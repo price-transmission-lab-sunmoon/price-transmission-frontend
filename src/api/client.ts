@@ -60,7 +60,7 @@ if (useMock) {
   });
 }
 
-// Error response interceptor
+// Error response interceptor — 원본 axios 에러를 cause로 보존 (exception_design_v2 §2.1)
 client.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
@@ -70,8 +70,8 @@ client.interceptors.response.use(
       'response' in error &&
       (error as { response?: { data?: unknown } }).response?.data
     ) {
-      throw parseApiError((error as { response: { data: unknown } }).response.data);
+      throw parseApiError((error as { response: { data: unknown } }).response.data, error);
     }
-    throw parseApiError(null);
+    throw parseApiError(null, error);
   },
 );
