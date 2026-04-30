@@ -1,8 +1,8 @@
 # 계량경제학 파이프라인 출력 명세서
 
 **과제명**: 계량경제학 모형과 머신러닝 기반 소비자 물가 분석 및 이상 탐지를 위한 모델 개발
-**문서 유형**: 파이프라인 출력 명세서 (계량경제학 브랜치, v5)
-**작성일**: 2026-04-25
+**문서 유형**: 파이프라인 출력 명세서 (계량경제학 브랜치, v6)
+**작성일**: 2026-04-30
 **작성 기준**: doc1 v8 / doc2 v2 / config/settings.py / Phase 0~3 구현 코드 기준
 **변경 이력**:
 
@@ -10,6 +10,8 @@
 - v2 → v3: 'palm_oil' -> 'palmoil'로 변경
 - v3 → v4: Phase 3 변경
 - v4 → v5: Phase 4 변경
+- v5 → v6: Phase 5,6 변경
+
 ---
 
 ## 개요
@@ -279,26 +281,26 @@ data/processed/phase3/
 
 ### `cointegration_results.csv`
 
-| 컬럼 | 타입 | 설명 |
-| --- | --- | --- |
-| `commodity_id` | str | 품목 식별자 |
-| `segment` | str | 분석 구간 (A, B, C, D, D_prime) |
-| `upstream` | str | 상류 가격 컬럼명 |
-| `downstream` | str | 하류 가격 컬럼명 |
-| `n_obs` | int | 관측치 수 |
-| `var_lag_aic` | int | VAR 최적 시차 (AIC 기준) |
-| `var_lag_bic` | int | VAR 최적 시차 (BIC 기준) |
-| `johansen_lag` | int | Johansen 검정 시차 (var_lag_aic - 1, 최소 1) |
-| `trace_stat_r0` | float | Johansen Trace 통계량 (r=0 검정) |
-| `trace_crit_r0` | float | Trace 임계값 (5% 유의수준) |
-| `trace_reject_r0` | bool | Trace 기각 여부 (stat > crit) |
-| `eigen_stat_r0` | float | Max-Eigenvalue 통계량 (r=0 검정) |
-| `eigen_crit_r0` | float | Max-Eigen 임계값 (5% 유의수준) |
-| `eigen_reject_r0` | bool | Max-Eigen 기각 여부 (stat > crit) |
-| `cointegrated` | bool | 공적분 존재 여부 (최종 판정) |
-| `judgment_note` | str | 판정 근거 설명 (예: "Trace·Max-Eigen 모두 기각 → 공적분 확정") |
-| `model_selected` | str | 선택 모형 (`VECM` \| `VAR`) |
-| `integration_flag` | str \| NaN | I(2) 포함 시 주의 메시지, 정상 쌍은 NaN |
+| 컬럼               | 타입       | 설명                                                           |
+| ------------------ | ---------- | -------------------------------------------------------------- |
+| `commodity_id`     | str        | 품목 식별자                                                    |
+| `segment`          | str        | 분석 구간 (A, B, C, D, D_prime)                                |
+| `upstream`         | str        | 상류 가격 컬럼명                                               |
+| `downstream`       | str        | 하류 가격 컬럼명                                               |
+| `n_obs`            | int        | 관측치 수                                                      |
+| `var_lag_aic`      | int        | VAR 최적 시차 (AIC 기준)                                       |
+| `var_lag_bic`      | int        | VAR 최적 시차 (BIC 기준)                                       |
+| `johansen_lag`     | int        | Johansen 검정 시차 (var_lag_aic - 1, 최소 1)                   |
+| `trace_stat_r0`    | float      | Johansen Trace 통계량 (r=0 검정)                               |
+| `trace_crit_r0`    | float      | Trace 임계값 (5% 유의수준)                                     |
+| `trace_reject_r0`  | bool       | Trace 기각 여부 (stat > crit)                                  |
+| `eigen_stat_r0`    | float      | Max-Eigenvalue 통계량 (r=0 검정)                               |
+| `eigen_crit_r0`    | float      | Max-Eigen 임계값 (5% 유의수준)                                 |
+| `eigen_reject_r0`  | bool       | Max-Eigen 기각 여부 (stat > crit)                              |
+| `cointegrated`     | bool       | 공적분 존재 여부 (최종 판정)                                   |
+| `judgment_note`    | str        | 판정 근거 설명 (예: "Trace·Max-Eigen 모두 기각 → 공적분 확정") |
+| `model_selected`   | str        | 선택 모형 (`VECM` \| `VAR`)                                    |
+| `integration_flag` | str \| NaN | I(2) 포함 시 주의 메시지, 정상 쌍은 NaN                        |
 
 **비고**: Johansen 검정은 ADF와 달리 p값을 반환하지 않는다. 통계량이 임계값을 초과하면 귀무가설(공적분 없음)을 기각한다.
 
@@ -446,14 +448,14 @@ VECM과 VAR에서 포함되는 필드가 다르다.
 
 충격반응함수 시계열. Phase 7 패턴 1의 정상 전달 시차 산출에 사용.
 
-| 컬럼                 | 타입  | 설명                                       |
-| -------------------- | ----- | ------------------------------------------ |
-| `horizon`            | int   | 충격 후 경과 기간 (개월, 0~24)             |
-| `irf_downstream`     | float | 하류 가격의 상류 충격에 대한 반응           |
-| `irf_lower_ci`       | float | IRF 95% 신뢰구간 하한 (stderr 기반)        |
-| `irf_upper_ci`       | float | IRF 95% 신뢰구간 상한 (stderr 기반)        |
+| 컬럼                 | 타입  | 설명                                                         |
+| -------------------- | ----- | ------------------------------------------------------------ |
+| `horizon`            | int   | 충격 후 경과 기간 (개월, 0~24)                               |
+| `irf_downstream`     | float | 하류 가격의 상류 충격에 대한 반응                            |
+| `irf_lower_ci`       | float | IRF 95% 신뢰구간 하한 (stderr 기반)                          |
+| `irf_upper_ci`       | float | IRF 95% 신뢰구간 상한 (stderr 기반)                          |
 | `irf_peak_horizon`   | int   | IRF 피크 도달 시점 (정상 전달 시차 기준값, 모든 행에 동일값) |
-| `irf_peak_magnitude` | float | IRF 피크 크기 (전이탄력성 기준값, 모든 행에 동일값)        |
+| `irf_peak_magnitude` | float | IRF 피크 크기 (전이탄력성 기준값, 모든 행에 동일값)          |
 
 **비고**: 피크는 IRF 절대값 최대 시점으로 선택. 음수 반응(역방향 전달)도 포착하기 위해 절대값 기준 사용.
 
@@ -491,23 +493,22 @@ Phase 7 이상 탐지의 기준선 파라미터. **전체 기간 기준선만 �
 | `ect`      | float              | ECT 값 (VECM) 또는 로그 수준 스프레드 (VAR) |
 | `ect_type` | str                | `"ECT"` \| `"log_spread"`                   |
 
-**비고**: ECT = β' × Y_t (공적분 벡터 × 수준 데이터). 로그 스프레드 = log(하류_sa) - log(상류_sa). Phase 7 패턴 3 및 Phase 7-ML 입력 피처 (6종 중 하나)로 직접 사용.
+**비고**: ECT = β' × Y_t (공적분 벡터 × 수준 데이터). 로그 스프레드 = log(하류\_sa) - log(상류\_sa). Phase 7 패턴 3 및 Phase 7-ML 입력 피처 (6종 중 하나)로 직접 사용.
 
 ### `phase4_summary.csv`
 
-| 컬럼               | 타입  | 설명                                |
-| ------------------ | ----- | ----------------------------------- |
-| `commodity_id`     | str   | 품목 식별자                         |
-| `segment`          | str   | 분석 구간                           |
-| `model_type`       | str   | VECM / VAR                         |
-| `lag`              | int   | 사용된 시차                         |
-| `n_obs`            | int   | 관측치 수                           |
-| `peak_horizon`     | int   | IRF 피크 시점 (개월)                |
-| `peak_magnitude`   | float | IRF 피크 크기 (전이탄력성)          |
-| `ect_type`         | str   | ECT / log_spread                   |
-| `estimation_start` | str   | 추정 시작 월 (YYYY-MM)             |
-| `estimation_end`   | str   | 추정 종료 월 (YYYY-MM)             |
-
+| 컬럼               | 타입  | 설명                       |
+| ------------------ | ----- | -------------------------- |
+| `commodity_id`     | str   | 품목 식별자                |
+| `segment`          | str   | 분석 구간                  |
+| `model_type`       | str   | VECM / VAR                 |
+| `lag`              | int   | 사용된 시차                |
+| `n_obs`            | int   | 관측치 수                  |
+| `peak_horizon`     | int   | IRF 피크 시점 (개월)       |
+| `peak_magnitude`   | float | IRF 피크 크기 (전이탄력성) |
+| `ect_type`         | str   | ECT / log_spread           |
+| `estimation_start` | str   | 추정 시작 월 (YYYY-MM)     |
+| `estimation_end`   | str   | 추정 종료 월 (YYYY-MM)     |
 
 ---
 
@@ -524,6 +525,7 @@ Phase 7 이상 탐지의 기준선 파라미터. **전체 기간 기준선만 �
 ```
 data/processed/phase5/
 └── granger_results.csv         ← Granger 검정 결과 및 확정 방향
+└── granger_direction.json      ← 품목별 최종 확정 인과 방향 (후속 분석 참조용)
 ```
 
 ### `granger_results.csv`
@@ -534,20 +536,51 @@ data/processed/phase5/
 | `segment`             | str   | 분석 구간 (C 고정)                                                                          |
 | `direction`           | str   | 검정 방향 (`ppi_to_wholesale` \| `wholesale_to_ppi`)                                        |
 | `max_lag`             | int   | 검정에 사용된 최대 시차                                                                     |
+| `best_lag`            | int   | 1부터 max_lag 사이에서 p-value(ssr_ftest)가 최소가 되는 최적 시차                           |
 | `f_stat`              | float | F 통계량                                                                                    |
 | `pvalue`              | float | p값                                                                                         |
 | `significant`         | bool  | 유의 여부 (p < 0.05)                                                                        |
 | `confirmed_direction` | str   | 최종 확정 인과 방향 (`ppi_to_wholesale` \| `wholesale_to_ppi` \| `bidirectional` \| `none`) |
 
-**비고**: `confirmed_direction` 확정 후 `phase3/model_routing.json`의 `granger_direction` 필드를 갱신한다.
+### `confirmed_direction` 판정 로직 및 Phase 7 적용 범위
+
+| 결과               | 조건                                                | Phase 7 적용    |
+| ------------------ | --------------------------------------------------- | --------------- |
+| `ppi_to_wholesale` | PPI→도매가만 유의                                   | 패턴 1·2·3 모두 |
+| `wholesale_to_ppi` | 도매가→PPI만 유의                                   | 패턴 1·2·3 모두 |
+| `bidirectional`    | 양방향 유의 (PL-P5-003) — PPI→도매가 기본 방향 유지 | 패턴 1·2·3 모두 |
+| `none`             | 양방향 비유의 (PL-P5-002)                           | 패턴 1만        |
+
+### 'granger_direction.json'
+
+품목별 최종 확정 인과 방향 (후속 분석 참조용)
+
+```json
+{
+  "groundnuts": {
+    "segment": "C",
+    "confirmed_direction": "bidirectional"
+  },
+  "banana": {
+    "segment": "C",
+    "confirmed_direction": "none"
+  },
+  "orange": {
+    "segment": "C",
+    "confirmed_direction": "none"
+  }
+}
+```
 
 ---
 
 ## Phase 6 — 구조 변화 탐지 및 기간 분할
 
-**입력**: `phase1/changes/{cid}_changes.csv`, `phase3/model_routing.json`, `phase4/baseline/{cid}_{seg}_baseline.json`
+**입력**: `phase1/changes/{cid}_changes.csv`, `phase1/seasonal_adjusted/{cid}_sa.csv`, `phase3/model_routing.json`, `phase4/baseline/{cid}_{seg}_baseline.json`, `product_config.json`
 
-**방법**: Bai-Perron 구조 변화 검정 (데이터 주도 변화 시점 탐지) + Chow Test (2008·2020·2022 사전 지정 3개 시점 교차 확인). 하위 기간 최소 관측치 60개 (`MIN_SUBPERIOD_OBS = 60`). 미달 시 인접 기간과 병합.
+**방법**: 전이율(하류 변화율 ÷ 상류 변화율) 시계열에 Bai-Perron 구조 변화 검정 (Dynp + BIC, 데이터 주도 변화 시점 탐지) + Chow Test (2008·2020·2022 사전 지정 3개 시점 교차 확인). 전이율 산출 시 상류 변화율 절대값 < 3% 구간은 NaN 처리 후 forward-fill (Phase 7 STABILITY_THRESHOLD와 동일). 하위 기간 최소 관측치 60개 (`MIN_SUBPERIOD_OBS = 60`). 미달 시 인접 기간과 병합.
+
+**경계 사례 플래그**: Phase 3에서 공적분 Trace가 임계값 ±10% 이내이거나, 데이터 확장으로 모형이 전환됐거나, I(2) 플래그가 붙은 구간에 `borderline_cointegration: true`를 부착. 하위 기간 재추정 결과의 해석 시 주의 표시.
 
 **Chow Test 고정 시점 (D-07)**: Chow Test는 `2008-01`, `2020-01`, `2022-01` **정확히 3개 시점**을 항상 검정한다. 추가 또는 축소 없이 고정. DB `breakpoints` 테이블의 `chow_2008_*`, `chow_2020_*`, `chow_2022_*` 컬럼 구조에 1:1 대응.
 
@@ -559,8 +592,9 @@ data/processed/phase6/
 │   └── {cid}_{seg}_breakpoints.json    ← 변화 시점 및 하위 기간 분할 정보
 ├── chow_results/
 │   └── {cid}_{seg}_chow.csv            ← Chow Test 결과
-└── subperiod_models/
-    └── {cid}_{seg}_subperiod_{n}_model.json  ← 하위 기간별 재추정 모형 파라미터
+├── subperiod_models/
+│   └── {cid}_{seg}_subperiod_{n}_model.json  ← 하위 기간별 재추정 모형 파라미터
+└── phase6_summary.csv                  ← 전 품목·구간 요약
 ```
 
 ### `breakpoints/{cid}_{seg}_breakpoints.json`
@@ -568,38 +602,131 @@ data/processed/phase6/
 ```json
 {
   "commodity_id": "wheat",
-  "segment": "A",
-  "bai_perron_breakpoints": ["2008-09", "2022-03"],
+  "segment": "D_prime",
+  "borderline_cointegration": false,
+  "bai_perron_breakpoints": ["2013-05", "2020-11"],
+  "bai_perron_best_k": 2,
+  "bic_scores": {
+    "0": -62.9,
+    "1": -67.57,
+    "2": -362.49,
+    "3": -350.52,
+    "4": -245.59
+  },
   "chow_test_points": {
-    "2008-01": { "f_stat": 12.3, "pvalue": 0.001, "significant": true },
-    "2020-01": { "f_stat": 2.1, "pvalue": 0.142, "significant": false },
-    "2022-01": { "f_stat": 8.7, "pvalue": 0.003, "significant": true }
+    "2008-01": {
+      "break_point": "2008-01",
+      "f_stat": 7.3014,
+      "pvalue": 0.0008,
+      "significant": true
+    },
+    "2020-01": {
+      "break_point": "2020-01",
+      "f_stat": 103.4496,
+      "pvalue": 0.0,
+      "significant": true
+    },
+    "2022-01": {
+      "break_point": "2022-01",
+      "f_stat": 96.2219,
+      "pvalue": 0.0,
+      "significant": true
+    }
   },
   "subperiods": [
-    { "id": 1, "start": "YYYY-MM", "end": "YYYY-MM", "n_obs": 105 },
-    { "id": 2, "start": "YYYY-MM", "end": "YYYY-MM", "n_obs": 162 },
-    {
-      "id": 3,
-      "start": "YYYY-MM",
-      "end": "YYYY-MM",
-      "n_obs": 33,
-      "merged_with": 2
-    }
+    { "id": 1, "start": "2000-01", "end": "2013-04", "n_obs": 160 },
+    { "id": 2, "start": "2013-05", "end": "2020-10", "n_obs": 90 },
+    { "id": 3, "start": "2020-11", "end": "2026-02", "n_obs": 64 }
   ]
 }
 ```
 
-| 필드                     | 설명                                                                                                      |
-| ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `bai_perron_breakpoints` | Bai-Perron이 탐지한 구조 변화 시점 목록 (`"YYYY-MM"` 형식)                                                |
-| `chow_test_points`       | 고정 3개 시점별 Chow Test 결과                                                                            |
-| `subperiods`             | 확정된 하위 기간 목록. `n_obs` < 60인 기간은 `merged_with`로 병합 처리. `merged_with`는 병합 대상 `id` 값 |
+| 필드                       | 설명                                                                                                                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `borderline_cointegration` | 경계 사례 플래그. Phase 3 공적분 검정이 아슬하거나 I(2) 플래그가 부착된 구간은 `true`                                                                                             |
+| `bai_perron_breakpoints`   | Bai-Perron이 탐지한 구조 변화 시점 목록 (`"YYYY-MM"` 형식). 탐지 없으면 빈 배열                                                                                                   |
+| `bai_perron_best_k`        | BIC 기준 최적 변화점 수 (0이면 변화점 없음)                                                                                                                                       |
+| `bic_scores`               | 변화점 수(k=0,1,2,...) 별 BIC 점수. 최소 BIC의 k가 `bai_perron_best_k`                                                                                                            |
+| `chow_test_points`         | 고정 3개 시점별 Chow Test 결과. 각 항목에 `break_point`, `f_stat`, `pvalue`, `significant` 포함. 분석 범위 밖이면 `f_stat`·`pvalue`·`significant`가 `null`이고 `note`에 사유 기재 |
+| `subperiods`               | 확정된 하위 기간 목록. `n_obs` < 60인 기간은 `merged_with`로 병합 대상 `id` 기재                                                                                                  |
+
+### `chow_results/{cid}_{seg}_chow.csv`
+
+| 컬럼           | 타입  | 설명                                                                  |
+| -------------- | ----- | --------------------------------------------------------------------- |
+| `commodity_id` | str   | 품목 식별자                                                           |
+| `segment`      | str   | 분석 구간                                                             |
+| `break_point`  | str   | Chow 검정 시점 (`2008-01` \| `2020-01` \| `2022-01`)                  |
+| `f_stat`       | float | F 통계량. 범위 밖이면 빈값                                            |
+| `pvalue`       | float | p값. 범위 밖이면 빈값                                                 |
+| `significant`  | bool  | 유의 여부 (p < 0.05). 범위 밖이면 빈값                                |
+| `note`         | str   | 비고. `분석 범위 밖 (PL-P6-002)` 또는 `구간 관측치 부족 (전=N, 후=M)` |
+
+### `subperiod_models/{cid}_{seg}_subperiod_{n}_model.json`
+
+하위 기간별 VAR/VECM 재추정 결과. 2개 이상 독립 하위 기간이 있을 때만 생성.
+
+```json
+{
+  "model_type": "VECM",
+  "lag_selected": 3,
+  "n_obs": 160,
+  "cointegrated": true,
+  "det_order": 0,
+  "coint_rank": 1,
+  "alpha": [[-0.2257], [0.2479]],
+  "beta": [[1.0], [-0.8901]],
+  "subperiod_index": 1,
+  "subperiod_start": "2000-01",
+  "subperiod_end": "2013-04",
+  "commodity_id": "wheat",
+  "segment": "D_prime",
+  "upstream_col": "ppi",
+  "downstream_col": "cpi",
+  "effective_lag": 3,
+  "original_lag": 3,
+  "irf_peak_horizon": 24,
+  "irf_peak_magnitude": 1.129387
+}
+```
+
+| 필드                                                                                | 설명                                                                                         |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `model_type`                                                                        | 모형 유형 (`VECM` \| `VAR`). 전체 기간 `model_routing.json`의 모형을 하위 기간에도 동일 적용 |
+| `lag_selected`, `n_obs`, `cointegrated`, `det_order`, `coint_rank`, `alpha`, `beta` | Phase 4 추정 함수의 표준 출력 필드                                                           |
+| `subperiod_index`                                                                   | 하위 기간 번호 (1부터)                                                                       |
+| `subperiod_start`, `subperiod_end`                                                  | 하위 기간 범위 (`YYYY-MM`)                                                                   |
+| `commodity_id`, `segment`                                                           | 품목·구간 식별자                                                                             |
+| `upstream_col`, `downstream_col`                                                    | 상류·하류 변수명                                                                             |
+| `effective_lag`                                                                     | 실제 적용 시차. 하위 기간이 짧으면 `original_lag`보다 축소될 수 있음                         |
+| `original_lag`                                                                      | 전체 기간 기준 시차 (`model_routing.json`의 `johansen_lag` 또는 `var_lag_aic`)               |
+| `irf_peak_horizon`                                                                  | IRF 피크 도달 시점 (개월)                                                                    |
+| `irf_peak_magnitude`                                                                | IRF 피크 크기 (탄력성)                                                                       |
+
+### `phase6_summary.csv`
+
+| 컬럼                 | 타입 | 설명                                  |
+| -------------------- | ---- | ------------------------------------- |
+| `commodity_id`       | str  | 품목 식별자                           |
+| `segment`            | str  | 분석 구간                             |
+| `n_obs`              | int  | 전이율 유효 관측치 수                 |
+| `n_breakpoints`      | int  | Bai-Perron 탐지 변화점 수             |
+| `bp_dates`           | str  | 변화 시점 목록 (문자열 표현)          |
+| `n_subperiods`       | int  | 독립 하위 기간 수                     |
+| `borderline`         | bool | 경계 사례 플래그                      |
+| `chow_2008_sig`      | bool | Chow 2008 유의 여부. 범위 밖이면 빈값 |
+| `chow_2020_sig`      | bool | Chow 2020 유의 여부. 범위 밖이면 빈값 |
+| `chow_2022_sig`      | bool | Chow 2022 유의 여부. 범위 밖이면 빈값 |
+| `reestimation_count` | int  | 하위 기간 재추정 성공 수              |
 
 ### `breakpoints/{cid}_{seg}_breakpoints.json` → DB 적재 변환 규칙 (D-07)
 
 | JSON 필드                              | DB 컬럼                                                        | 변환 규칙                                                                                 |
 | -------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `borderline_cointegration`             | `breakpoints.borderline_cointegration`                         | 직접 매핑 (BOOLEAN)                                                                       |
 | `bai_perron_breakpoints` (문자열 배열) | `breakpoints.bp_dates` (DATE[])                                | `"YYYY-MM"` → `"YYYY-MM-01"` 월초 승격                                                    |
+| `bai_perron_best_k`                    | `breakpoints.bp_best_k`                                        | 직접 매핑 (INTEGER)                                                                       |
+| `bic_scores`                           | `breakpoints.bic_scores` (JSONB)                               | 직접 매핑                                                                                 |
 | `chow_test_points["2008-01"].*`        | `breakpoints.chow_2008_f`, `chow_2008_pvalue`, `chow_2008_sig` | 키 직접 매핑 (항상 존재)                                                                  |
 | `chow_test_points["2020-01"].*`        | `breakpoints.chow_2020_f`, `chow_2020_pvalue`, `chow_2020_sig` | 키 직접 매핑 (항상 존재)                                                                  |
 | `chow_test_points["2022-01"].*`        | `breakpoints.chow_2022_f`, `chow_2022_pvalue`, `chow_2022_sig` | 키 직접 매핑 (항상 존재)                                                                  |

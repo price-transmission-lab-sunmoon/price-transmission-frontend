@@ -1,12 +1,13 @@
 # DB 스키마 명세서
 
 **과제명**: 계량경제학 모형과 머신러닝 기반 소비자 물가 분석 및 이상 탐지를 위한 모델 개발
-**문서 유형**: PostgreSQL 16 DB 스키마 명세서 (v3)
+**문서 유형**: PostgreSQL 16 DB 스키마 명세서 (v4)
 **작성일**: 2026-04-20
-**작성 기준**: pipeline_output_spec_v5 / web_plan_v6 / doc1 v9 / doc2 v2
+**작성 기준**: pipeline_output_spec_v6 / web_plan_v6 / doc1 v9 / doc2 v2
 **변경 이력**:
 - v1 → v2: design_review_v1 검토 반영. 주요 변경: D-01(asymmetry_results.subperiod_id 제거), D-02(anomaly_results는 탐지 행만 저장 명시, confidence_grade NOT NULL 유지), D-03(anomaly_results에 zscore_warning 추가), D-05(anomaly_results에 pattern1_flag_type 추가), D-06(baselines에 warmup_end 추가), D-07(breakpoints JSON→DB 변환 규칙 명시), D-08(mv_anomaly_density_yearly 머티리얼라이즈드 뷰 추가), D-09(이벤트 오버레이 정책 명시), D-10(granger_results.segment_id FK 추가), D-11(월 기준일 검증 정책 명시), D-13(anomaly_results UNIQUE 제약 수정·pattern1_flag_type 추가), D-17(배치 롤백 정책 명시), D-18(Redis 캐시 무효화 방향성 기록), D-19(ml_projections 저장 범위 방침 기록), D-20(에러 envelope context 필드 추가 — API 명세 반영).
 - v2 → v3: pipeline_output_spec v5 반영. 설계 원칙 2번 버전 참조 갱신. stationarity_results·cointegration_results 대응 명세 버전 갱신. model_params.lag_criterion 컬럼 주석 재정의(Phase 4 자체 시차 선택 없음 — Phase 3 결정값 기록용). 푸터 버전 갱신.
+- v3 → v4: pipeline_output_spec v6 업데이트
 
 ---
 
@@ -19,7 +20,7 @@
 ### 설계 원칙
 
 1. **읽기 최적화 우선** — 웹 서비스는 배치 적재 후 읽기 전용으로 동작한다. 쓰기 성능보다 쿼리 속도를 우선한다.
-2. **파이프라인 출력과 1:1 대응** — 각 테이블은 `pipeline_output_spec_v5`의 출력 파일 단위에 대응하며, 컬럼 이름은 가능한 한 동일하게 유지한다.
+2. **파이프라인 출력과 1:1 대응** — 각 테이블은 `pipeline_output_spec_v6`의 출력 파일 단위에 대응하며, 컬럼 이름은 가능한 한 동일하게 유지한다.
 3. **웹 서비스 API 단위 분리** — `web_plan_v6` §12의 API 엔드포인트 단위로 테이블을 분리하여 조인 비용을 최소화한다.
 4. **v2 과적재 원칙** — 파이프라인 출력이 미확정인 Phase 3~7 산출물은 넉넉하게 컬럼을 정의한다. 검수 후 불필요한 컬럼은 제거한다.
 5. **탐지 이벤트만 저장 (D-02)** — `anomaly_results` 테이블은 이상 탐지된 행만 저장한다. `confidence_grade IS NOT NULL`인 행만 적재한다. 정상 월은 저장하지 않는다.
@@ -202,7 +203,7 @@ CREATE INDEX idx_raw_prices_commodity_period ON raw_prices (commodity_id, period
 
 ### `stationarity_results` — Phase 2 정상성 검정 결과
 
-`pipeline_output_spec_v5`의 `phase2/stationarity_results.csv`에 대응.
+`pipeline_output_spec_v6`의 `phase2/stationarity_results.csv`에 대응.
 
 ```sql
 CREATE TABLE stationarity_results (
@@ -244,7 +245,7 @@ CREATE TABLE stationarity_results (
 
 ### `cointegration_results` — Phase 3 Johansen 공적분 검정 결과
 
-`pipeline_output_spec_v5`의 `phase3/cointegration_results.csv`에 대응.
+`pipeline_output_6`의 `phase3/cointegration_results.csv`에 대응.
 
 ```sql
 CREATE TABLE cointegration_results (
@@ -846,4 +847,4 @@ web_plan_v6 §12의 API 엔드포인트별로 주로 참조하는 테이블을 �
 
 ---
 
-*v3 — pipeline_output_spec_v5 반영. Phase 3~7 미구현 구간 테이블은 pipeline_output_spec_v5 기준 설계. 파이프라인 구현 완료 후 실제 출력과 대조하여 갱신 필요.*
+*v3 — pipeline_output_spec_v6 반영. Phase 3~7 미구현 구간 테이블은 pipeline_output_spec_v6 기준 설계. 파이프라인 구현 완료 후 실제 출력과 대조하여 갱신 필요.*
