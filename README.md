@@ -162,7 +162,7 @@ price-transmission-frontend/
 | `web_plan_v6.md` | UI/UX 웹 플랜 |
 | `api_spec_v4.md` | API 명세 18개 엔드포인트 |
 | `db_schema_v3.md` | DB 스키마 (필드명·Literal 값 출처) |
-| `exception_spec_v4.md` | 예외 코드 명세 |
+| `exception_design_v2.md` | 예외처리 설계 (frame 단계 참조) |
 | `pipeline_output_spec_v5.md` | 파이프라인 출력 명세 |
 | `doc1_technical_pipeline_v9.md` | 파이프라인 기술 명세 |
 | `doc3_research_proposal_v11.md` | 연구 제안서 |
