@@ -1,16 +1,17 @@
 # 계량경제학 파이프라인 출력 명세서
 
 **과제명**: 계량경제학 모형과 머신러닝 기반 소비자 물가 분석 및 이상 탐지를 위한 모델 개발
-**문서 유형**: 파이프라인 출력 명세서 (계량경제학 브랜치, v6)
+**문서 유형**: 파이프라인 출력 명세서 (계량경제학 브랜치, v7)
 **작성일**: 2026-04-30
-**작성 기준**: doc1 v8 / doc2 v2 / config/settings.py / Phase 0~3 구현 코드 기준
+**작성 기준** (최신 버전 자동 참조 — `abcd_vN.md` 규칙): `doc1_technical_pipeline_vN.md` / `doc2_pattern_definitions_vN.md` / `config/settings.py` / Phase 0~3 구현 코드 기준
 **변경 이력**:
 
-- v1 → v2: design_review_v1 검토 반영. 주요 변경: D-01(비대칭 검정 하위 기간 미적용 확정), D-07(Chow Test 고정 3시점 명시·적재 변환 규칙 추가), D-11(월 식별자 타입 변환 규칙 명시), D-13(동월·동구간 복수 패턴 집계 규칙 추가), D-14(ML 학습 단위 명시), D-03·D-05 파생 수정.
-- v2 → v3: 'palm_oil' -> 'palmoil'로 변경
-- v3 → v4: Phase 3 변경
-- v4 → v5: Phase 4 변경
-- v5 → v6: Phase 5,6 변경
+- v1 → v2: 당시 design_review v1 검토 반영. 주요 변경: D-01(비대칭 검정 하위 기간 미적용 확정), D-07(Chow Test 고정 3시점 명시·적재 변환 규칙 추가), D-11(월 식별자 타입 변환 규칙 명시), D-13(동월·동구간 복수 패턴 집계 규칙 추가), D-14(ML 학습 단위 명시), D-03·D-05 파생 수정.
+- v2 → v3: 'palm_oil' -> 'palmoil'로 변경.
+- v3 → v4: Phase 3 변경.
+- v4 → v5: Phase 4 변경.
+- v5 → v6: Phase 5,6 변경.
+- v6 → v7 (2026-05-02): 본문 정정. `reference_audit_report v1` §4 규칙에 따라 외부 참조 표기를 `abcd_vN.md`로 일괄 전환. 헤더·본문의 구버전 참조(당시 doc1 v8) 정정. 본 문서는 이제 `docs/docs_manifest.md`의 버전 해석기에 의해 자동 최신 참조되며, 파일명·본문·푸터는 `_v7`로 정합.
 
 ---
 
@@ -18,7 +19,7 @@
 
 ### 명세서 목적
 
-본 명세서는 계량경제학 파이프라인(Phase 0~7)의 각 단계가 생성하는 파일과 그 내부 구조를 정의한다. Phase 0~2는 구현 완료 코드 기준이며, Phase 3~7은 doc1 v8 및 settings.py 파라미터 기준 설계 명세다.
+본 명세서는 계량경제학 파이프라인(Phase 0~7)의 각 단계가 생성하는 파일과 그 내부 구조를 정의한다. Phase 0~2는 구현 완료 코드 기준이며, Phase 3~7은 `doc1_technical_pipeline_vN` 및 `settings.py` 파라미터 기준 설계 명세다.
 
 ### 표기 원칙
 
@@ -1033,4 +1034,4 @@ Phase 구현 시 `config/settings.py` 값을 우선 참조한다.
 
 ---
 
-_v2 — design_review_v1 기반 갱신. Phase 3~7 출력 명세는 구현 착수 시 코드 기준으로 재갱신 필요._
+_v7 — 당시 design_review v1 기반 갱신에서 출발, Phase 3·4·5·6 반영하여 갱신. Phase 3~7 출력 명세는 구현 착수 시 코드 기준으로 재갱신 필요. (v7에서 외부 참조 표기를 `abcd_vN.md` 규칙으로 전환, `docs/docs_manifest.md` 버전 해석기 연동)_

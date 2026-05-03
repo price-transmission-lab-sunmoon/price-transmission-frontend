@@ -1,13 +1,14 @@
 # DB 스키마 명세서
 
 **과제명**: 계량경제학 모형과 머신러닝 기반 소비자 물가 분석 및 이상 탐지를 위한 모델 개발
-**문서 유형**: PostgreSQL 16 DB 스키마 명세서 (v4)
+**문서 유형**: PostgreSQL 16 DB 스키마 명세서 (v5)
 **작성일**: 2026-04-20
-**작성 기준**: pipeline_output_spec_v6 / web_plan_v6 / doc1 v9 / doc2 v2
+**작성 기준** (최신 버전 자동 참조 — `abcd_vN.md` 규칙): `pipeline_output_spec_vN.md` / `web_plan_vN.md` / `doc1_technical_pipeline_vN.md` / `doc2_pattern_definitions_vN.md`
 **변경 이력**:
-- v1 → v2: design_review_v1 검토 반영. 주요 변경: D-01(asymmetry_results.subperiod_id 제거), D-02(anomaly_results는 탐지 행만 저장 명시, confidence_grade NOT NULL 유지), D-03(anomaly_results에 zscore_warning 추가), D-05(anomaly_results에 pattern1_flag_type 추가), D-06(baselines에 warmup_end 추가), D-07(breakpoints JSON→DB 변환 규칙 명시), D-08(mv_anomaly_density_yearly 머티리얼라이즈드 뷰 추가), D-09(이벤트 오버레이 정책 명시), D-10(granger_results.segment_id FK 추가), D-11(월 기준일 검증 정책 명시), D-13(anomaly_results UNIQUE 제약 수정·pattern1_flag_type 추가), D-17(배치 롤백 정책 명시), D-18(Redis 캐시 무효화 방향성 기록), D-19(ml_projections 저장 범위 방침 기록), D-20(에러 envelope context 필드 추가 — API 명세 반영).
-- v2 → v3: pipeline_output_spec v5 반영. 설계 원칙 2번 버전 참조 갱신. stationarity_results·cointegration_results 대응 명세 버전 갱신. model_params.lag_criterion 컬럼 주석 재정의(Phase 4 자체 시차 선택 없음 — Phase 3 결정값 기록용). 푸터 버전 갱신.
-- v3 → v4: pipeline_output_spec v6 업데이트
+- v1 → v2: 당시 design_review v1 검토 반영. 주요 변경: D-01(asymmetry_results.subperiod_id 제거), D-02(anomaly_results는 탐지 행만 저장 명시, confidence_grade NOT NULL 유지), D-03(anomaly_results에 zscore_warning 추가), D-05(anomaly_results에 pattern1_flag_type 추가), D-06(baselines에 warmup_end 추가), D-07(breakpoints JSON→DB 변환 규칙 명시), D-08(mv_anomaly_density_yearly 머티리얼라이즈드 뷰 추가), D-09(이벤트 오버레이 정책 명시), D-10(granger_results.segment_id FK 추가), D-11(월 기준일 검증 정책 명시), D-13(anomaly_results UNIQUE 제약 수정·pattern1_flag_type 추가), D-17(배치 롤백 정책 명시), D-18(Redis 캐시 무효화 방향성 기록), D-19(ml_projections 저장 범위 방침 기록), D-20(에러 envelope context 필드 추가 — API 명세 반영).
+- v2 → v3: 당시 pipeline_output_spec v5 반영. 설계 원칙 2번 버전 참조 갱신. stationarity_results·cointegration_results 대응 명세 버전 갱신. model_params.lag_criterion 컬럼 주석 재정의(Phase 4 자체 시차 선택 없음 — Phase 3 결정값 기록용). 푸터 버전 갱신.
+- v3 → v4: 당시 pipeline_output_spec v6 업데이트.
+- v4 → v5 (2026-05-02): 본문 정정. `reference_audit_report v1` §4 규칙에 따라 외부 참조 표기를 `abcd_vN.md`로 일괄 전환. 헤더 `작성 기준`의 구버전 참조(당시 doc1 v9) 정정. 본 문서는 이제 `docs/docs_manifest.md`의 버전 해석기에 의해 자동 최신 참조되며, 파일명·본문·푸터는 `_v5`로 정합.
 
 ---
 
@@ -20,8 +21,8 @@
 ### 설계 원칙
 
 1. **읽기 최적화 우선** — 웹 서비스는 배치 적재 후 읽기 전용으로 동작한다. 쓰기 성능보다 쿼리 속도를 우선한다.
-2. **파이프라인 출력과 1:1 대응** — 각 테이블은 `pipeline_output_spec_v6`의 출력 파일 단위에 대응하며, 컬럼 이름은 가능한 한 동일하게 유지한다.
-3. **웹 서비스 API 단위 분리** — `web_plan_v6` §12의 API 엔드포인트 단위로 테이블을 분리하여 조인 비용을 최소화한다.
+2. **파이프라인 출력과 1:1 대응** — 각 테이블은 `pipeline_output_spec_vN`의 출력 파일 단위에 대응하며, 컬럼 이름은 가능한 한 동일하게 유지한다.
+3. **웹 서비스 API 단위 분리** — `web_plan_vN` §12의 API 엔드포인트 단위로 테이블을 분리하여 조인 비용을 최소화한다.
 4. **v2 과적재 원칙** — 파이프라인 출력이 미확정인 Phase 3~7 산출물은 넉넉하게 컬럼을 정의한다. 검수 후 불필요한 컬럼은 제거한다.
 5. **탐지 이벤트만 저장 (D-02)** — `anomaly_results` 테이블은 이상 탐지된 행만 저장한다. `confidence_grade IS NOT NULL`인 행만 적재한다. 정상 월은 저장하지 않는다.
 6. **월 기준일 검증 (D-11)** — `period DATE` 컬럼을 갖는 모든 테이블에서 `period`는 반드시 **월초(`YYYY-MM-01`)** 값으로 고정한다. 적재 시 `period.day == 1` 검증을 수행하며, 월말 기준 저장을 방지한다.
@@ -149,7 +150,7 @@ CREATE TABLE external_events (
 );
 ```
 
-**초기 데이터 (5개 행, web_plan_v6 §3.4 기준)**
+**초기 데이터 (5개 행, web_plan_vN §3.4 기준)**
 
 | event_key | label_kr | start_date | end_date | color_hex |
 |---|---|---|---|---|
@@ -165,7 +166,7 @@ CREATE TABLE external_events (
 
 ### `raw_prices` — 원시 시계열
 
-원시 시계열 뷰(web_plan_v6 §4.3)에서 사용. Phase 0 `merged/{cid}.csv` 기준으로 적재하며, Y축 통일을 위한 2020=100 지수 환산값을 함께 저장한다.
+원시 시계열 뷰(web_plan_vN §4.3)에서 사용. Phase 0 `merged/{cid}.csv` 기준으로 적재하며, Y축 통일을 위한 2020=100 지수 환산값을 함께 저장한다.
 
 ```sql
 CREATE TABLE raw_prices (
@@ -203,7 +204,7 @@ CREATE INDEX idx_raw_prices_commodity_period ON raw_prices (commodity_id, period
 
 ### `stationarity_results` — Phase 2 정상성 검정 결과
 
-`pipeline_output_spec_v6`의 `phase2/stationarity_results.csv`에 대응.
+`pipeline_output_spec_vN`의 `phase2/stationarity_results.csv`에 대응.
 
 ```sql
 CREATE TABLE stationarity_results (
@@ -319,7 +320,7 @@ CREATE TABLE model_params (
 
 ### `irf_data` — Phase 4 IRF 곡선 데이터
 
-분석 수치 패널 §IRF 차트(web_plan_v6 §6.5)에서 사용. 전체 기간 + 하위 기간별 IRF를 저장.
+분석 수치 패널 §IRF 차트(web_plan_vN §6.5)에서 사용. 전체 기간 + 하위 기간별 IRF를 저장.
 
 ```sql
 CREATE TABLE irf_data (
@@ -471,7 +472,7 @@ CREATE TABLE subperiods (
 
 ### `stat_timeseries` — Phase 7 지표별 시계열
 
-분석 수치 패널에서 지표 항목 클릭 시 표시되는 개별 인라인 그래프(web_plan_v6 §6.2) 및 스트림 그래프의 전이율 곡선 데이터 소스.
+분석 수치 패널에서 지표 항목 클릭 시 표시되는 개별 인라인 그래프(web_plan_vN §6.2) 및 스트림 그래프의 전이율 곡선 데이터 소스.
 
 ```sql
 CREATE TABLE stat_timeseries (
@@ -644,7 +645,7 @@ CREATE TABLE asymmetry_results (
 
 ### `ml_scores` — Phase 7-ML 모델별 이상 점수
 
-분석 수치 패널 ML 판정 섹션의 이상 점수 바 차트(web_plan_v6 §6.3)에 사용.
+분석 수치 패널 ML 판정 섹션의 이상 점수 바 차트(web_plan_vN §6.3)에 사용.
 
 ```sql
 CREATE TABLE ml_scores (
@@ -685,7 +686,7 @@ CREATE INDEX idx_ml_scores_commodity_segment ON ml_scores (commodity_id, segment
 
 ### `ml_projections` — Phase 7-ML ML 결과맵 2D 투영 데이터
 
-분석 수치 패널 ML 결과맵(web_plan_v6 §6.3) 시각화에 사용. 투영 축(PCA 2D vs 직접 피처 2종)은 OI-15에 따라 S4 스프린트 내 확정.
+분석 수치 패널 ML 결과맵(web_plan_vN §6.3) 시각화에 사용. 투영 축(PCA 2D vs 직접 피처 2종)은 OI-15에 따라 S4 스프린트 내 확정.
 
 저장 범위 방침 (D-19): OI-15 결정 후 `projection_method`를 단일로 확정하거나, "이상 탐지 월 ± 12개월" 범위만 저장하는 방식을 검토한다. 현재는 전 관측치 저장 구조로 설계하나, 배치 완료 후 실제 행 수를 확인하여 축소 여부를 결정한다.
 
@@ -754,7 +755,7 @@ CREATE TABLE pipeline_runs (
 
 ### `data_freshness` — 데이터 기준 시점
 
-웹 서비스 상단 바의 "2026년 3월 기준 · 다음 갱신 4월 15일 예정" 칩 컴포넌트 데이터 소스(web_plan_v6 §3.3).
+웹 서비스 상단 바의 "2026년 3월 기준 · 다음 갱신 4월 15일 예정" 칩 컴포넌트 데이터 소스(web_plan_vN §3.3).
 
 Redis 캐시 무효화 방향성 (D-18): 배치 완료 시 `pipeline_runs.id`를 Redis 캐시 키에 포함하여 갱신 여부를 판단하는 방식을 예비 방향으로 기록한다. 상세 규칙(TTL, 키 네이밍 규칙)은 OI(캐시 키 규칙, S6 결정) 해소 시 확정한다.
 
@@ -775,7 +776,7 @@ CREATE TABLE data_freshness (
 
 ### `mv_anomaly_density_yearly` — 연도별 이상 밀도 머티리얼라이즈드 뷰 (D-08)
 
-미니맵(web_plan_v6 §4.1) `anomaly_density` 데이터 소스. `pipeline_runs` 완료 후 `REFRESH MATERIALIZED VIEW`로 갱신한다.
+미니맵(web_plan_vN §4.1) `anomaly_density` 데이터 소스. `pipeline_runs` 완료 후 `REFRESH MATERIALIZED VIEW`로 갱신한다.
 
 ```sql
 CREATE MATERIALIZED VIEW mv_anomaly_density_yearly AS
@@ -800,7 +801,7 @@ CREATE UNIQUE INDEX idx_mv_anomaly_density
 
 ## API 엔드포인트 ↔ 테이블 대응
 
-web_plan_v6 §12의 API 엔드포인트별로 주로 참조하는 테이블을 정리한다.
+web_plan_vN §12의 API 엔드포인트별로 주로 참조하는 테이블을 정리한다.
 
 | API 엔드포인트 | 주 참조 테이블 | 보조 참조 테이블 |
 |---|---|---|
@@ -847,4 +848,4 @@ web_plan_v6 §12의 API 엔드포인트별로 주로 참조하는 테이블을 �
 
 ---
 
-*v3 — pipeline_output_spec_v6 반영. Phase 3~7 미구현 구간 테이블은 pipeline_output_spec_v6 기준 설계. 파이프라인 구현 완료 후 실제 출력과 대조하여 갱신 필요.*
+*v5 — 당시 pipeline_output_spec v6 반영. Phase 3~7 미구현 구간 테이블은 당시 pipeline_output_spec v6 기준 설계. 파이프라인 구현 완료 후 실제 출력과 대조하여 갱신 필요. (v5에서 외부 참조 표기를 `abcd_vN.md` 규칙으로 전환, `docs/docs_manifest.md` 버전 해석기 연동)*

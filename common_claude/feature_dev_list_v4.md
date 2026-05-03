@@ -1,11 +1,13 @@
-# 기능 개발 리스트 v3
+# 기능 개발 리스트 v4
 
 **과제명**: 계량경제학 모형과 머신러닝 기반 소비자 물가 분석 및 이상 탐지를 위한 모델 개발
 **문서 유형**: feat/* 브랜치 기능 개발 관리 (frame/* 머지 이후 적용)
 **작성일**: 2026-04-27
 **담당**: PM 최수안
-**참조**: sprint_plan_v2.md, api_spec_v4.md, web_plan_v6.md, db_schema_v3.md
-**버전** : v2 -> v3 : pipeline_output_spec_v5 에서 v6으로 버전 업
+**참조** (최신 버전 자동 참조 — `abcd_vN.md` 규칙): sprint_plan_vN.md, api_spec_vN.md, web_plan_vN.md, db_schema_vN.md
+**변경 이력**:
+- v2 -> v3 (2026-04-27) : 당시 pipeline_output_spec v5 에서 v6으로 버전 업.
+- v3 -> v4 (2026-05-02) : 본문 정정. `reference_audit_report v1` §4 규칙에 따라 외부 참조 표기를 `abcd_vN.md`로 일괄 전환. 잔존 구버전 참조(당시 doc1 v9, db_schema v3) 전부 정정. 본 문서는 이제 `docs/docs_manifest.md`의 버전 해석기에 의해 자동 최신 참조된다.
 
 
 > **운영 원칙**
@@ -52,7 +54,7 @@
 | **브랜치** | `feat/phase7-stat` |
 | **스프린트** | S3 (05.05~05.12) |
 | **선행 조건** | Phase 6 Bai-Perron·Chow Test 구조 변화 탐지 완료 |
-| **참조 명세** | `doc1_technical_pipeline_v9.md §Phase 7`, `doc2_pattern_definitions_v2.md` |
+| **참조 명세** | `doc1_technical_pipeline_vN.md §Phase 7`, `doc2_pattern_definitions_vN.md` |
 
 **구현 범위**
 
@@ -68,13 +70,13 @@
 **팀 검토 항목**
 - 임계값 3종 (Z-score 2.0/2.5, IQR 1.5, 안정기 ±3%) 합의
 - 패턴별 탐지 결과 샘플 품목(밀·바나나) 교차 검토
-- `pipeline_output_spec_v6.md §Phase 7` 출력 형식 준수 확인
+- `pipeline_output_spec_vN.md §Phase 7` 출력 형식 준수 확인
 
 **완료 기준**
 - 전 10품목 × 전 구간 패턴 1~3 탐지 완료
 - 임계값 팀 전원 합의 기록 (`docs/results/phase7-threshold.md`)
 - `anomaly_results` 테이블 적재 및 필드 형식 확인
-- `pipeline_output_spec_v6 §Phase 7` 출력 불일치 0건
+- `pipeline_output_spec_vN §Phase 7` 출력 불일치 0건
 
 **절대 금지**
 - Phase 8 신뢰도 최종 판정을 이 Phase에서 선행 수행
@@ -90,7 +92,7 @@
 | **브랜치** | `feat/phase7-ml` |
 | **스프린트** | S4 (05.12~05.19) |
 | **선행 조건** | `feat/phase7-stat` 완료 (통계 탐지 결과 확정) |
-| **참조 명세** | `doc1_technical_pipeline_v9.md §Phase 7-ML`, `doc3_research_proposal_v11.md §8` |
+| **참조 명세** | `doc1_technical_pipeline_vN.md §Phase 7-ML`, `doc3_research_proposal_vN.md §8` |
 
 **구현 범위**
 
@@ -130,7 +132,7 @@
 | **브랜치** | `feat/be-api-reference` |
 | **스프린트** | S2 (04.28~05.05) |
 | **선행 조건** | `frame/backend` dev 머지 완료 |
-| **참조 명세** | `api_spec_v4.md §참조 엔드포인트` |
+| **참조 명세** | `api_spec_vN.md §참조 엔드포인트` |
 
 **구현 엔드포인트 5개**
 
@@ -151,7 +153,7 @@
 
 **완료 기준**
 - 5개 엔드포인트 200 OK 확인 (더미 DB 기반)
-- `api_spec_v4.md` 응답 필드명·타입 일치 (불일치 0건)
+- `api_spec_vN.md` 응답 필드명·타입 일치 (불일치 0건)
 - snake_case 필드명 유지 (alias 변환 없음)
 
 ---
@@ -164,7 +166,7 @@
 | **브랜치** | `feat/be-api-anomaly` |
 | **스프린트** | S2 후반~S3 (Phase 7-stat 완료 시점에 맞춰 실제 데이터 연동) |
 | **선행 조건** | `frame/backend` dev 머지 완료 (더미), `feat/phase7-stat` 완료 (실제 연동) |
-| **참조 명세** | `api_spec_v4.md §요약 엔드포인트` |
+| **참조 명세** | `api_spec_vN.md §요약 엔드포인트` |
 
 **구현 엔드포인트 1개**
 
@@ -191,7 +193,7 @@
 | **브랜치** | `feat/be-api-timeseries` |
 | **스프린트** | S3 (05.05~05.12) |
 | **선행 조건** | `feat/phase7-stat` 완료 (이상 노드 데이터 필요) |
-| **참조 명세** | `api_spec_v4.md §시각화 엔드포인트` |
+| **참조 명세** | `api_spec_vN.md §시각화 엔드포인트` |
 
 **구현 엔드포인트 5개**
 
@@ -230,7 +232,7 @@
 | **브랜치** | `feat/be-api-panel` |
 | **스프린트** | S4 (05.12~05.19) |
 | **선행 조건** | `feat/phase7-ml` 완료 (ML 결과 데이터 필요) |
-| **참조 명세** | `api_spec_v4.md §패널 엔드포인트` |
+| **참조 명세** | `api_spec_vN.md §패널 엔드포인트` |
 
 **구현 엔드포인트 5개**
 
@@ -266,7 +268,7 @@
 | **브랜치** | `feat/be-api-meta` *(be-api-reference와 동시 진행 가능)* |
 | **스프린트** | S2 |
 | **선행 조건** | `frame/backend` dev 머지 완료 |
-| **참조 명세** | `api_spec_v4.md §방법론 엔드포인트` |
+| **참조 명세** | `api_spec_vN.md §방법론 엔드포인트` |
 
 **구현 엔드포인트 2개**
 
@@ -278,12 +280,12 @@
 **세부 구현 요건**
 - 두 엔드포인트 모두 DB 조회 없이 코드 내 정적 딕셔너리로 구현
 - `ETag` + `Cache-Control: max-age=86400` 헤더 포함
-- `/meta/pipeline` — 노드 11개, 엣지 11개 (api_spec_v4 §방법론 예시 JSON 그대로)
+- `/meta/pipeline` — 노드 11개, 엣지 11개 (api_spec_vN §방법론 예시 JSON 그대로)
 - `/meta/analysis-params` — `rolling_window`, `zscore_warning/alert`, `iqr_multiplier`, `stability_threshold`, `pattern3_n_values`, `chow_test_points` 포함. 값은 settings.py 참조
 
 **완료 기준**
 - 2개 엔드포인트 200 OK 확인
-- 응답 JSON 구조가 api_spec_v4 예시와 일치
+- 응답 JSON 구조가 api_spec_vN 예시와 일치
 
 ---
 
@@ -295,7 +297,7 @@
 | **브랜치** | `feat/be-db-pipeline` |
 | **스프린트** | S3 (05.05~05.12) |
 | **선행 조건** | `frame/backend` dev 머지 완료, Phase 2~3 출력 CSV 파일 존재 |
-| **참조 명세** | `db_schema_v3.md`, `pipeline_output_spec_v6.md` |
+| **참조 명세** | `db_schema_vN.md`, `pipeline_output_spec_vN.md` |
 
 **구현 범위**
 
@@ -323,7 +325,7 @@
 | **브랜치** | `feat/be-batch` |
 | **스프린트** | S4 (05.12~05.19) |
 | **선행 조건** | `feat/be-api-reference` 완료 |
-| **참조 명세** | `web_plan_v6.md §11.2`, `frame_spec_backend_v2.md §8.7` |
+| **참조 명세** | `web_plan_vN.md §11.2`, `frame_spec_backend_vN.md §8.7` |
 
 **구현 범위**
 - APScheduler v3.10.4 기반 월별 파이프라인 실행 스케줄 등록
@@ -345,7 +347,7 @@
 | **브랜치** | `feat/be-redis` |
 | **스프린트** | S5 (05.19~06.02) |
 | **선행 조건** | `feat/be-db-pipeline` 완료 |
-| **참조 명세** | `api_spec_v4.md §설계 원칙 6, §미결 사항 캐시 키 규칙` |
+| **참조 명세** | `api_spec_vN.md §설계 원칙 6, §미결 사항 캐시 키 규칙` |
 
 **구현 범위**
 
@@ -355,7 +357,7 @@
 | `/meta/pipeline`, `/meta/analysis-params`, `/segments`, `/events` | ETag 기반 조건부 캐싱 (이미 be-api에서 헤더 설정 완료) |
 | 배치 갱신 후 | `pipeline_runs.id` 기반 캐시 무효화 트리거 |
 
-> **미결**: Redis TTL 값 및 캐시 무효화 전략 상세는 S6 착수 시 `api_spec_v4.md §미결 사항` 기준으로 확정.
+> **미결**: Redis TTL 값 및 캐시 무효화 전략 상세는 S6 착수 시 `api_spec_vN.md §미결 사항` 기준으로 확정.
 
 **완료 기준**
 - `/stream` 첫 요청 DB 조회, 두 번째 요청 Redis 캐시 반환 확인
@@ -373,7 +375,7 @@
 | **브랜치** | `feat/fe-layout-filter` |
 | **스프린트** | S3 (05.05~05.12) |
 | **선행 조건** | `frame/frontend` dev 머지 완료 |
-| **참조 명세** | `web_plan_v6.md §3, §4` |
+| **참조 명세** | `web_plan_vN.md §3, §4` |
 
 **구현 범위**
 
@@ -401,7 +403,7 @@
 | **브랜치** | `feat/fe-stream-chart` |
 | **스프린트** | S3 (05.05~05.12) |
 | **선행 조건** | `frame/frontend` dev 머지 완료 |
-| **참조 명세** | `web_plan_v6.md §4~§5`, `api_spec_v4.md §/stream` |
+| **참조 명세** | `web_plan_vN.md §4~§5`, `api_spec_vN.md §/stream` |
 
 **구현 범위**
 
@@ -433,7 +435,7 @@
 | **브랜치** | `feat/fe-minimap` |
 | **스프린트** | S3 후반 |
 | **선행 조건** | `feat/fe-stream-chart` 완료 |
-| **참조 명세** | `web_plan_v6.md §5.1`, `api_spec_v4.md §/stream/minimap` |
+| **참조 명세** | `web_plan_vN.md §5.1`, `api_spec_vN.md §/stream/minimap` |
 
 **구현 범위**
 - 스트림 그래프 하단 고정 미니맵 (전체 기간 yearly 압축 뷰)
@@ -454,7 +456,7 @@
 | **브랜치** | `feat/fe-panel` |
 | **스프린트** | S4 (05.12~05.19) |
 | **선행 조건** | `feat/fe-stream-chart` 완료 (노드 클릭 트리거 필요) |
-| **참조 명세** | `web_plan_v6.md §6`, `api_spec_v4.md §패널 엔드포인트` |
+| **참조 명세** | `web_plan_vN.md §6`, `api_spec_vN.md §패널 엔드포인트` |
 
 **구현 범위**
 
@@ -488,14 +490,14 @@
 | **브랜치** | `feat/fe-scatter-chart` |
 | **스프린트** | S4 후반 |
 | **선행 조건** | `feat/fe-panel` 완료 |
-| **참조 명세** | `web_plan_v6.md §5.2`, `api_spec_v4.md §/scatter` |
+| **참조 명세** | `web_plan_vN.md §5.2`, `api_spec_vN.md §/scatter` |
 
 **구현 범위**
 - D3.js 기반 상류·하류 가격 변화율 산점도
 - 과대 전달 구역(우상단), 과소 전달 구역(우하단), 역전달 구역(좌측) 색상 구분 영역 표시
 - 현재 선택 시점 강조 마커
 - `until` 슬라이더: 특정 시점까지의 데이터만 표시 (누적 변화 확인용)
-- 구간 탭: A·B·C·D 구간별 전환 (web_plan_v6 §5.2 하단 구간 탭)
+- 구간 탭: A·B·C·D 구간별 전환 (web_plan_vN §5.2 하단 구간 탭)
 - 더미 데이터 기반 렌더링
 
 **완료 기준**
@@ -513,7 +515,7 @@
 | **브랜치** | `feat/fe-raw-timeseries` |
 | **스프린트** | S4 후반 |
 | **선행 조건** | `feat/fe-layout-filter` 완료 |
-| **참조 명세** | `web_plan_v6.md §5.3`, `api_spec_v4.md §/raw-prices` |
+| **참조 명세** | `web_plan_vN.md §5.3`, `api_spec_vN.md §/raw-prices` |
 
 **구현 범위**
 
@@ -546,7 +548,7 @@
 | **브랜치** | `feat/fe-methodology-tab` |
 | **스프린트** | S5 (05.19~06.02) |
 | **선행 조건** | `feat/be-api-meta` 완료 |
-| **참조 명세** | `web_plan_v6.md §8` |
+| **참조 명세** | `web_plan_vN.md §8` |
 
 **구현 범위**
 
@@ -573,7 +575,7 @@
 | **브랜치** | `feat/fe-onboarding` |
 | **스프린트** | S5 (05.19~06.02) |
 | **선행 조건** | `feat/fe-panel` 완료 (패널 UI 확정 후 가이드 내용 작성 가능) |
-| **참조 명세** | `web_plan_v6.md §9` |
+| **참조 명세** | `web_plan_vN.md §9` |
 
 **구현 범위**
 - 최초 방문 시 자동 실행 인터랙티브 가이드 (4단계)
@@ -597,7 +599,7 @@
 | **브랜치** | `feat/fe-api-connect` |
 | **스프린트** | S6 (06.02~06.12) |
 | **선행 조건** | 전 백엔드 feat 브랜치 dev 머지 완료, end-to-end 동작 확인 완료 |
-| **참조 명세** | `api_spec_v4.md 전체` |
+| **참조 명세** | `api_spec_vN.md 전체` |
 
 **구현 범위**
 - `VITE_USE_MOCK=false` 전환 후 전 컴포넌트 실제 API 연동
@@ -638,4 +640,4 @@ feat/* 브랜치 생성 전 반드시 확인:
 
 ---
 
-*이 문서는 sprint_plan_v2.md와 함께 운용한다. 스프린트 일정 변경 시 sprint_plan만 갱신하고, 기능 구현 내용 변경 시 이 문서를 갱신한다.*
+*이 문서는 sprint_plan_vN.md와 함께 운용한다. 스프린트 일정 변경 시 sprint_plan만 갱신하고, 기능 구현 내용 변경 시 이 문서를 갱신한다.*
