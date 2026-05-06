@@ -1,6 +1,6 @@
 export function Header() {
-  // §3.3 — 뷰 전환 탭: 흐름 보기 / 전달 구조 / 원시 시계열
-  const viewTabs = ['흐름 보기', '전달 구조', '원시 시계열'];
+  // web_plan_vN §3.3 — 뷰 전환 탭: 흐름 보기 / 전달 구조 / 원시 시계열 / 방법론
+  const viewTabs = ['흐름 보기', '전달 구조', '원시 시계열', '방법론'];
 
   return (
     <header
