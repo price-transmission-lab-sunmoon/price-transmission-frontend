@@ -14,8 +14,9 @@ import type {
 } from '@/types/literals';
 
 // ============================================================
-// 단일 useAppStore — feature_spec_FE-LAY_v3 §3.1 합의된 슬라이스 결합 구조
+// 단일 useAppStore — frame_spec_frontend_vN §6 + web_plan_vN §3·§6 기반 슬라이스 결합 구조
 // 슬라이스: Commodity / Filter / View / Overlay / Panel
+// 후속 feat/fe-layout-filter, feat/fe-panel 단계에서 슬라이스 결합 패턴 구체화
 // ============================================================
 
 // 패널 섹션·인라인 차트·결과맵 토글 키
@@ -83,7 +84,7 @@ interface OverlayState {
 
 // ============================================================
 // PanelState — 패널 너비·섹션 토글·인라인 차트 토글·결과맵 토글
-// feature_spec_FE-PANEL_v1 §2.3 정의
+// web_plan_vN §6.6 (패널 너비 280~520px) + feature_dev_list_vN §feat/fe-panel 정의
 // ============================================================
 interface PanelState {
   panelWidth: number; // 280 ~ 520

@@ -228,15 +228,14 @@ export interface StatSnapshotAsymmetryResponse {
   asymmetry_significant: boolean;
 }
 
-export type StatSnapshotResponse =
-  | StatSnapshotIqrResponse
-  | StatSnapshotAsymmetryResponse;
+export type StatSnapshotResponse = StatSnapshotIqrResponse | StatSnapshotAsymmetryResponse;
 
 // metric → 응답 타입 매핑 (호출 측 타입 안내용)
-export type StatSnapshotResponseFor<M extends StatSnapshotMetric> =
-  M extends 'iqr' ? StatSnapshotIqrResponse :
-  M extends 'asymmetry' ? StatSnapshotAsymmetryResponse :
-  never;
+export type StatSnapshotResponseFor<M extends StatSnapshotMetric> = M extends 'iqr'
+  ? StatSnapshotIqrResponse
+  : M extends 'asymmetry'
+    ? StatSnapshotAsymmetryResponse
+    : never;
 
 // ============================================================
 // /anomalies/{id}/irf — IRF 차트

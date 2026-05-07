@@ -1,6 +1,7 @@
 export function Header() {
-  // web_plan_vN §3.3 — 뷰 전환 탭: 흐름 보기 / 전달 구조 / 원시 시계열 / 방법론
-  const viewTabs = ['흐름 보기', '전달 구조', '원시 시계열', '방법론'];
+  // web_plan_vN §3.3 — 뷰 전환 탭 3개 (방법론은 우측 별도 버튼)
+  // activeTab 매핑: 'stream' / 'scatter' / 'raw-prices' / 'methodology'
+  const viewTabs = ['흐름 보기', '전달 구조', '원시 시계열'];
 
   return (
     <header

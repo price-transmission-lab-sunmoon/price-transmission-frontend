@@ -64,6 +64,14 @@ export type ProjectionMethod = (typeof PROJECTION_METHODS)[number];
 export const PATTERN1_FLAG_TYPES = ['direction_reversal', 'lag_deviation', 'both'] as const;
 export type Pattern1FlagType = (typeof PATTERN1_FLAG_TYPES)[number] | null;
 
-// 비대칭 방향 — api_spec_vN stat_metrics.rocket_feather_direction
-export const ROCKET_FEATHER_DIRECTIONS = ['upward_stronger', 'downward_stronger', 'symmetric'] as const;
+// 비대칭 방향 — db_schema_vN.asymmetry_results.rocket_feather_direction 컬럼 + null
+// 'symmetric'은 DB에 명시적으로 저장되지 않으나(값 또는 NULL),
+// Wald 검정 비유의 케이스를 명시적으로 표현하기 위한 프론트 한정 도메인 값.
+// 백엔드 API 응답에는 등장하지 않으며, 프론트 내부 계산(asymmetry_significant=false 시)에서만 사용한다.
+// ⚠️ PM 검토 중 (plan_frontend_alignment_vN §9 5번) — 결정 후 옵션 A(제거) 채택 시 별도 PR 처리.
+export const ROCKET_FEATHER_DIRECTIONS = [
+  'upward_stronger',
+  'downward_stronger',
+  'symmetric',
+] as const;
 export type RocketFeatherDirection = (typeof ROCKET_FEATHER_DIRECTIONS)[number] | null;

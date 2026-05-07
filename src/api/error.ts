@@ -1,10 +1,10 @@
-// 예외처리 설계 문서(exception_design_v2) 기반 — 에러 체이닝 + ORIGIN 추출 + 글로벌 핸들러
+// 예외처리 설계 문서(exception_design_vN) 기반 — 에러 체이닝 + ORIGIN 추출 + 글로벌 핸들러
 // frame 단계: 인프라(체인 구조·핸들러)만 구축. FE-* 코드별 처리(toast/fallback)는 feat/* 단계.
 
 import type { ApiErrorResponse } from '@/types/error';
 
 /**
- * API 응답 에러 envelope을 wrapping하는 클래스 (frame_spec §6.4).
+ * API 응답 에러 envelope을 wrapping하는 클래스 (frame_spec_frontend_vN §6.4).
  * ES2022 표준 `cause` 옵션을 지원하여 `raise X from Y` 패턴을 JS에서 구현.
  */
 export class ApiError extends Error {
@@ -24,7 +24,7 @@ export class ApiError extends Error {
 }
 
 /**
- * 에러 체인 추적 결과 (exception_design_v2 §2.2).
+ * 에러 체인 추적 결과 (exception_design_vN §2.2).
  */
 export interface ErrorChainTrace {
   origin: Error;
@@ -33,7 +33,7 @@ export interface ErrorChainTrace {
 }
 
 /**
- * 예외 체인을 역추적하여 ORIGIN과 전파 경로를 반환한다 (exception_design_v2 §2.2).
+ * 예외 체인을 역추적하여 ORIGIN과 전파 경로를 반환한다 (exception_design_vN §2.2).
  * 체인의 끝(`cause === undefined`)이 ORIGIN이며, 첫 번째로 정렬된다.
  *
  * 컨벤션 전제: `throw new X('...', { cause: e })` 패턴을 반드시 지킨다.
@@ -60,7 +60,7 @@ export function traceErrorChain(err: unknown): ErrorChainTrace {
 }
 
 /**
- * 체인을 사람이 읽기 좋은 다중 라인 문자열로 포매팅 (exception_design_v2 §2.3).
+ * 체인을 사람이 읽기 좋은 다중 라인 문자열로 포매팅 (exception_design_vN §2.3).
  * ORIGIN 행에만 context를 출력한다.
  */
 export function formatErrorChain(chain: Error[]): string {
@@ -92,7 +92,7 @@ export function formatErrorChain(chain: Error[]): string {
 }
 
 /**
- * 체인을 AI 디버깅 전달용 한 줄 요약으로 포매팅 (exception_design_v2 §2.5).
+ * 체인을 AI 디버깅 전달용 한 줄 요약으로 포매팅 (exception_design_vN §2.5).
  * 코드만 나열하여 전파 경로를 한눈에 파악할 수 있게 한다.
  *
  * @example
@@ -106,7 +106,7 @@ export function formatErrorChainSummary(chain: Error[]): string {
 }
 
 /**
- * Axios 응답 본문을 ApiError envelope으로 파싱한다 (frame_spec §6.4).
+ * Axios 응답 본문을 ApiError envelope으로 파싱한다 (frame_spec_frontend_vN §6.4).
  * 원본 axios 에러는 `cause`로 보존하여 체인을 끊지 않는다.
  *
  * @param data Axios 에러 응답의 body (response.data)
@@ -126,7 +126,7 @@ export function parseApiError(data: unknown, cause?: unknown): ApiError {
 }
 
 /**
- * 최상위에서 잡힌 예외를 처리한다 (exception_design_v2 §2.4).
+ * 최상위에서 잡힌 예외를 처리한다 (exception_design_vN §2.4).
  * 에러 체인을 분석하고 ORIGIN 코드를 콘솔에 기록한다.
  * 사용 위치: `main.tsx`의 `window.error` / `window.unhandledrejection` 핸들러.
  *
