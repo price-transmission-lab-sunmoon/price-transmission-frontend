@@ -5,8 +5,9 @@
 > 변경 시 단독 커밋: `[CLAUDE.md] Update {변경 내용}`
 
 **최초 작성**: 2026-04-28  
+**최종 갱신**: 2026-05-06 (frame 재정비)  
 **담당**: PM 최수안  
-**참조 기준 문서**: `web_plan_v6`, `api_spec_v4`, `exception_spec_v4`, `team_ai_collab_v6`
+**참조 기준 문서**: `web_plan_vN`, `api_spec_vN`, `exception_spec_vN`, `frame_spec_frontend_vN`, `team_ai_collab_vN` — 버전 해석은 `docs/docs_manifest.md`를 따른다
 
 ---
 
@@ -31,98 +32,88 @@
 
 ## 3. 디렉토리 구조
 
+> **단일 SoT**: 본 §3은 `frame_spec_frontend_vN.md §2` 디렉토리 구조와 정합한다.  
+> Frame 단계에 실제로 생성된 폴더·파일과, feat/* 브랜치에서 추가될 신규 폴더(주석 표시)를 함께 기재.
+
 ```
 price-transmission-frontend/
-├── CLAUDE.md                           ← 이 파일
+├── CLAUDE.md                           ← 이 파일 (frame 갱신 후 동기화)
 ├── README.md
-├── docs/                               ← 참조 명세 사본 (읽기 전용)
+├── docs/                               ← 참조 명세 사본
 │   ├── web_plan_vN.md
 │   ├── api_spec_vN.md
 │   ├── exception_spec_vN.md
-│   └── results/                        ← 기능 구현 완료 후 작업 결과 명세
-│       ├── FE-STREAM.md
-│       ├── FE-PANEL.md
-│       └── ...
+│   ├── frame_spec_frontend_vN.md
+│   ├── feature_dev_list_vN.md
+│   ├── feature_spec_FE-LAY_vN.md       ← feat/fe-layout-filter
+│   ├── feature_spec_FE-STREAM_vN.md    ← feat/fe-stream-chart
+│   ├── feature_spec_FE-MINIMAP_vN.md   ← feat/fe-minimap
+│   ├── feature_spec_FE-PANEL_vN.md     ← feat/fe-panel
+│   └── ...                             ← 후속 feat 명세서
 ├── src/
-│   ├── main.tsx                        ← 앱 진입점
-│   ├── App.tsx                         ← 라우팅, 전역 레이아웃
-│   ├── types/                          ← TypeScript 타입 정의 (API 응답 구조와 1:1 대응)
-│   │   ├── commodity.ts
-│   │   ├── anomaly.ts
-│   │   ├── timeseries.ts
-│   │   └── index.ts
-│   ├── store/                          ← Zustand 전역 상태
-│   │   ├── commodityStore.ts           ← 주 품목·보조 품목·분석 구간
-│   │   ├── filterStore.ts              ← 기간·신뢰도·패턴·사건·구간 토글 필터
-│   │   ├── panelStore.ts               ← 분석 수치 패널 열림·너비·섹션 상태
-│   │   ├── viewStore.ts                ← 현재 뷰 탭 (흐름/전달구조/원시시계열)
-│   │   └── overlayStore.ts             ← 이벤트 오버레이·보조 품목 오버레이 상태
+│   ├── main.tsx                        ← Vite 진입점
+│   ├── App.tsx                         ← QueryClientProvider + RouterProvider
+│   ├── index.css                       ← Tailwind import
+│   ├── vite-env.d.ts                   ← Vite 환경 변수 타입 선언
 │   ├── api/                            ← Axios API 클라이언트
-│   │   ├── client.ts                   ← Axios 인스턴스, 인터셉터
-│   │   ├── commodityApi.ts
-│   │   ├── anomalyApi.ts
-│   │   ├── timeseriesApi.ts
-│   │   └── metaApi.ts
-│   ├── components/                     ← 공유 UI 컴포넌트
-│   │   ├── ErrorBoundary.tsx
-│   │   ├── Toast.tsx
-│   │   ├── Badge.tsx
-│   │   └── ...
-│   ├── views/                          ← 페이지 단위 뷰
-│   │   ├── MainLayout.tsx              ← 전체 레이아웃 (배너·상단바·필터바·미니맵)
-│   │   ├── StreamView/                 ← 흐름 보기 (스트림 그래프)
-│   │   │   ├── StreamView.tsx
-│   │   │   ├── StreamChart.tsx         ← D3.js 스트림 그래프
-│   │   │   └── Minimap.tsx
-│   │   ├── ScatterView/                ← 전달 구조 (연결 산점도)
-│   │   │   ├── ScatterView.tsx
-│   │   │   └── ScatterChart.tsx        ← D3.js 산점도
-│   │   ├── RawPricesView/              ← 원시 시계열
-│   │   │   ├── RawPricesView.tsx
-│   │   │   └── RawPricesChart.tsx      ← D3.js 시계열 차트
-│   │   └── MethodologyView/            ← 방법론 탭
-│   │       ├── MethodologyView.tsx
-│   │       └── PipelineFlowDiagram.tsx ← D3.js 플로우 다이어그램 (대안: SVG 이미지)
-│   ├── panel/                          ← 분석 수치 패널
-│   │   ├── AnalysisPanel.tsx           ← 패널 컨테이너 (슬라이드인·너비 드래그)
-│   │   ├── StatSection.tsx             ← 계량경제학 수치 섹션
-│   │   ├── MLSection.tsx               ← ML 판정 섹션
-│   │   ├── JudgmentPathSection.tsx     ← 패턴 판정 경로 섹션
-│   │   ├── IRFSection.tsx              ← IRF 차트 섹션
-│   │   └── charts/                     ← 패널 내 인라인 차트 (D3.js)
-│   │       ├── TransmissionRateChart.tsx
-│   │       ├── ZScoreChart.tsx
-│   │       ├── ECTChart.tsx
-│   │       ├── IRFChart.tsx
-│   │       └── MLMapChart.tsx
-│   ├── filters/                        ← 필터 바 컴포넌트
-│   │   ├── FilterBar.tsx
-│   │   ├── PeriodFilter.tsx
-│   │   ├── EventFilter.tsx
-│   │   ├── ConfidenceFilter.tsx
-│   │   ├── PatternFilter.tsx
-│   │   └── SegmentToggle.tsx
-│   ├── onboarding/                     ← 온보딩 가이드
-│   │   └── OnboardingGuide.tsx
-│   ├── hooks/                          ← 커스텀 React Hooks
-│   │   ├── useStreamData.ts            ← /stream 데이터 fetch + React Query
-│   │   ├── useAnomalyDetail.ts         ← /anomalies/{id}/detail fetch
-│   │   └── ...
-│   ├── utils/
-│   │   ├── dateUtils.ts                ← YYYY-MM 파싱·포맷 유틸리티
-│   │   └── colorUtils.ts               ← 신뢰도·패턴 색상 상수
-│   └── fixtures/                       ← Mock 데이터 (VITE_USE_MOCK=true 환경)
-│       ├── stream.json
-│       └── anomaly.json
+│   │   ├── client.ts                   ← Axios 인스턴스 + Mock 인터셉터 (regex 분기)
+│   │   ├── endpoints.ts                ← api_spec_vN 18종 경로 상수
+│   │   └── error.ts                    ← API 에러 envelope 파서 + ApiError
+│   ├── components/
+│   │   ├── layout/                     ← 전역 레이아웃 (frame 단계 자리표시자)
+│   │   │   ├── AppShell.tsx            ← 상단바·필터바·메인·패널 결합 래퍼
+│   │   │   ├── Header.tsx              ← 상단바 (web_plan_vN §3.3, 4탭)
+│   │   │   ├── FilterBar.tsx           ← 필터 바 (web_plan_vN §3.4)
+│   │   │   └── Panel.tsx               ← 우측 분석 수치 패널 (자리표시자, feat/fe-panel가 AnalysisPanel로 대체)
+│   │   └── charts/
+│   │       └── .gitkeep                ← feat/* 브랜치에서 D3 컴포넌트 추가 (frame_spec §8.6)
+│   ├── stores/
+│   │   └── useAppStore.ts              ← 단일 Zustand 스토어 (5개 슬라이스 결합 구조 — §7 참조)
+│   ├── types/                          ← API 응답 구조와 1:1 대응 (frame_spec §6)
+│   │   ├── commodity.ts                ← /commodities, /segments 응답
+│   │   ├── anomaly.ts                  ← /anomalies/* 응답 (요약, 패널, IRF, ML 결과맵)
+│   │   ├── timeseries.ts               ← /stream, /scatter, /raw-prices, /minimap 응답
+│   │   ├── event.ts                    ← /events 응답
+│   │   ├── meta.ts                     ← /meta/pipeline, /meta/analysis-params, /freshness 응답
+│   │   ├── error.ts                    ← API 에러 envelope (frame_spec §6.4)
+│   │   ├── literals.ts                 ← Literal SoT (ConfidenceGrade, SegmentId, ViewTab 등)
+│   │   └── index.ts                    ← barrel re-export
+│   ├── fixtures/                       ← Mock 데이터 (VITE_USE_MOCK=true)
+│   │   ├── commodities.json            ← /commodities 10행
+│   │   ├── segments.json               ← /segments 5행
+│   │   ├── events.json                 ← /events 5건
+│   │   ├── freshness.json              ← /freshness 고정값
+│   │   └── ...                         ← feat/* 브랜치에서 stream/minimap/anomaly_detail/irf/ml_map 등 추가
+│   ├── services/
+│   │   └── .gitkeep                    ← feat/* 브랜치에서 데이터 변환·집계 로직 추가 (frame_spec §8.7)
+│   ├── pages/
+│   │   └── MainPage.tsx                ← 메인 페이지 (자리표시자)
+│   ├── router/
+│   │   └── index.tsx                   ← React Router v6 라우터
+│   ├── hooks/                          ← (feat/* 브랜치 신규 추가) React Query 훅
+│   │   ├── useStreamData.ts            ← feat/fe-stream-chart
+│   │   ├── useMinimapData.ts           ← feat/fe-minimap
+│   │   ├── useAnomalyDetail.ts         ← feat/fe-panel
+│   │   ├── useStatSeries.ts            ← feat/fe-panel
+│   │   ├── useStatSnapshot.ts          ← feat/fe-panel
+│   │   ├── useIRF.ts                   ← feat/fe-panel
+│   │   └── useMLMap.ts                 ← feat/fe-panel
+│   └── utils/                          ← (feat/* 브랜치 신규 추가)
+│       ├── colorUtils.ts               ← 신뢰도·패턴·구간 색상 상수
+│       └── dateUtils.ts                ← YYYY-MM 파싱·포맷
+├── tests/
+│   ├── setup.ts
+│   └── frame_smoke.test.ts             ← frame_spec §7.4 smoke test
 ├── public/
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
 ├── tailwind.config.ts
 ├── .env.example
-├── Dockerfile
 └── package.json
 ```
+
+> **D3.js 차트 컴포넌트 위치 정책**: frame_spec §8.6은 D3 컴포넌트를 `src/components/charts/` 빈 폴더로 두고 feat/* 브랜치에서 추가하도록 명시. feature 명세서들이 가정한 `views/StreamView/`, `panel/charts/` 등 별도 디렉토리는 frame_spec 정책과 충돌 — 각 feat 명세서 §1.3에서 `components/charts/` 또는 `panel/`(또는 명시된 새 디렉토리) 중 선택하여 PM 합의 후 진행한다.
 
 ---
 
@@ -172,56 +163,66 @@ interface TimeseriesEnvelope {
 
 ## 6. TypeScript 타입 — API 필드명 드리프트 방지
 
-**원칙**: `api_spec_vN.md`의 JSON 키 이름과 TypeScript 타입 필드명을 동일하게 유지한다.
+**원칙** (frame_spec_vN §6.1·§6.2·§6.3 준수):
+- API 응답 JSON 키를 변형 없이 `snake_case` 그대로 사용 (camelCase 변환 인터셉터 금지)
+- 모든 literal 타입은 `src/types/literals.ts`가 SoT — 타 파일에서 동일 유니온 직접 선언 금지
+- 날짜 필드는 모두 `string` 타입 (자동 Date 변환 금지, frame_spec §6.5)
 
-핵심 타입 예시:
+핵심 타입 예시 (정확한 정의는 `src/types/literals.ts`·`anomaly.ts`·`commodity.ts` 참조):
 
 ```typescript
-// 신뢰도 등급
+// literals.ts — SoT
 type ConfidenceGrade = "high" | "medium" | "reference";
-
-// 분석 구간
 type SegmentId = "A" | "B" | "C" | "D" | "D_prime";
+type PrimaryPattern = "pattern1" | "pattern2" | "pattern3";
+type ViewTab = "stream" | "scatter" | "raw-prices" | "methodology";
+type MlModel = "isolation_forest" | "lof" | "ocsvm";
 
-// 이상 탐지 결과
-interface AnomalyNode {
-  anomaly_id:        string;
-  commodity_id:      string;
+// anomaly.ts — 스트림 차트용 이상 노드 (api_spec_vN /stream 응답)
+interface StreamAnomalyNode {
+  anomaly_id:        number;          // ← integer (frame_spec §6.2)
   segment_id:        SegmentId;
   period:            string;          // YYYY-MM
+  primary_pattern:   PrimaryPattern;  // ← literal union (1|2|3 아님)
+  pattern_types:     PrimaryPattern[];
   confidence_grade:  ConfidenceGrade;
-  primary_pattern:   1 | 2 | 3;
-  pattern_types:     number[];
   transmission_rate: number;
-  ml_vote:           0 | 1 | 2 | 3;
   is_new:            boolean;
 }
 
-// 품목 메타
+// commodity.ts — 품목 메타
 interface Commodity {
   commodity_id:            string;
   name_kr:                 string;
   name_en:                 string;
+  cluster:                 "grain" | "oil_sugar" | "tropical" | "livestock" | "independent";
   has_wholesale:           boolean;
   route_type:              "3seg" | "4seg";
   segments:                SegmentId[];
   analysis_start:          string;     // YYYY-MM
+  analysis_end:            string;     // YYYY-MM
   has_anomaly_this_month:  boolean;
   latest_anomaly_grade:    ConfidenceGrade | null;
 }
 ```
 
+> **이전 버전의 잘못된 예시 정정**: 과거 본 §6은 `anomaly_id: string`, `primary_pattern: 1|2|3`, `pattern_types: number[]`로 표기했으나 모두 frame_spec_vN §6.2 매트릭스 위반. 위 예시가 정정된 SoT.
+
 ---
 
 ## 7. Zustand 스토어 구조
 
-| 스토어 | 관리 상태 |
-|--------|-----------|
-| `commodityStore` | 주 품목 ID, 보조 품목 ID (null 가능) |
-| `filterStore` | 기간(from/to), granularity, 신뢰도 필터, 패턴 필터, 이벤트 선택 목록, 구간 on/off 토글 |
-| `panelStore` | 패널 열림 여부, 선택된 anomaly_id, 패널 너비, 섹션별 펼침 상태, 인라인 그래프 펼침 상태 |
-| `viewStore` | 현재 뷰 탭 (`"stream"` \| `"scatter"` \| `"raw-prices"` \| `"methodology"`) |
-| `overlayStore` | 이벤트 오버레이 선택 목록, 원시 시계열 레이아웃 번호 |
+**단일 스토어**: `src/stores/useAppStore.ts` 안에 5개 슬라이스를 결합. feature_spec_FE-LAY_vN 합의 사항.
+
+| 슬라이스 | 관리 상태 |
+|----------|-----------|
+| Commodity | `commodities`, `primaryCommodityId`, `secondaryCommodityId` |
+| Filter | `filterFrom`, `filterTo`, `granularity`, `confidenceFilter`, `patternFilter`, `eventFilter` (다중 토글), `activeSegments` |
+| View | `activeTab` (4탭), `selectedAnomalyId`, `isPanelOpen` |
+| Overlay | `events`, `freshness`, `layoutNumber` (raw-prices 전용), `isOnboardingVisible` |
+| Panel | `panelWidth`, `expandedSections` (Set), `expandedInlineCharts` (Set), `expandedMLMaps` (Set) |
+
+> **이전 버전 정정**: 과거 본 §7은 5개 별도 스토어(`commodityStore.ts` 등)를 명시했으나 frame 실제는 단일 `useAppStore.ts` 슬라이스 결합. 본 갱신으로 정합.
 
 ---
 
@@ -415,7 +416,7 @@ throw new FEError("FE-API-001", "API 응답 파싱 실패", {
 | 단계 | 안내 내용 |
 |------|-----------|
 | 1 | 최근 고신뢰 노드 가리킴 — "이 빨간 점이 이상 탐지 시점입니다. 클릭하면 분석 수치를 볼 수 있습니다" |
-| 2 | 계량경제학 수치 섹션 가리킴 — "항목을 클릭하면 해당 지표의 개별 그래프를 확인할 수 있습니다" |
+| 2 | 계량경제학 수치 섹션 가리킴 — "계량경제학 수치 항목을 클릭하면 해당 지표의 개별 그래프를 확인할 수 있습니다" |
 | 3 | ML 판정 섹션 가리킴 — "ML 모델 행을 클릭하면 각 모델이 분석한 결과맵을 볼 수 있습니다" |
 | 4 | 방법론 탭 가리킴 — "방법론 탭에서 파이프라인 전체 설명을 확인하세요" |
 

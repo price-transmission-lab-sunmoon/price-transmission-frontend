@@ -1,4 +1,5 @@
-// All 18 endpoints from api_spec_v4
+// API 엔드포인트 18종 — api_spec_vN 정의
+// 버전 해석은 docs/docs_manifest.md를 따른다 (v4와 v5는 구조 동일, 외부 참조 표기만 차이)
 
 export const ENDPOINTS = {
   COMMODITIES_LIST: '/commodities',
