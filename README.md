@@ -10,7 +10,7 @@
 밀, 설탕 등 10개 식품 품목에 대해 **국제가 → 수입단가 → PPI → (도매가) → CPI** 가격 전달 체인의 이상을 탐지하고 시각화하는 웹 서비스입니다.
 이 repo는 백엔드 FastAPI에서 분석 결과를 받아 **D3.js로 렌더링하는 React 프론트엔드**입니다.
 
-> **현재 단계: `frame/frontend`** — 레이아웃·타입·API 클라이언트·자리 표시자만 구현. D3 차트, 분석 패널 수치, 미니맵 등 실제 시각화는 `feat/fe-*` 후속 브랜치에서 단계별로 구현됩니다 (`docs/frame_spec_frontend_v3.md §8.6` 참조).
+> **현재 단계: `frame/frontend`** — 레이아웃·타입·API 클라이언트·자리 표시자만 구현. D3 차트, 분석 패널 수치, 미니맵 등 실제 시각화는 `feat/fe-*` 후속 브랜치에서 단계별로 구현됩니다 (`docs/frame_spec_frontend_vN.md §8.6` 참조).
 
 ---
 
@@ -94,7 +94,7 @@ npm run dev
 
 ### Frame 단계 통과 기준
 
-PR 제출 전 아래 모두 성공해야 합니다 (`docs/frame_spec_frontend_v3.md §1`):
+PR 제출 전 아래 모두 성공해야 합니다 (`docs/frame_spec_frontend_vN.md §1`):
 
 ```bash
 npm run build         # 오류 0건
@@ -150,23 +150,25 @@ price-transmission-frontend/
 - **필드명**: API 응답의 `snake_case` 키를 변환 없이 그대로 TypeScript 타입에 매핑
 - **인증**: 없음 (1차 출시 기준)
 
-상세 명세: `docs/api_spec_v4.md`
+상세 명세: `docs/api_spec_v5.md`
 
 ---
 
 ## 참조 문서 (`docs/`)
 
+> 아래 표의 파일명은 `docs/docs_manifest.md` §1 의 현재 버전 시점 스냅샷이다. 버전 갱신 시 manifest 와 본 표를 함께 갱신한다.
+
 | 파일 | 내용 |
 |------|------|
-| `frame_spec_frontend_v3.md` | 프론트엔드 Frame 명세 (구현 기준) |
+| `frame_spec_frontend_v4.md` | 프론트엔드 Frame 명세 (구현 기준) |
 | `web_plan_v6.md` | UI/UX 웹 플랜 |
-| `api_spec_v4.md` | API 명세 18개 엔드포인트 |
-| `db_schema_v3.md` | DB 스키마 (필드명·Literal 값 출처) |
-| `exception_design_v2.md` | 예외처리 설계 (frame 단계 참조) |
-| `pipeline_output_spec_v5.md` | 파이프라인 출력 명세 |
-| `doc1_technical_pipeline_v9.md` | 파이프라인 기술 명세 |
+| `api_spec_v5.md` | API 명세 18개 엔드포인트 |
+| `db_schema_v5.md` | DB 스키마 (필드명·Literal 값 출처) |
+| `exception_design_v3.md` | 예외처리 설계 (frame 단계 참조) |
+| `pipeline_output_spec_v7.md` | 파이프라인 출력 명세 |
+| `doc1_technical_pipeline_v10.md` | 파이프라인 기술 명세 |
 | `doc3_research_proposal_v11.md` | 연구 제안서 |
-| `sprint_plan.md` | 스프린트 일정 |
+| `sprint_plan_vN.md` | 스프린트 일정 _(미입고 — manifest §1.1)_ |
 | `CLAUDE.md` | AI 컨텍스트 기준 파일 사본 |
 
 ---
@@ -188,7 +190,7 @@ main
         └── feat/fe-api-connect     (S6)
 ```
 
-`feat/fe-*` 브랜치는 PM 승인 후 `frame/frontend`에서 분기합니다 (`docs/sprint_plan.md`).
+`feat/fe-*` 브랜치는 PM 승인 후 `frame/frontend`에서 분기합니다 (`sprint_plan_vN.md` — 미입고).
 
 ---
 

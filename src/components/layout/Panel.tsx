@@ -1,5 +1,5 @@
 // frame 단계 — 패널 구조만 자리 표시자로. 실제 분석 수치·배지·판정 결과는
-// feat/fe-panel 브랜치에서 API 응답으로 채움 (frame_spec §8.6, web_plan §6.1)
+// feat/fe-panel 브랜치에서 API 응답으로 채움 (frame_spec_frontend_vN §8.6, web_plan_vN §6.1)
 
 export function Panel() {
   // §6.3 — ML 판정 섹션은 항상 3개 모델 행으로 구성 (구조 정의)

@@ -1,5 +1,5 @@
 // frame 단계 — 자리 표시자만. 차트·노드·이벤트 오버레이·미니맵 막대 등
-// 실제 데이터 시각화는 feat/* 브랜치에서 구현 (frame_spec §8.6)
+// 실제 데이터 시각화는 feat/* 브랜치에서 구현 (frame_spec_frontend_vN §8.6)
 
 export function MainPage() {
   // §4.1 — 곡선 색상 정의 (구간 A 청색 / B 녹색 / D′ 주황)
