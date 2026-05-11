@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { parseApiError } from './error';
+import { parseApiError, FEError } from './error';
 
 import commoditiesFixture from '@/fixtures/commodities.json';
 import segmentsFixture from '@/fixtures/segments.json';
@@ -15,7 +15,7 @@ if (!import.meta.env.VITE_API_BASE_URL) {
 
 export const client = axios.create({
   baseURL,
-  timeout: 15000,
+  timeout: 30000, // FE-API-005: 30초 초과 시 타임아웃
 });
 
 // ============================================================
@@ -77,17 +77,16 @@ if (useMock) {
 }
 
 // Error response interceptor — 원본 axios 에러를 cause로 보존 (exception_design_vN §2.1)
+// API 에러 envelope 형식이면 ApiError로 래핑, 그 외(네트워크·CORS 등)는 FEError('NETWORK_ERROR')로 정규화
+// (frame_spec_frontend_vN §6.4 인터셉터 동작 정책)
 client.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
-    if (
-      error !== null &&
-      typeof error === 'object' &&
-      'response' in error &&
-      (error as { response?: { data?: unknown } }).response?.data
-    ) {
-      throw parseApiError((error as { response: { data: unknown } }).response.data, error);
+    const axiosError = error as { response?: { data?: unknown; status?: number } };
+    if (axiosError?.response?.data !== undefined) {
+      throw parseApiError(axiosError.response.data, axiosError.response.status ?? 0, error);
     }
-    throw parseApiError(null, error);
+    // 네트워크 오류 / CORS / 타임아웃(FE-API-005) 등 HTTP 응답 없는 경우 → FEError
+    throw new FEError('NETWORK_ERROR', 'Network or unknown error', {}, error);
   },
 );
