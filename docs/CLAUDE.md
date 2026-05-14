@@ -54,7 +54,9 @@ price-transmission-frontend/
 │   ├── api/
 │   │   ├── client.ts               ← Axios 인스턴스 + Mock 인터셉터 + 에러 파서
 │   │   ├── endpoints.ts            ← 18종 경로 상수
-│   │   └── error.ts                ← ApiError + 에러 체이닝 구조
+│   │   ├── error.ts                ← FEError / ApiError 클래스 + parseApiError
+│   │   ├── errorChain.ts           ← traceErrorChain / formatErrorChain / formatErrorChainSummary
+│   │   └── globalErrorHandler.ts   ← registerGlobalErrorHandler (window.onerror 등록)
 │   ├── components/
 │   │   ├── layout/                 ← AppShell · Header · FilterBar · Panel
 │   │   └── charts/                 ← (feat/fe-*에서 D3 차트 추가)
@@ -145,10 +147,16 @@ price-transmission-frontend/
 | 슬라이스 | 주요 상태 |
 |----------|-----------|
 | CommodityState | `commodities`, `primaryCommodityId`, `secondaryCommodityId` |
-| FilterState | `filterFrom`, `filterTo`, `granularity`, `confidenceFilter`, `patternFilter`, `eventFilter`, `activeSegments` |
-| ViewState | `activeTab`, `selectedAnomalyId`, `isPanelOpen` |
-| OverlayState | `events`, `freshness`, `layoutNumber`, `isOnboardingVisible` |
+| FilterState | `filterFrom`, `filterTo`, `granularity`, `periodPreset`(6종·null=커스텀), `confidenceFilter`, `patternFilter`, `eventFilter`, `activeSegments` |
+| ViewState | `activeTab`, `selectedAnomalyId`, `isPanelOpen`, `scatterSegment`(초기값 `'A'`) |
+| OverlayState | `events`, `freshness`, `layoutNumber`, `isOnboardingVisible`, `hasSeenOnboardingThisSession`(세션 단위 온보딩 노출 제어) |
 | PanelState | `panelWidth` (280~520), `expandedSections`, `expandedInlineCharts`, `expandedMLMaps` |
+
+**주요 액션 이름 규칙** (IS-1 반영):
+- 품목 선택: `setPrimaryCommodity(id)` / `setSecondaryCommodity(id)` (구 `selectPrimary/Secondary` 사용 금지)
+- 필터 범위: `setFilterRange(from, to)` 통합 / `setFilterFrom(from)` · `setFilterTo(to)` 개별 (미니맵 브러시 핸들 개별 제어용)
+- 산점도 구간: `setScatterSegment(segment)` (feature_spec_fe-scatter-chart_vN §1.3)
+- 기간 프리셋: `setPeriodPreset(preset)` — 클릭 시 from/to 자동 계산은 FilterBar 컴포넌트 담당
 
 ---
 
@@ -237,12 +245,18 @@ price-transmission-frontend/
 
 > ⚠️ 신규 예외 상황은 `exception_spec_vN.md`에 등록 확정 전까지 임의 코드 사용 금지. 신규 상황은 `(proposed)` 표식으로 PM에게 제안.
 
-**예외 사용 패턴**:
+**예외 사용 패턴** (IS-6/IS-7 반영 — `cause`를 `context.cause`로 보관):
 ```typescript
+// FEError: cause를 context 필드로 보관 (ES2022 Error.cause 사용 금지)
+throw new FEError('FE-D3-001', '데이터 빈 배열', {
+  cause: originalError,
+  chart_type: 'stream',
+});
+
+// ApiError: parseApiError가 생성. 직접 생성 시 body.context.cause에 원인 삽입
 throw new ApiError(
-  'FE-API-003',
-  '품목 미존재',
-  { context: { commodityId }, cause: originalError }
+  { code: 'FE-API-003', message: '품목 미존재', context: { commodityId, cause: originalError } },
+  httpStatus,
 );
 ```
 
@@ -284,7 +298,24 @@ API JSON 키 이름 ↔ TypeScript 타입 필드명은 동일한 `snake_case` �
 
 ---
 
-## 16. Git 커밋 컨벤션
+## 16. 자동 선택 정책
+
+> 참조 위치: `feature_spec_fe-stream-chart_vN §1.3`, `feature_spec_fe-onboarding_vN §1.2`
+
+품목 자동 선택 및 상태 초기화 규칙:
+
+| 조건 | 동작 |
+|------|------|
+| `/commodities` 응답 수신 + `primaryCommodityId === null` | `setCommodities` 이후 `setPrimaryCommodity(commodities[0].id)` 자동 호출 |
+| 주 품목 변경 (`setPrimaryCommodity`) | `activeSegments`를 해당 품목의 `commodity.segments` 전체로 초기화 (구현: `useAppStore.ts`) |
+| 보조 품목 | 자동 선택 없음 — 사용자 명시 선택 전용 |
+| 온보딩 | `hasSeenOnboardingThisSession === false`일 때만 표시. 세션 내 1회 노출 후 `setHasSeenOnboardingThisSession(true)` |
+
+> ⚠️ 자동 선택은 `main.tsx` 또는 데이터 훅의 `onSuccess` 콜백에서만 수행. 컴포넌트 render 함수 내 직접 `setPrimaryCommodity` 호출 금지.
+
+---
+
+## 17. Git 커밋 컨벤션
 
 형식: `[{영역}] {동사} {대상}`
 
@@ -310,7 +341,7 @@ API JSON 키 이름 ↔ TypeScript 타입 필드명은 동일한 `snake_case` �
 
 ---
 
-## 17. 세션 간 컨텍스트 승계 포맷
+## 18. 세션 간 컨텍스트 승계 포맷
 
 새 세션 시작 시 아래 포맷으로 제공:
 
@@ -330,7 +361,7 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 
 ---
 
-## 18. 참조 문서 경로
+## 19. 참조 문서 경로
 
 | 문서 | 경로 |
 |------|------|

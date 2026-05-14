@@ -28,7 +28,7 @@
 | `feature_dev_list` | **v4** | `feature_dev_list_v4.md` | feat/* 브랜치 기능 개발 목록 |
 | `frame_spec_backend` | **v4** | `frame_spec_backend_v4.md` | 백엔드 Frame 명세 |
 | `frame_spec_frontend` | **v5** | `frame_spec_frontend_v5.md` | 프론트 Frame 명세 |
-| `sprint_plan` | _(미입고)_ | _(파일 부재)_ | 스프린트 계획 — 현 repo에 미동기화 |
+| `sprint_plan` | _(버전 미부여)_ | `sprint_plan.md` | 스프린트 계획 — 버전 접미사 없이 `docs/sprint_plan.md`로 존재. IS-15: 파일 확인됨. 정식 버전 태깅은 PM 지정 필요 |
 | `team_ai_collab` | _(미입고)_ | _(파일 부재)_ | 팀 AI 협업 규칙 — 현 repo에 미동기화 |
 
 ### 1.1 미입고 문서의 취급

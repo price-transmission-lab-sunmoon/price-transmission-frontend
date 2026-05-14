@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { parseApiError, FEError } from './error';
+import { parseApiError } from './error';
 
 import commoditiesFixture from '@/fixtures/commodities.json';
 import segmentsFixture from '@/fixtures/segments.json';
@@ -76,17 +76,12 @@ if (useMock) {
   });
 }
 
-// Error response interceptor — 원본 axios 에러를 cause로 보존 (exception_design_vN §2.1)
-// API 에러 envelope 형식이면 ApiError로 래핑, 그 외(네트워크·CORS 등)는 FEError('NETWORK_ERROR')로 정규화
-// (frame_spec_frontend_vN §6.4 인터셉터 동작 정책)
+// Error response interceptor — IS-9: parseApiError 단일 인자(axiosError 전체) 적용
+// API 에러 envelope → ApiError, 네트워크/타임아웃 → FEError('NETWORK_ERROR')
+// 원본 axiosError는 각 에러의 context.cause로 보존 (frame_spec_frontend_vN §6.4 · IS-6 패턴)
 client.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
-    const axiosError = error as { response?: { data?: unknown; status?: number } };
-    if (axiosError?.response?.data !== undefined) {
-      throw parseApiError(axiosError.response.data, axiosError.response.status ?? 0, error);
-    }
-    // 네트워크 오류 / CORS / 타임아웃(FE-API-005) 등 HTTP 응답 없는 경우 → FEError
-    throw new FEError('NETWORK_ERROR', 'Network or unknown error', {}, error);
+    throw parseApiError(error);
   },
 );
