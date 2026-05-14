@@ -1,5 +1,5 @@
 // 예외처리 설계 문서(exception_design_vN) §2.1 + frame_spec_frontend_vN §6.4 정합
-// feature_spec_fe-api-connect_vN §4.1 SoT (v4 정정 반영)
+// feature_spec_fe-api-connect_vN §4.1 §4.4 §4.5 SoT (v4 정정 반영)
 //
 // 변경 이력:
 //   IS-6: FEError constructor에서 cause 직접 파라미터 제거 → context.cause 보관 패턴으로 전환
@@ -9,7 +9,10 @@
 //   IS-11: globalErrorHandler → globalErrorHandler.ts 이전 (registerGlobalErrorHandler)
 
 import { AxiosError } from 'axios';
+import type { Query, QueryClient } from '@tanstack/react-query';
 import type { ApiErrorBody, ApiErrorResponse } from '@/types/error';
+import { showToast } from '@/components/ui/Toast';
+import { formatErrorChainSummary, formatErrorChain } from '@/api/errorChain';
 
 /**
  * 프론트엔드 공통 에러 베이스 클래스 (exception_spec_vN §부록 A + frame_spec_frontend_vN §6.4).
@@ -101,4 +104,122 @@ export function parseApiError(axiosError: unknown): ApiError | FEError {
     },
     response.status,
   );
+}
+
+// ============================================================
+// handleQueryError — feature_spec_fe-api-connect_vN §4.5
+// QueryCache.onError 콜백. 에러 코드 분기 후 Toast 발화.
+// ============================================================
+
+const CODES_404 = new Set([
+  'COMMODITY_NOT_FOUND',
+  'ANOMALY_NOT_FOUND',
+  'ML_MAP_NOT_READY',
+  'WARMUP_PERIOD_ONLY',
+]);
+
+export function handleQueryError(
+  error: unknown,
+  query: Query,
+  queryClient: QueryClient,
+): void {
+  console.error(`[ApiError @ ${query.queryHash}]`, formatErrorChain(error));
+
+  const refetch = () => queryClient.refetchQueries({ queryKey: query.queryKey });
+
+  // 1. FEError 외 (예상치 못한 non-FEError)
+  if (!(error instanceof FEError)) {
+    showToast({
+      code: 'FE-API-001',
+      variant: 'error',
+      message: '서버에 연결할 수 없습니다. 네트워크를 확인해 주세요.',
+      onRetry: refetch,
+    });
+    return;
+  }
+
+  // 2. NETWORK_ERROR / TIMEOUT
+  if (error.code === 'NETWORK_ERROR') {
+    const causeCode = (error.context as { cause?: { code?: string } })?.cause?.code;
+    const isTimeout = typeof causeCode === 'string' && causeCode === 'ECONNABORTED';
+    showToast({
+      code: isTimeout ? 'FE-API-005' : 'FE-API-001',
+      variant: 'error',
+      message: isTimeout
+        ? '요청 시간이 초과되었습니다. 다시 시도해 주세요.'
+        : '서버에 연결할 수 없습니다. 네트워크를 확인해 주세요.',
+      onRetry: refetch,
+    });
+    return;
+  }
+
+  // 3. PARSE 코드
+  if (error.code === 'PARSE-SCHEMA-001') {
+    showToast({
+      code: 'PARSE-SCHEMA-001',
+      variant: 'error',
+      message: '응답 형식이 올바르지 않습니다. 서버 점검이 필요합니다.',
+    });
+    return;
+  }
+  if (error.code === 'PARSE-ENUM-002') {
+    showToast({
+      code: 'PARSE-ENUM-002',
+      variant: 'warning',
+      message: `알 수 없는 값이 응답에 포함됐습니다. (${formatErrorChainSummary(error)})`,
+    });
+    return;
+  }
+
+  // 4. ApiError 도메인 코드
+  if (error instanceof ApiError) {
+    if (error.code === 'WHOLESALE_NOT_AVAILABLE') {
+      showToast({
+        code: 'WHOLESALE_NOT_AVAILABLE',
+        variant: 'warning',
+        message: '해당 품목은 도매가 데이터가 없습니다. 레이아웃 1로 전환됩니다.',
+      });
+      return;
+    }
+    if (error.code === 'INVALID_LAYOUT') {
+      showToast({
+        code: 'INVALID_LAYOUT',
+        variant: 'warning',
+        message: '잘못된 레이아웃 번호입니다. 레이아웃 1로 전환됩니다.',
+      });
+      return;
+    }
+    if (error.code === 'UNTIL_EXCEEDS_TO') {
+      showToast({
+        code: 'UNTIL_EXCEEDS_TO',
+        variant: 'warning',
+        message: '슬라이더 시점이 데이터 범위를 초과했습니다.',
+      });
+      return;
+    }
+    // 404 계열 — FE_FALLBACK (Toast 없이 조용히 처리)
+    if (CODES_404.has(error.code)) return;
+
+    if (error.code === 'PIPELINE_DATA_MISSING' || error.httpStatus >= 500) {
+      showToast({
+        code: 'FE-API-004',
+        variant: 'error',
+        message: '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
+        onRetry: refetch,
+      });
+      return;
+    }
+
+    if (error.httpStatus >= 400) {
+      showToast({
+        code: 'FE-API-002',
+        variant: 'warning',
+        message: `잘못된 요청입니다. (${error.code})`,
+      });
+      return;
+    }
+  }
+
+  // 5. 기타 FEError
+  showToast({ code: error.code, variant: 'error', message: formatErrorChainSummary(error) });
 }
