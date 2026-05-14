@@ -30,6 +30,11 @@ export type SegmentId = (typeof SEGMENT_IDS)[number];
 export const VIEW_TABS = ['stream', 'scatter', 'raw-prices', 'methodology'] as const;
 export type ViewTab = (typeof VIEW_TABS)[number];
 
+// 기간 프리셋 — feature_dev_list_vN §feat/fe-layout-filter FilterBar 기간 프리셋 6종
+// (3개월·6개월·1년·3년·5년·전체) — 클릭 시 filterFrom/filterTo 자동 계산
+export const PERIOD_PRESETS = ['3m', '6m', '1y', '3y', '5y', 'all'] as const;
+export type PeriodPreset = (typeof PERIOD_PRESETS)[number];
+
 // ML 모델 — api_spec_vN /ml-map model 파라미터
 export const ML_MODELS = ['isolation_forest', 'lof', 'ocsvm'] as const;
 export type MlModel = (typeof ML_MODELS)[number];
