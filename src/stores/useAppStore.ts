@@ -179,7 +179,11 @@ export const useAppStore = create<AppStore>((set) => ({
   isPanelOpen: false,
   // IS-3: scatterSegment 초기값 'A' (feature_spec_fe-scatter-chart_vN §1.3)
   scatterSegment: 'A',
-  setActiveTab: (tab) => set({ activeTab: tab }),
+  // fe-methodology-tab P1 #6: methodology 탭 진입 시 패널 자동 닫힘
+  setActiveTab: (tab) =>
+    set(tab === 'methodology'
+      ? { activeTab: tab, isPanelOpen: false, selectedAnomalyId: null }
+      : { activeTab: tab }),
   selectAnomaly: (id) => set({ selectedAnomalyId: id, isPanelOpen: id !== null }),
   closePanel: () =>
     set(() => ({
