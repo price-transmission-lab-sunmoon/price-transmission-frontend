@@ -1,5 +1,6 @@
-// frame 단계 — 자리 표시자만. 차트·노드·이벤트 오버레이·미니맵 막대 등
+// frame 단계 — 자리 표시자만. 차트·노드·이벤트 오버레이 등
 // 실제 데이터 시각화는 feat/* 브랜치에서 구현 (frame_spec_frontend_vN §8.6)
+import { Minimap } from '@/components/charts/Minimap';
 
 export function MainPage() {
   // §4.1 — 곡선 색상 정의 (구간 A 청색 / B 녹색 / D′ 주황)
@@ -82,11 +83,8 @@ export function MainPage() {
         </div>
       </div>
 
-      {/* §4.1 하단 미니맵 — 자리 표시자 */}
-      <div className="h-14 bg-slate-800/30 border border-slate-700/50 rounded-lg flex items-center justify-center gap-2">
-        <span className="text-slate-600 text-xs">연도별 이상 밀도 미니맵</span>
-        <span className="text-slate-700 text-[10px] font-mono">feat/fe-minimap</span>
-      </div>
+      {/* §4.1 하단 미니맵 — feat/fe-minimap */}
+      <Minimap variant="stream" />
     </div>
   );
 }
