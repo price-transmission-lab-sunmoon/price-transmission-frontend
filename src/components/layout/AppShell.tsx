@@ -1,6 +1,8 @@
 import { Header } from './Header';
 import { FilterBar } from './FilterBar';
 import { Panel } from './Panel';
+import { OnboardingGuide } from './OnboardingGuide';
+import { HelpFloatingButton } from './HelpFloatingButton';
 import type { ReactNode } from 'react';
 
 interface AppShellProps {
@@ -18,6 +20,9 @@ export function AppShell({ children }: AppShellProps) {
         </main>
         <Panel />
       </div>
+      {/* 항상 마운트, 표시는 조건부 (feature_spec_fe-onboarding_vN §1.3) */}
+      <OnboardingGuide />
+      <HelpFloatingButton />
     </div>
   );
 }
