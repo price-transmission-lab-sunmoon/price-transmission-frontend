@@ -1,10 +1,11 @@
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { parseApiError } from './error';
 
 import commoditiesFixture from '@/fixtures/commodities.json';
 import segmentsFixture from '@/fixtures/segments.json';
 import eventsFixture from '@/fixtures/events.json';
 import freshnessFixture from '@/fixtures/freshness.json';
+import scatterFixture from '@/fixtures/scatter.json';
 
 const useMock = import.meta.env.VITE_USE_MOCK !== 'false';
 
@@ -15,70 +16,116 @@ if (!import.meta.env.VITE_API_BASE_URL) {
 
 export const client = axios.create({
   baseURL,
-  timeout: 30000, // FE-API-005: 30초 초과 시 타임아웃
+  timeout: 30000,
 });
 
 // ============================================================
-// Mock 라우트 매처 — 동적 경로(/commodities/{id}/stream 등) 대응 위한 regex 기반 분기
-// frame_spec_vN §8.1 더미 응답 정책. 이 frame은 정적 경로 4종만 처리하고,
-// 동적 경로는 후속 feat 브랜치(feat/fe-stream-chart 등)가 자기 fixture와 함께 분기를 추가한다.
+// Mock 라우트 시스템 — 정적·동적 경로 + 성공/에러 응답 지원
+// frame_spec_vN §8.1 더미 응답 정책
 //
-// 분기 규칙:
-//   - 정확 매칭 (정적 경로): url === '/commodities' 등
-//   - 정규식 매칭 (동적 경로): url.match(/^\/commodities\/[^/]+\/stream$/) 등
-//   - 매칭 안 되면 useMock 모드라도 통과시켜 실제 baseURL로 호출 (frame 단계 한정)
+// MockResult:
+//   { type: 'success', data }          → 200 OK 응답으로 resolve
+//   { type: 'error', status, data }    → status 에러로 parseApiError 경유 reject
 // ============================================================
+
+type MockResult =
+  | { type: 'success'; data: unknown }
+  | { type: 'error'; status: number; data: unknown };
 
 interface MockRoute {
   test: (url: string) => boolean;
-  data: unknown;
+  handle: (config: InternalAxiosRequestConfig) => MockResult;
 }
 
 const MOCK_ROUTES: MockRoute[] = [
-  // 정적 경로 — frame이 직접 제공하는 fixture 4종
-  { test: (u) => u === '/commodities', data: commoditiesFixture },
-  { test: (u) => u === '/segments', data: segmentsFixture },
-  { test: (u) => u === '/events', data: eventsFixture },
-  { test: (u) => u === '/freshness', data: freshnessFixture },
-  // 동적 경로(예시) — 후속 feat 브랜치에서 fixture import 후 추가:
-  //   { test: (u) => /^\/commodities\/[^/]+\/stream$/.test(u.split('?')[0]), data: streamFixture },
-  //   { test: (u) => /^\/commodities\/[^/]+\/stream\/minimap$/.test(u.split('?')[0]), data: streamMinimapFixture },
-  //   { test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]), data: anomalyDetailFixture },
+  // ── 정적 경로 4종 ───────────────────────────────���──────────
+  {
+    test: (u) => u === '/commodities',
+    handle: () => ({ type: 'success', data: commoditiesFixture }),
+  },
+  {
+    test: (u) => u === '/segments',
+    handle: () => ({ type: 'success', data: segmentsFixture }),
+  },
+  {
+    test: (u) => u === '/events',
+    handle: () => ({ type: 'success', data: eventsFixture }),
+  },
+  {
+    test: (u) => u === '/freshness',
+    handle: () => ({ type: 'success', data: freshnessFixture }),
+  },
+
+  // ── scatter (feature_spec_fe-scatter-chart_vN §1.3) ────────
+  {
+    test: (u) => /^\/commodities\/[^/]+\/scatter$/.test(u),
+    handle: () => ({ type: 'success', data: scatterFixture }),
+  },
 ];
 
+// ────────────────────────────────���────────────────────────────���
+// 내부 Mock 통신 마커 타입
+// ───────────────────────────────────────────────────────────��──
+interface MockInternal {
+  isMockResponse: true;
+  isMockError: boolean;
+  data: unknown;
+  status?: number;
+  config: InternalAxiosRequestConfig;
+}
+
 if (useMock) {
+  // 요청 인터셉터: 매칭 라우트가 있으면 실제 HTTP 요청 차단
   client.interceptors.request.use((config) => {
     const url = config.url ?? '';
     const route = MOCK_ROUTES.find((r) => r.test(url));
 
     if (route) {
+      const result = route.handle(config);
       return Promise.reject({
         isMockResponse: true,
-        data: route.data,
+        isMockError: result.type === 'error',
+        data: result.type === 'success' ? result.data : result.data,
+        status: result.type === 'error' ? result.status : undefined,
         config,
-      });
+      } satisfies MockInternal);
     }
 
     return config;
   });
 
-  // Return mock data as resolved response
+  // 응답 에러 인터셉터: Mock 성공/에러를 각각 처리
   client.interceptors.response.use(undefined, (error: unknown) => {
     if (
       error !== null &&
       typeof error === 'object' &&
       'isMockResponse' in error &&
-      (error as { isMockResponse: boolean }).isMockResponse
+      (error as MockInternal).isMockResponse
     ) {
-      return Promise.resolve({ data: (error as unknown as { data: unknown }).data });
+      const mock = error as MockInternal;
+
+      if (mock.isMockError && mock.status !== undefined) {
+        // Mock 에러 → AxiosError 형태로 변환 → 하위 parseApiError 인터셉터로 전달
+        const axiosLike = Object.assign(
+          new Error(`Request failed with status code ${mock.status}`),
+          {
+            isAxiosError: true,
+            response: { status: mock.status, data: mock.data },
+            config: mock.config,
+          },
+        );
+        return Promise.reject(axiosLike);
+      }
+
+      // Mock 성공 → 정상 응답으로 resolve
+      return Promise.resolve({ data: mock.data });
     }
+
     return Promise.reject(error);
   });
 }
 
-// Error response interceptor — IS-9: parseApiError 단일 인자(axiosError 전체) 적용
-// API 에러 envelope → ApiError, 네트워크/타임아웃 → FEError('NETWORK_ERROR')
-// 원본 axiosError는 각 에러의 context.cause로 보존 (frame_spec_frontend_vN §6.4 · IS-6 패턴)
+// Error response interceptor — parseApiError 단일 경로
 client.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
