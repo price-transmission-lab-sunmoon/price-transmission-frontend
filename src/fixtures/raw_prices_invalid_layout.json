@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "INVALID_LAYOUT",
+    "message": "지원하지 않는 레이아웃 번호입니다. 1~6만 허용됩니다.",
+    "context": {
+      "layout_requested": 99
+    }
+  }
+}

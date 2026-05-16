@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "WHOLESALE_NOT_AVAILABLE",
+    "message": "이 품목은 도매가 데이터가 없습니다. 3구간 품목(국제가→수입단가→PPI→CPI 경로)입니다.",
+    "context": {
+      "commodity_id": "wheat",
+      "layout_requested": 4
+    }
+  }
+}
