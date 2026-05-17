@@ -5,7 +5,17 @@ import { useAppStore } from '@/stores/useAppStore';
 import { ApiError } from '@/api/error';
 import { RAW_PRICE_COLORS, ANOMALY_COLORS, ANOMALY_RADII } from '@/utils/colorUtils';
 import type { RawPriceAnomalyNode, RawPriceDataPoint } from '@/types/timeseries';
-import type { RawPriceSource } from '@/types/literals';
+import type { RawPriceSource, SegmentId } from '@/types/literals';
+
+// 이상 노드 Y 매핑 — segment_id 별 하류 소스 (spec §3.3 ⑤ "segment_id의 하류 소스 곡선 위에 표시").
+// 매핑이 없거나 응답에 해당 소스가 없으면 BASELINE_Y(=100)로 폴백.
+const SEGMENT_TO_DOWNSTREAM_SOURCE: Record<SegmentId, RawPriceSource> = {
+  A: 'ppi',
+  B: 'wholesale_price',
+  C: 'wholesale_price',
+  D: 'cpi',
+  D_prime: 'cpi',
+};
 
 // ── Constants ──────────────────────────────────────────────────
 const MARGIN = { top: 24, right: 32, bottom: 40, left: 64 };
@@ -55,6 +65,10 @@ export function RawPricesChart() {
   const eventFilter = useAppStore((s) => s.eventFilter);
   const events = useAppStore((s) => s.events);
   const selectAnomaly = useAppStore((s) => s.selectAnomaly);
+  const commodities = useAppStore((s) => s.commodities);
+  const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
+  const primaryCommodity = commodities.find((c) => c.commodity_id === primaryCommodityId);
+  const hasWholesale = primaryCommodity?.has_wholesale ?? true;
 
   // Local state for layout-1 source toggle and toast
   const [enabledSources, setEnabledSources] = useState<Set<RawPriceSource>>(
@@ -222,12 +236,13 @@ export function RawPricesChart() {
 
     // ⑤ Transmission overlay (layouts 2–6)
     if (layoutNumber !== 1 && data.transmission_overlay.length > 0) {
-      const overlayLine = d3
+      // PM 별건 #3 잠정안: 단일 Y축에 가시화하기 위해 transmission_rate 값을 100배 스케일링.
+      // (기본값 1.0 = 100 = baseline 부근에 노출). PM 결정 시 재조정.
+      const overlayLineScaled = d3
         .line<{ period: string; transmission_rate: number | null }>()
         .defined((dp) => dp.transmission_rate !== null)
         .x((dp) => xScale(parseYM(dp.period) ?? new Date()))
-        .y((dp) => yScale(dp.transmission_rate as number));
-
+        .y((dp) => yScale((dp.transmission_rate as number) * 100));
       data.transmission_overlay.forEach((ov) => {
         clipped.append('path')
           .datum(ov.data)
@@ -236,7 +251,7 @@ export function RawPricesChart() {
           .attr('stroke-width', 1.5)
           .attr('stroke-dasharray', OVERLAY_DASH)
           .attr('opacity', 0.7)
-          .attr('d', overlayLine);
+          .attr('d', overlayLineScaled);
       });
     }
 
@@ -253,8 +268,12 @@ export function RawPricesChart() {
       const px = xScale(date);
       if (px < 0 || px > innerW) return;
 
-      // Find Y position: use the first matching series data point
-      const matchSeries = data.series[0];
+      // Y 위치: segment_id → 하류 소스 매핑 (spec §3.3 ⑤). 매핑 series가 없거나
+      // 해당 period 데이터가 없으면 다른 series에서 period 일치 데이터 탐색 후 BASELINE_Y 폴백.
+      const downstream = SEGMENT_TO_DOWNSTREAM_SOURCE[node.segment_id];
+      const matchSeries =
+        data.series.find((s) => s.source === downstream) ??
+        data.series.find((s) => s.data.some((dp) => dp.period === node.period));
       const matchPt = matchSeries?.data.find((dp) => dp.period === node.period);
       const yVal = matchPt?.index_2020 ?? BASELINE_Y;
       const py = yScale(yVal);
@@ -262,7 +281,7 @@ export function RawPricesChart() {
       const r = ANOMALY_RADII[node.confidence_grade];
       const color = ANOMALY_COLORS[node.confidence_grade];
 
-      // Glow filter for high/medium
+      // 글로우 — high/medium 공통, 펄스 — high 전용 (spec §3.3 ⑤ "고신뢰 글로우+펄스, 중신뢰 글로우")
       if (node.confidence_grade === 'high' || node.confidence_grade === 'medium') {
         const filterId = `glow-${node.anomaly_id}`;
         const defs = svg.select('defs');
@@ -270,12 +289,26 @@ export function RawPricesChart() {
         filter.append('feGaussianBlur').attr('stdDeviation', node.confidence_grade === 'high' ? 3 : 2).attr('result', 'blur');
         filter.append('feComposite').attr('in', 'SourceGraphic').attr('in2', 'blur').attr('operator', 'over');
 
-        nodeG.append('circle')
+        const glow = nodeG.append('circle')
           .attr('cx', px).attr('cy', py)
           .attr('r', r + 3)
           .attr('fill', color)
           .attr('opacity', 0.25)
           .attr('filter', `url(#${filterId})`);
+
+        // 고신뢰 펄스 — SVG <animate> 로 r/opacity 반복
+        if (node.confidence_grade === 'high') {
+          glow.append('animate')
+            .attr('attributeName', 'r')
+            .attr('values', `${r + 2};${r + 6};${r + 2}`)
+            .attr('dur', '1.6s')
+            .attr('repeatCount', 'indefinite');
+          glow.append('animate')
+            .attr('attributeName', 'opacity')
+            .attr('values', '0.35;0.1;0.35')
+            .attr('dur', '1.6s')
+            .attr('repeatCount', 'indefinite');
+        }
       }
 
       const circle = nodeG.append('circle')
@@ -433,20 +466,24 @@ export function RawPricesChart() {
           {SOURCES_ALL.map((src) => {
             const color = RAW_PRICE_COLORS[src];
             const active = enabledSources.has(src);
+            // spec §3.3 ③ 레이아웃 1: has_wholesale=false 품목은 wholesale 토글 비활성 (회색, 클릭 불가)
+            const disabled = src === 'wholesale_price' && !hasWholesale;
             return (
               <button
                 key={src}
-                onClick={() => toggleSource(src)}
-                className="flex items-center gap-1 px-2 py-0.5 rounded text-xs border transition-opacity"
+                onClick={() => !disabled && toggleSource(src)}
+                disabled={disabled}
+                aria-disabled={disabled}
+                className="flex items-center gap-1 px-2 py-0.5 rounded text-xs border transition-opacity disabled:cursor-not-allowed"
                 style={{
-                  borderColor: color,
-                  color: active ? color : '#64748b',
-                  opacity: active ? 1 : 0.4,
+                  borderColor: disabled ? '#475569' : color,
+                  color: disabled ? '#64748b' : active ? color : '#64748b',
+                  opacity: disabled ? 0.4 : active ? 1 : 0.4,
                 }}
               >
                 <span
                   className="inline-block w-3 h-0.5 rounded"
-                  style={{ backgroundColor: active ? color : '#64748b' }}
+                  style={{ backgroundColor: disabled ? '#64748b' : active ? color : '#64748b' }}
                 />
                 {SOURCE_LABEL[src]}
               </button>
