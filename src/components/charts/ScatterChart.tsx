@@ -415,8 +415,8 @@ export function ScatterChart() {
       .attr('cx', (p) => xScale(p.upstream_pct))
       .attr('cy', (p) => yScale(p.downstream_pct))
       .attr('r', ANOMALY_RADII.reference) // 일반 = 4px (reference 반지름과 동일)
-      .style('fill', '#94a3b8')
-      .style('opacity', 0.65);
+      // spec §3.3 ④ "일반 관측치: 효과 없음" — opacity 미적용
+      .style('fill', '#94a3b8');
 
     // ── 이상 관측치 ───────────────────────────────────────────────
     const anomalyPts = filteredPoints.filter(
