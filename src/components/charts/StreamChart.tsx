@@ -178,19 +178,20 @@ export function StreamChart() {
         .attr('opacity', 0.5);
     }
 
-    // Line + area generators
+    // Line + area generators — in_warmup_period 구간은 표시 제어 (spec §2/§3.3)
+    type ChartPt = { period: Date; transmission_rate: number | null; in_warmup_period: boolean };
     const lineGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
       d3
-        .line<{ period: Date; transmission_rate: number | null }>()
-        .defined((p) => p.transmission_rate !== null)
+        .line<ChartPt>()
+        .defined((p) => p.transmission_rate !== null && !p.in_warmup_period)
         .x((p) => xSc(p.period))
         .y((p) => ySc(p.transmission_rate!))
         .curve(d3.curveCatmullRom.alpha(0.5));
 
     const areaGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
       d3
-        .area<{ period: Date; transmission_rate: number | null }>()
-        .defined((p) => p.transmission_rate !== null)
+        .area<ChartPt>()
+        .defined((p) => p.transmission_rate !== null && !p.in_warmup_period)
         .x((p) => xSc(p.period))
         .y0(ySc(0))
         .y1((p) => ySc(p.transmission_rate!))
@@ -255,6 +256,31 @@ export function StreamChart() {
       const color = ANOMALY_COLORS[an.confidence_grade];
       const isSelected = an.anomaly_id === selectedAnomalyId;
 
+      // 글로우 — high/medium 공통, 펄스 — high 전용 (web_plan §4.1)
+      if (an.confidence_grade === 'high' || an.confidence_grade === 'medium') {
+        const glow = anomalyGroup
+          .append('circle')
+          .attr('cx', cx)
+          .attr('cy', cy)
+          .attr('r', r + 3)
+          .attr('fill', color)
+          .attr('opacity', 0.25)
+          .style('filter', `blur(${an.confidence_grade === 'high' ? 3 : 2}px)`)
+          .style('pointer-events', 'none');
+        if (an.confidence_grade === 'high') {
+          glow.append('animate')
+            .attr('attributeName', 'r')
+            .attr('values', `${r + 2};${r + 6};${r + 2}`)
+            .attr('dur', '1.6s')
+            .attr('repeatCount', 'indefinite');
+          glow.append('animate')
+            .attr('attributeName', 'opacity')
+            .attr('values', '0.35;0.1;0.35')
+            .attr('dur', '1.6s')
+            .attr('repeatCount', 'indefinite');
+        }
+      }
+
       const circle = anomalyGroup
         .append('circle')
         .attr('data-anomaly-id', an.anomaly_id)
@@ -266,6 +292,20 @@ export function StreamChart() {
         .attr('stroke-width', isSelected ? 2 : 0)
         .attr('cursor', 'pointer')
         .style('filter', isSelected ? 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' : 'none');
+
+      // NEW 배지 — 신규 탐지 노드 (web_plan §4.1)
+      if (an.is_new) {
+        anomalyGroup
+          .append('text')
+          .attr('x', cx)
+          .attr('y', cy - r - 6)
+          .attr('text-anchor', 'middle')
+          .attr('fill', color)
+          .attr('font-size', '9px')
+          .attr('font-weight', '700')
+          .style('pointer-events', 'none')
+          .text('NEW');
+      }
 
       circle
         .transition()
@@ -418,9 +458,18 @@ export function StreamChart() {
     );
   }
 
+  // "이상 없음" 빈 상태 — 로딩/에러 통과 후 anomalies 0건 (web_plan §4.1)
+  const noAnomalies = chartData != null && chartData.anomalies.length === 0;
+
   return (
-    <div ref={containerRef} data-testid="stream-chart" className="w-full h-full min-h-[320px]">
+    <div ref={containerRef} data-testid="stream-chart" className="w-full h-full min-h-[320px] relative">
       <svg ref={svgRef} className="w-full h-full overflow-visible" />
+      {noAnomalies && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
+          <div className="text-slate-300 text-sm">이 기간에는 탐지된 이상이 없습니다.</div>
+          <div className="text-slate-500 text-xs">필터 기간을 넓히거나 다른 품목을 살펴보세요.</div>
+        </div>
+      )}
     </div>
   );
 }

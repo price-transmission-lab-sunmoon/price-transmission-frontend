@@ -29,7 +29,8 @@ export function useStreamData() {
       if (filterFrom) params.from = filterFrom;
       if (filterTo) params.to = filterTo;
       if (activeSegments.length > 0) params.segments = activeSegments.join(',');
-      if (confidenceFilter.length > 0) params.grade = confidenceFilter.join(',');
+      // grade 기본값을 클라/서버 모두 'high,medium'으로 명시 정렬 (api_spec_vN §/stream 기본값 정합)
+      params.grade = confidenceFilter.length > 0 ? confidenceFilter.join(',') : 'high,medium';
       if (patternFilter.length > 0) params.patterns = patternFilter.join(',');
 
       const res = await client.get<StreamResponse>(
