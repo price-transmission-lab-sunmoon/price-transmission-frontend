@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
-import { ANOMALY_COLORS } from '@/utils/colorUtils';
+import { ANOMALY_COLORS, PANEL_CHART_COLORS } from '@/utils/colorUtils';
 import { usePanelDetail } from '@/hooks/usePanelDetail';
 import { useStatSeries } from '@/hooks/useStatSeries';
 import { useStatSnapshot } from '@/hooks/useStatSnapshot';
@@ -22,12 +22,13 @@ type PanelSectionId = 'stat' | 'ml' | 'path' | 'irf';
 // ── sub-components ──────────────────────────────────────────────────────────
 
 function ConfidenceBadge({ grade }: { grade: string }) {
+  // §3.3 ② 헤더 신뢰도 배지 색상: ANOMALY_COLORS.high/medium/reference SoT
   const color =
     grade === 'high'
       ? ANOMALY_COLORS.high
       : grade === 'medium'
         ? ANOMALY_COLORS.medium
-        : '#64748b';
+        : ANOMALY_COLORS.reference;
   return (
     <span
       className="px-1.5 py-0.5 rounded text-[10px] font-semibold border"
@@ -127,13 +128,13 @@ function InlineChartSection({
             </div>
           )}
           {data && metric === 'transmission_rate' && data.metric === 'transmission_rate' && (
-            <TransmissionRateChart data={data.data} />
+            <TransmissionRateChart data={data.data} highlightPeriod={data.highlight_period} />
           )}
           {data && metric === 'zscore' && data.metric === 'zscore' && (
             <ZScoreChart data={data.data} />
           )}
           {data && metric === 'ect' && data.metric === 'ect' && (
-            <ECTChart data={data.data} />
+            <ECTChart data={data.data} ectType={data.data[0]?.ect_type ?? null} />
           )}
           {data && metric === 'breakpoints' && data.metric === 'breakpoints' && (
             <BreakpointsChart data={data.data} bpDates={data.bp_dates} />
@@ -207,7 +208,8 @@ function MlBarRow({
 
   const { data, isLoading } = useMLMap({ anomalyId, model, enabled: isOpen });
 
-  const barColor = isAnomaly ? ANOMALY_COLORS.high : '#475569';
+  // §3.3 ⑤ ML 바 차트 색상 (v3 정정): false 시 mlMapNormalFill SoT
+  const barColor = isAnomaly ? ANOMALY_COLORS.high : PANEL_CHART_COLORS.mlMapNormalFill;
 
   return (
     <div className="flex flex-col gap-1">
