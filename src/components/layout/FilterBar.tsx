@@ -124,7 +124,7 @@ export function FilterBar() {
   return (
     <div
       data-testid="filter-bar"
-      className="flex items-center gap-3 h-12 px-5 bg-slate-900 border-b border-slate-700/60 shrink-0 overflow-x-auto"
+      className="flex items-center gap-3 h-12 px-5 bg-slate-900 border-b border-slate-700/60 shrink-0"
     >
       {/* 기간 프리셋 */}
       <div className="flex items-center gap-1 shrink-0">
