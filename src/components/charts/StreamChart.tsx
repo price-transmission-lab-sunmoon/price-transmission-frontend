@@ -276,6 +276,7 @@ export function StreamChart() {
       if (an.confidence_grade === 'high' || an.confidence_grade === 'medium') {
         const glow = anomalyGroup
           .append('circle')
+          .attr('data-anomaly-glow', an.anomaly_id)
           .attr('cx', cx)
           .attr('cy', cy)
           .attr('r', r + 3)
@@ -313,6 +314,7 @@ export function StreamChart() {
       if (an.is_new) {
         anomalyGroup
           .append('text')
+          .attr('data-anomaly-new', an.anomaly_id)
           .attr('x', cx)
           .attr('y', cy - r - 6)
           .attr('text-anchor', 'middle')
@@ -392,11 +394,18 @@ export function StreamChart() {
             .attr('d', areaGen(newXScale, yScale)(s.data) ?? '');
         }
 
-        // Reposition anomaly nodes
+        // Reposition anomaly nodes (main circle + glow + NEW label)
         for (const an of chartData.anomalies) {
+          const newCx = newXScale(an.period);
           chartGroup
             .select<SVGCircleElement>(`[data-anomaly-id="${an.anomaly_id}"]`)
-            .attr('cx', newXScale(an.period));
+            .attr('cx', newCx);
+          chartGroup
+            .select<SVGCircleElement>(`[data-anomaly-glow="${an.anomaly_id}"]`)
+            .attr('cx', newCx);
+          chartGroup
+            .select<SVGTextElement>(`[data-anomaly-new="${an.anomaly_id}"]`)
+            .attr('x', newCx);
         }
 
         // Reposition event overlays
