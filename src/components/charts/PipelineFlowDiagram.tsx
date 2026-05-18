@@ -113,7 +113,10 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
     for (const edge of edges) {
       const src = nodeMap.get(edge.source);
       const tgt = nodeMap.get(edge.target);
-      if (!src || !tgt) continue;
+      if (!src || !tgt) {
+        console.warn(`[PipelineFlowDiagram] PARSE-ARR-002: edge node not found — source="${edge.source}" target="${edge.target}"`);
+        continue;
+      }
 
       const x1 = src.x + NODE_W / 2;
       const y1 = src.y + NODE_H;

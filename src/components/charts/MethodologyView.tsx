@@ -62,6 +62,8 @@ const PATTERN_CHIP_COLORS: Record<string, string> = {
   pattern3: 'bg-teal-900/40 text-teal-300 border-teal-700/50',
 };
 
+const KNOWN_PATTERN_IDS = new Set(['pattern1', 'pattern2', 'pattern3']);
+
 // ============================================================
 // 섹션 1 — 분석 파이프라인 개요
 // ============================================================
@@ -147,13 +149,22 @@ function Section2Patterns({
       <SectionHeader num={2} title="이상 탐지 패턴 3종" />
       {isLoading && <LoadingSkeleton rows={4} />}
       {isError && <ErrorBanner message="/meta/analysis-params 데이터를 불러오지 못했습니다." />}
-      {patterns && (
-        <div className="grid gap-3 sm:grid-cols-1 lg:grid-cols-3">
-          {patterns.map((p) => (
-            <PatternCard key={p.pattern_id} pattern={p} params={params} />
-          ))}
-        </div>
-      )}
+      {patterns && (() => {
+        const validPatterns = patterns.filter((p) => {
+          if (!KNOWN_PATTERN_IDS.has(p.pattern_id)) {
+            console.warn(`[MethodologyView] PARSE-ENUM-002: unknown pattern_id="${p.pattern_id}" — skipping card`);
+            return false;
+          }
+          return true;
+        });
+        return (
+          <div className="grid gap-3 sm:grid-cols-1 lg:grid-cols-3">
+            {validPatterns.map((p) => (
+              <PatternCard key={p.pattern_id} pattern={p} params={params} />
+            ))}
+          </div>
+        );
+      })()}
     </SectionCard>
   );
 }
