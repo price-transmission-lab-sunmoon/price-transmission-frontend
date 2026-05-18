@@ -10,7 +10,8 @@ interface MinimapProps {
 }
 
 const TOTAL_HEIGHT = 64;
-const MARGIN = { top: 8, bottom: 20, left: 0, right: 0 };
+// left/right 24px = 양 끝 연도 라벨("2000"/"2026") 잘림 방지 (text-anchor: middle 기준 약 ±10px)
+const MARGIN = { top: 8, bottom: 20, left: 24, right: 24 };
 
 // 이상 밀도 밴드 색상 — feature_spec §3.3 ⑤ (PM 별건 #2 잠정 채택값)
 function getAnomalyBandStyle(
