@@ -194,7 +194,8 @@ export function FilterBar() {
             role="listbox"
             aria-label="사건 목록"
             aria-multiselectable="true"
-            className="absolute top-full left-0 mt-1 w-56 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 py-1"
+            style={{ zIndex: 200 /* Z_INDEX.DROPDOWN per fe-api-connect §5.5 — z-50은 fe-panel(z=100) 아래로 깔려 차트 위에 안 보임 */ }}
+            className="absolute top-full left-0 mt-1 w-56 bg-slate-800 border border-slate-600 rounded-lg shadow-xl py-1"
           >
             {selectedEventCount > 0 && (
               <div className="px-3 pb-1 border-b border-slate-700/50">

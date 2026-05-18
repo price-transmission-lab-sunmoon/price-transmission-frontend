@@ -180,7 +180,8 @@ export function Header() {
             <div
               role="listbox"
               aria-label="주 품목 목록"
-              className="absolute top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 py-1 max-h-72 overflow-y-auto"
+              style={{ zIndex: 200 /* Z_INDEX.DROPDOWN per fe-api-connect §5.5 — z-50은 fe-panel(z=100) 아래로 깔림 */ }}
+              className="absolute top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto"
             >
               {grouped.map(({ cluster, items }) => (
                 <div key={cluster}>
@@ -237,7 +238,8 @@ export function Header() {
             <div
               role="listbox"
               aria-label="보조 품목 목록"
-              className="absolute top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 py-1 max-h-72 overflow-y-auto"
+              style={{ zIndex: 200 /* Z_INDEX.DROPDOWN per fe-api-connect §5.5 — z-50은 fe-panel(z=100) 아래로 깔림 */ }}
+              className="absolute top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto"
             >
               {grouped.map(({ cluster, items }) => (
                 <div key={cluster}>
