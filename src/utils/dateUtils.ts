@@ -53,6 +53,6 @@ export function formatYearMonthKr(ym: string): string {
 
 // YYYY-MM-DD → 한국어 표시 (예: "4월 15일")
 export function formatDateKr(dateStr: string): string {
-  const d = new Date(dateStr);
+  const d = parse(dateStr, 'yyyy-MM-dd', new Date());
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
