@@ -120,7 +120,7 @@ const CODES_404 = new Set([
 
 export function handleQueryError(
   error: unknown,
-  query: Query,
+  query: Query<unknown, unknown>,
   queryClient: QueryClient,
 ): void {
   console.error(`[ApiError @ ${query.queryHash}]`, formatErrorChain(error));
