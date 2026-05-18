@@ -236,13 +236,11 @@ export function RawPricesChart() {
 
     // ⑤ Transmission overlay (layouts 2–6)
     if (layoutNumber !== 1 && data.transmission_overlay.length > 0) {
-      // PM 별건 #3 잠정안: 단일 Y축에 가시화하기 위해 transmission_rate 값을 100배 스케일링.
-      // (기본값 1.0 = 100 = baseline 부근에 노출). PM 결정 시 재조정.
-      const overlayLineScaled = d3
+      const overlayLine = d3
         .line<{ period: string; transmission_rate: number | null }>()
         .defined((dp) => dp.transmission_rate !== null)
         .x((dp) => xScale(parseYM(dp.period) ?? new Date()))
-        .y((dp) => yScale((dp.transmission_rate as number) * 100));
+        .y((dp) => yScale(dp.transmission_rate as number));
       data.transmission_overlay.forEach((ov) => {
         clipped.append('path')
           .datum(ov.data)
@@ -251,7 +249,7 @@ export function RawPricesChart() {
           .attr('stroke-width', 1.5)
           .attr('stroke-dasharray', OVERLAY_DASH)
           .attr('opacity', 0.7)
-          .attr('d', overlayLineScaled);
+          .attr('d', overlayLine);
       });
     }
 
