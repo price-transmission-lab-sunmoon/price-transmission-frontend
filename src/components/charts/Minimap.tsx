@@ -15,7 +15,8 @@ interface MinimapProps {
 }
 
 const HEIGHT = 64;
-const MARGIN = { top: 8, bottom: 20, left: 0, right: 0 };
+// left/right 24px = 양 끝 연도 라벨("2000"/"2026") 잘림 방지 (text-anchor: middle 기준 약 ±10px)
+const MARGIN = { top: 8, bottom: 20, left: 24, right: 24 };
 const BRUSH_FILL = 'rgba(100, 149, 237, 0.20)';
 const BRUSH_STROKE = '#6495ED';
 const MIN_BRUSH_MONTHS = 3;
