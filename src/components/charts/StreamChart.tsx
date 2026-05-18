@@ -20,7 +20,6 @@ export function StreamChart() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
-  const secondaryCommodityId = useAppStore((s) => s.secondaryCommodityId);
   const activeSegments = useAppStore((s) => s.activeSegments);
   const confidenceFilter = useAppStore((s) => s.confidenceFilter);
   const eventFilter = useAppStore((s) => s.eventFilter);
@@ -191,7 +190,7 @@ export function StreamChart() {
     }
 
     // Line + area generators — in_warmup_period 구간은 표시 제어 (spec §2/§3.3)
-    type ChartPt = { period: Date; transmission_rate: number | null; in_warmup_period: boolean };
+    type ChartPt = { period: Date; transmission_rate: number | null; in_warmup_period?: boolean };
     const lineGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
       d3
         .line<ChartPt>()
