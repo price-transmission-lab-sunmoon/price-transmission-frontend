@@ -312,7 +312,19 @@ export function Panel() {
     [panelWidth, setPanelWidth],
   );
 
-  if (!isPanelOpen) return null;
+  if (!isPanelOpen) {
+    return (
+      <aside
+        data-testid="panel"
+        style={{ width: panelWidth }}
+        className="relative shrink-0 bg-slate-900 border-l border-slate-700/60 flex items-center justify-center"
+      >
+        <p className="text-slate-500 text-xs px-4 text-center leading-relaxed">
+          이상 데이터를 선택하면<br />분석 수치가 표시됩니다.
+        </p>
+      </aside>
+    );
+  }
 
   const mlRows = detail
     ? [
