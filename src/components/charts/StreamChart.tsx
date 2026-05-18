@@ -2,6 +2,7 @@ import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useAppStore } from '@/stores/useAppStore';
 import { useStreamData } from '@/hooks/useStreamData';
+import { useSecondaryStreamData } from '@/hooks/useSecondaryStreamData';
 import { buildStreamChartData } from '@/services/timeseries';
 import {
   ANOMALY_COLORS,
@@ -28,6 +29,7 @@ export function StreamChart() {
   const selectAnomaly = useAppStore((s) => s.selectAnomaly);
 
   const { data: primaryData, isLoading: primaryLoading, isError: primaryError } = useStreamData();
+  const { data: secondaryRaw } = useSecondaryStreamData();
 
   // Auto-selection: on first successful load, select the most recent high-confidence anomaly
   // Only runs when primaryCommodityId changes or on first load.
@@ -59,6 +61,11 @@ export function StreamChart() {
     if (!primaryData) return null;
     return buildStreamChartData(primaryData, activeSegments, confidenceFilter);
   }, [primaryData, activeSegments, confidenceFilter]);
+
+  const secondaryChartData = useMemo(() => {
+    if (!secondaryRaw) return null;
+    return buildStreamChartData(secondaryRaw, activeSegments, []);
+  }, [secondaryRaw, activeSegments]);
 
   // Build the D3 chart whenever chartData changes
   useEffect(() => {
@@ -96,9 +103,14 @@ export function StreamChart() {
       .domain([chartData.domainFrom, chartData.domainTo])
       .range([0, innerW]);
 
-    const allRates = chartData.series.flatMap((s) =>
-      s.data.map((p) => p.transmission_rate).filter((v): v is number => v !== null),
-    );
+    const allRates = [
+      ...chartData.series.flatMap((s) =>
+        s.data.map((p) => p.transmission_rate).filter((v): v is number => v !== null),
+      ),
+      ...(secondaryChartData?.series.flatMap((s) =>
+        s.data.map((p) => p.transmission_rate).filter((v): v is number => v !== null),
+      ) ?? []),
+    ];
     const [yMin, yMax] = d3.extent(allRates) as [number, number];
     const yPad = (yMax - yMin) * 0.1 || 0.05;
     const yScale = d3
@@ -202,6 +214,7 @@ export function StreamChart() {
       segId: SegmentId,
       data: { period: Date; transmission_rate: number | null }[],
       isSecondary: boolean,
+      prefix = '',
     ) => {
       const colorMap = isSecondary ? SEGMENT_COLORS_SECONDARY : SEGMENT_COLORS_PRIMARY;
       const color = colorMap[segId] ?? '#94a3b8';
@@ -210,7 +223,7 @@ export function StreamChart() {
       chartGroup
         .append('path')
         .datum(data)
-        .attr('class', `area-${segId}`)
+        .attr('class', `${prefix}area-${segId}`)
         .attr('fill', color)
         .attr('opacity', isSecondary ? 0.08 : 0.15)
         .attr('d', areaGen(xScale, yScale));
@@ -218,7 +231,7 @@ export function StreamChart() {
       const path = chartGroup
         .append('path')
         .datum(data)
-        .attr('class', `line-${segId}`)
+        .attr('class', `${prefix}line-${segId}`)
         .attr('fill', 'none')
         .attr('stroke', color)
         .attr('stroke-width', isSecondary ? 1.5 : 2)
@@ -239,12 +252,16 @@ export function StreamChart() {
       }
     };
 
+    // Secondary series drawn first so primary renders on top
+    if (secondaryChartData) {
+      for (const s of secondaryChartData.series) {
+        drawSeries(s.segment_id, s.data, true, 'sec-');
+      }
+    }
+
     for (const s of chartData.series) {
       drawSeries(s.segment_id, s.data, false);
     }
-
-    // Secondary commodity series if available (uses same activeSegments)
-    // Secondary data is loaded by a separate hook in a future branch; skip here.
 
     // Anomaly nodes
     const anomalyGroup = chartGroup.append('g').attr('class', 'anomaly-nodes');
@@ -357,6 +374,16 @@ export function StreamChart() {
         root.selectAll('.domain, .tick line').attr('stroke', '#334155');
 
         // Redraw lines and areas
+        if (secondaryChartData) {
+          for (const s of secondaryChartData.series) {
+            chartGroup
+              .select(`.sec-line-${s.segment_id}`)
+              .attr('d', lineGen(newXScale, yScale)(s.data) ?? '');
+            chartGroup
+              .select(`.sec-area-${s.segment_id}`)
+              .attr('d', areaGen(newXScale, yScale)(s.data) ?? '');
+          }
+        }
         for (const s of chartData.series) {
           chartGroup
             .select(`.line-${s.segment_id}`)
@@ -385,7 +412,7 @@ export function StreamChart() {
       });
 
     svg.call(zoom);
-  }, [chartData, selectedAnomalyId, events, eventFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [chartData, secondaryChartData, selectedAnomalyId, events, eventFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Tooltip helpers (DOM-based)
   function showTooltip(
