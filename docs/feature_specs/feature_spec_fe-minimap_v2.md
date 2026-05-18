@@ -70,7 +70,7 @@ useAppStore (primaryCommodityId, filterFrom, filterTo, activeSegments)
 | 수정 | `src/pages/MainPage.tsx` | `activeTab === 'stream'` 분기에 `<Minimap variant="stream" />` 하단 고정 마운트 |
 | 신규 | `src/components/charts/Minimap.tsx` | 미니맵 본체 — d3.brushX 뷰포트 박스·곡선 렌더·밀도 밴드. frame_spec_vN §8.6 D3 컴포넌트 위치 정책 따름 |
 | 신규 | `src/hooks/useMinimapData.ts` | variant에 따라 `/stream/minimap` 또는 `/raw-prices/minimap` 조건부 호출. queryKey: `['minimap', variant, primaryCommodityId, activeSegments.join(',')]`. enabled: `primaryCommodityId !== null` |
-| 수정 | `src/types/timeseries.ts` | `MinimapDataPoint`, `AnomalyDensityItem`, `MinimapResponse` 타입 추가 |
+| 수정 | `src/types/timeseries.ts` | `AnomalyDensityItem`, `StreamMinimapResponse` 타입 추가 (계열 데이터는 기존 `StreamSeriesItem` 재사용) |
 | 수정 | `src/api/client.ts` | regex 매칭: `url.match(/^\/commodities\/([^/]+)\/stream\/minimap$/)` |
 | 신규 | `src/fixtures/stream_minimap.json` | wheat 미니맵 Mock 데이터 (yearly, anomaly_density 3개 연도) |
 
@@ -396,7 +396,7 @@ feature_dev_list_vN 완료 기준 (2개) + web_plan_vN §4.1 기준 보강:
 - [ ] Minimap.tsx — d3.brushX 뷰포트 박스, 전이율 곡선 배경, anomaly_density 밀도 밴드
 - [ ] useMinimapData.ts — /stream/minimap React Query 호출 (variant prop 기반 라우팅)
 - [ ] MainPage.tsx — Minimap 하단 고정 마운트
-- [ ] types/timeseries.ts — MinimapDataPoint, AnomalyDensityItem, MinimapResponse 타입 추가
+- [ ] types/timeseries.ts — AnomalyDensityItem, StreamMinimapResponse 타입 추가 (StreamSeriesItem 재사용)
 - [ ] client.ts — /stream/minimap regex 인터셉터 추가
 - [ ] stream_minimap.json — wheat 미니맵 fixture (yearly, anomaly_density 3개 연도)
 
