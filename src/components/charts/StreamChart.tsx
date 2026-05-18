@@ -236,7 +236,8 @@ export function StreamChart() {
         .attr('stroke-width', isSecondary ? 1.5 : 2)
         .attr('opacity', opacity);
 
-      // Entrance animation
+      // Entrance animation — dasharray로 라인 reveal. 종료 후 dasharray 제거(zoom 시
+      // path geometry 변화로 인한 깜빡임 방지).
       const pathNode = path.node();
       if (pathNode) {
         path.attr('d', lineGen(xScale, yScale));
@@ -247,7 +248,10 @@ export function StreamChart() {
           .transition()
           .duration(ANIMATION_DURATION)
           .ease(d3.easeCubicOut)
-          .attr('stroke-dashoffset', 0);
+          .attr('stroke-dashoffset', 0)
+          .on('end', function () {
+            d3.select(this).attr('stroke-dasharray', null).attr('stroke-dashoffset', null);
+          });
       }
     };
 
