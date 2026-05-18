@@ -3,8 +3,11 @@ import { usePipelineData } from '@/hooks/usePipelineData';
 import { useAnalysisParams } from '@/hooks/useAnalysisParams';
 import { PipelineFlowDiagram } from './PipelineFlowDiagram';
 import { ANOMALY_COLORS } from '@/utils/colorUtils';
+import { showToast } from '@/components/ui/Toast';
 import type { AnalysisParams, PatternDescription } from '@/types/meta';
-import type { SegmentId } from '@/types/literals';
+import { SEGMENT_IDS, type SegmentId } from '@/types/literals';
+
+const KNOWN_SEGMENT_IDS = new Set<string>(SEGMENT_IDS);
 
 // ============================================================
 // 공통 UI 유틸
@@ -153,6 +156,21 @@ function Section2Patterns({
         const validPatterns = patterns.filter((p) => {
           if (!KNOWN_PATTERN_IDS.has(p.pattern_id)) {
             console.warn(`[MethodologyView] PARSE-ENUM-002: unknown pattern_id="${p.pattern_id}" — skipping card`);
+            showToast({
+              code: 'PARSE-ENUM-002',
+              variant: 'warning',
+              message: `알 수 없는 pattern_id "${p.pattern_id}" — 해당 카드를 건너뜁니다.`,
+            });
+            return false;
+          }
+          const badSegment = p.applicable_segments.find((s) => !KNOWN_SEGMENT_IDS.has(s));
+          if (badSegment !== undefined) {
+            console.warn(`[MethodologyView] PARSE-ENUM-002: unknown segment="${badSegment}" in pattern="${p.pattern_id}" — skipping card`);
+            showToast({
+              code: 'PARSE-ENUM-002',
+              variant: 'warning',
+              message: `알 수 없는 segment "${badSegment}" (pattern ${p.pattern_id}) — 해당 카드를 건너뜁니다.`,
+            });
             return false;
           }
           return true;
