@@ -1,6 +1,7 @@
 import { Header } from './Header';
 import { FilterBar } from './FilterBar';
 import { Panel } from './Panel';
+import { Toast } from '@/components/ui/Toast';
 import type { ReactNode } from 'react';
 
 interface AppShellProps {
@@ -18,6 +19,7 @@ export function AppShell({ children }: AppShellProps) {
         </main>
         <Panel />
       </div>
+      <Toast />
     </div>
   );
 }
