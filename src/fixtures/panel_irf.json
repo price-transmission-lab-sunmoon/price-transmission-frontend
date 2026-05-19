@@ -1,0 +1,59 @@
+{
+  "commodity_id": "wheat",
+  "segment_id": "A",
+  "irfs": [
+    {
+      "scope": "full",
+      "label": "전체 기간",
+      "estimation_start": "2000-01",
+      "estimation_end": "2026-03",
+      "peak_horizon": 2,
+      "peak_magnitude": 0.72,
+      "data": [
+        { "horizon": 0, "irf_downstream": 0.0,  "irf_lower_ci": -0.02, "irf_upper_ci": 0.02 },
+        { "horizon": 1, "irf_downstream": 0.41, "irf_lower_ci": 0.28,  "irf_upper_ci": 0.54 },
+        { "horizon": 2, "irf_downstream": 0.72, "irf_lower_ci": 0.58,  "irf_upper_ci": 0.86 },
+        { "horizon": 3, "irf_downstream": 0.61, "irf_lower_ci": 0.47,  "irf_upper_ci": 0.75 },
+        { "horizon": 4, "irf_downstream": 0.48, "irf_lower_ci": 0.33,  "irf_upper_ci": 0.63 },
+        { "horizon": 5, "irf_downstream": 0.35, "irf_lower_ci": 0.20,  "irf_upper_ci": 0.50 },
+        { "horizon": 6, "irf_downstream": 0.24, "irf_lower_ci": 0.09,  "irf_upper_ci": 0.39 }
+      ]
+    },
+    {
+      "scope": "subperiod",
+      "subperiod_index": 1,
+      "label": "2000-01 ~ 2008-08",
+      "estimation_start": "2000-01",
+      "estimation_end": "2008-08",
+      "peak_horizon": 3,
+      "peak_magnitude": 0.65,
+      "data": [
+        { "horizon": 0, "irf_downstream": 0.0,  "irf_lower_ci": -0.03, "irf_upper_ci": 0.03 },
+        { "horizon": 1, "irf_downstream": 0.32, "irf_lower_ci": 0.18,  "irf_upper_ci": 0.46 },
+        { "horizon": 2, "irf_downstream": 0.55, "irf_lower_ci": 0.40,  "irf_upper_ci": 0.70 },
+        { "horizon": 3, "irf_downstream": 0.65, "irf_lower_ci": 0.49,  "irf_upper_ci": 0.81 },
+        { "horizon": 4, "irf_downstream": 0.52, "irf_lower_ci": 0.36,  "irf_upper_ci": 0.68 },
+        { "horizon": 5, "irf_downstream": 0.38, "irf_lower_ci": 0.22,  "irf_upper_ci": 0.54 },
+        { "horizon": 6, "irf_downstream": 0.27, "irf_lower_ci": 0.11,  "irf_upper_ci": 0.43 }
+      ]
+    },
+    {
+      "scope": "subperiod",
+      "subperiod_index": 2,
+      "label": "2008-10 ~ 2022-02",
+      "estimation_start": "2008-10",
+      "estimation_end": "2022-02",
+      "peak_horizon": 1,
+      "peak_magnitude": 0.89,
+      "data": [
+        { "horizon": 0, "irf_downstream": 0.0,  "irf_lower_ci": -0.04, "irf_upper_ci": 0.04 },
+        { "horizon": 1, "irf_downstream": 0.89, "irf_lower_ci": 0.71,  "irf_upper_ci": 1.07 },
+        { "horizon": 2, "irf_downstream": 0.74, "irf_lower_ci": 0.57,  "irf_upper_ci": 0.91 },
+        { "horizon": 3, "irf_downstream": 0.51, "irf_lower_ci": 0.35,  "irf_upper_ci": 0.67 },
+        { "horizon": 4, "irf_downstream": 0.32, "irf_lower_ci": 0.16,  "irf_upper_ci": 0.48 },
+        { "horizon": 5, "irf_downstream": 0.18, "irf_lower_ci": 0.03,  "irf_upper_ci": 0.33 },
+        { "horizon": 6, "irf_downstream": 0.09, "irf_lower_ci": -0.05, "irf_upper_ci": 0.23 }
+      ]
+    }
+  ]
+}

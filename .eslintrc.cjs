@@ -10,7 +10,7 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint', 'react-hooks'],
   rules: {
-    camelcase: ['error', { properties: 'never' }],
+    camelcase: ['error', { properties: 'never', allow: ['^[a-z]+(_[a-z0-9]+)+$'] }],
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
   },
 };

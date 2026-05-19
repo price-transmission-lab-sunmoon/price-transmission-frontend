@@ -12,6 +12,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**', '.claude/**'],
     env: {
       VITE_USE_MOCK: 'true',
       VITE_API_BASE_URL: 'http://localhost:8000/api/v1',
