@@ -1,19 +1,30 @@
-// frame 단계 — 자리 표시자만. 차트·노드·이벤트 오버레이 등
-// 실제 데이터 시각화는 feat/* 브랜치에서 구현 (frame_spec_frontend_vN §8.6)
-import { Minimap } from '@/components/charts/Minimap';
 import { useAppStore } from '@/stores/useAppStore';
+import { RawPricesChart } from '@/components/charts/RawPricesChart';
+import { Minimap } from '@/components/charts/Minimap';
 
 export function MainPage() {
-  // spec §1.3: activeTab === 'stream' 분기에서만 stream 미니맵 마운트
   const activeTab = useAppStore((s) => s.activeTab);
-  // §4.1 — 곡선 색상 정의 (구간 A 청색 / B 녹색 / D′ 주황)
+
+  if (activeTab === 'raw-prices') {
+    return (
+      <div className="flex flex-col h-full gap-2">
+        {/* Main raw-prices chart */}
+        <div className="flex-1 min-h-0">
+          <RawPricesChart />
+        </div>
+        {/* Minimap — variant raw-prices */}
+        <Minimap variant="raw-prices" />
+      </div>
+    );
+  }
+
+  // ── Stream view (and other tabs — placeholder) ─────────────
   const segmentLegend = [
     { label: '구간 A', desc: '국제가 → 수입단가', color: '#60a5fa' },
     { label: '구간 B', desc: '수입단가 → PPI', color: '#34d399' },
     { label: "구간 D'", desc: 'PPI → CPI', color: '#fb923c' },
   ];
 
-  // §4.1 — 이상 노드 신뢰도별 색상
   const gradeLegend = [
     { grade: '고신뢰', color: '#e24b4a' },
     { grade: '중신뢰', color: '#ef9f27' },
@@ -33,7 +44,6 @@ export function MainPage() {
 
       {/* §4.1 스트림 그래프 영역 — 자리 표시자 */}
       <div className="flex-1 relative bg-slate-800/30 border border-slate-700/60 rounded-lg overflow-hidden">
-        {/* 격자 배경 */}
         <svg
           className="absolute inset-0 w-full h-full opacity-10"
           xmlns="http://www.w3.org/2000/svg"
@@ -46,7 +56,6 @@ export function MainPage() {
           <rect width="100%" height="100%" fill="url(#grid)" />
         </svg>
 
-        {/* 좌상단: 곡선 색상 범례 (정의 — feat 단계에서 곡선과 매핑) */}
         <div className="absolute top-3 left-4 flex items-center gap-3">
           {segmentLegend.map((s) => (
             <div key={s.label} className="flex items-center gap-1.5">
@@ -58,7 +67,6 @@ export function MainPage() {
           ))}
         </div>
 
-        {/* 우상단: 신뢰도 등급 범례 (정의) */}
         <div className="absolute top-3 right-4 flex items-center gap-3">
           {gradeLegend.map((l) => (
             <div key={l.grade} className="flex items-center gap-1">
@@ -68,7 +76,6 @@ export function MainPage() {
           ))}
         </div>
 
-        {/* 중앙: 자리 표시자 메시지 */}
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 pointer-events-none">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none" className="text-slate-700">
             <path
@@ -81,13 +88,22 @@ export function MainPage() {
             <circle cx="14" cy="18" r="2" fill="currentColor" />
             <circle cx="20" cy="10" r="2.5" fill="currentColor" />
           </svg>
-          <span className="text-slate-600 text-xs font-medium">스트림 그래프</span>
+          <span className="text-slate-600 text-xs font-medium">
+            {activeTab === 'stream' ? '스트림 그래프' : activeTab}
+          </span>
           <span className="text-slate-700 text-[10px] font-mono">feat/fe-stream-chart</span>
         </div>
       </div>
 
-      {/* §4.1 하단 미니맵 — feat/fe-minimap, activeTab='stream' 전용 */}
-      {activeTab === 'stream' && <Minimap variant="stream" />}
+      {/* §4.1 하단 미니맵 */}
+      {activeTab === 'stream' ? (
+        <Minimap variant="stream" />
+      ) : (
+        <div className="h-14 bg-slate-800/30 border border-slate-700/50 rounded-lg flex items-center justify-center gap-2">
+          <span className="text-slate-600 text-xs">연도별 이상 밀도 미니맵</span>
+          <span className="text-slate-700 text-[10px] font-mono">feat/fe-minimap</span>
+        </div>
+      )}
     </div>
   );
 }

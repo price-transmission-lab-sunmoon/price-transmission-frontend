@@ -1,38 +1,41 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import * as d3 from 'd3';
-import { useAppStore } from '@/stores/useAppStore';
 import { useMinimapData, type MinimapVariant } from '@/hooks/useMinimapData';
-import { getSegmentColor } from '@/utils/colorUtils';
-import type { AnomalyDensityItem, StreamDataPoint } from '@/types/timeseries';
+import { useAppStore } from '@/stores/useAppStore';
+import { SEGMENT_COLORS_PRIMARY, RAW_PRICE_COLORS, ANOMALY_COLORS } from '@/utils/colorUtils';
+import type {
+  StreamMinimapResponse,
+  RawPricesMinimapResponse,
+  AnomalyDensityItem,
+} from '@/types/timeseries';
+import type { SegmentId, RawPriceSource } from '@/types/literals';
 
 interface MinimapProps {
   variant: MinimapVariant;
 }
 
-const TOTAL_HEIGHT = 64;
+const HEIGHT = 64;
 // left/right 24px = 양 끝 연도 라벨("2000"/"2026") 잘림 방지 (text-anchor: middle 기준 약 ±10px)
 const MARGIN = { top: 8, bottom: 20, left: 24, right: 24 };
+const BRUSH_FILL = 'rgba(100, 149, 237, 0.20)';
+const BRUSH_STROKE = '#6495ED';
+const MIN_BRUSH_MONTHS = 3;
+const fmtYM = d3.timeFormat('%Y-%m');
 
-// 이상 밀도 밴드 색상 — feature_spec §3.3 ⑤ (PM 별건 #2 잠정 채택값)
-function getAnomalyBandStyle(
-  item: AnomalyDensityItem,
-): { color: string; opacity: number } | null {
-  if (item.high_count > 0) return { color: '#e24b4a', opacity: 0.12 };
-  if (item.medium_count > 0) return { color: '#ef9f27', opacity: 0.12 };
-  if (item.reference_count > 0) return { color: '#c8d850', opacity: 0.10 };
+function densityColor(item: AnomalyDensityItem): string | null {
+  if (item.high_count > 0) return ANOMALY_COLORS.high;
+  if (item.medium_count > 0) return ANOMALY_COLORS.medium;
+  if (item.reference_count > 0) return ANOMALY_COLORS.reference;
   return null;
 }
 
-export function Minimap({ variant }: MinimapProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-  // D3 내부 객체 — 브러시 sync effect에서 재사용
-  const brushGroupDomRef = useRef<SVGGElement | null>(null);
-  const brushBehaviorRef = useRef<d3.BrushBehavior<unknown> | null>(null);
-  const xScaleRef = useRef<d3.ScaleTime<number, number> | null>(null);
-  // 브러시를 코드로 이동할 때 brush end 핸들러의 store 갱신을 차단하는 플래그
-  const isProgrammaticRef = useRef(false);
+function densityOpacity(item: AnomalyDensityItem): number {
+  if (item.high_count > 0 || item.medium_count > 0) return 0.12;
+  return 0.10;
+}
 
+export function Minimap({ variant }: MinimapProps) {
+  const { data, isLoading, isError } = useMinimapData(variant);
   const filterFrom = useAppStore((s) => s.filterFrom);
   const filterTo = useAppStore((s) => s.filterTo);
   const setFilterFrom = useAppStore((s) => s.setFilterFrom);
@@ -270,8 +273,26 @@ export function Minimap({ variant }: MinimapProps) {
   }
 
   return (
-    <div ref={containerRef} style={{ height: TOTAL_HEIGHT }}>
-      <svg ref={svgRef} className="w-full h-full" />
+    <div
+      ref={containerRef}
+      className="bg-slate-800/30 border border-slate-700/50 rounded-lg overflow-hidden"
+      style={{ height: HEIGHT }}
+    >
+      <svg ref={svgRef} style={{ display: 'block' }} />
     </div>
   );
+}
+
+function showFallback(svg: SVGSVGElement, width: number) {
+  const sel = d3.select(svg);
+  sel.selectAll('*').remove();
+  sel.attr('width', width).attr('height', HEIGHT);
+  sel
+    .append('text')
+    .attr('x', width / 2)
+    .attr('y', HEIGHT / 2 + 4)
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#64748b')
+    .attr('font-size', '11px')
+    .text('전체 기간 데이터 없음');
 }

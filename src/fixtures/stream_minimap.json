@@ -68,7 +68,10 @@
   ],
   "anomaly_density": [
     { "period": "2008", "high_count": 0, "medium_count": 1, "reference_count": 2 },
+    { "period": "2012", "high_count": 0, "medium_count": 0, "reference_count": 1 },
     { "period": "2020", "high_count": 1, "medium_count": 2, "reference_count": 0 },
-    { "period": "2022", "high_count": 3, "medium_count": 1, "reference_count": 0 }
+    { "period": "2022", "high_count": 3, "medium_count": 1, "reference_count": 0 },
+    { "period": "2024", "high_count": 1, "medium_count": 1, "reference_count": 0 },
+    { "period": "2025", "high_count": 0, "medium_count": 0, "reference_count": 1 }
   ]
 }
