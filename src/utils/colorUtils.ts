@@ -42,7 +42,7 @@ export const RAW_PRICE_COLORS: Record<RawPriceSource, string> = {
   ppi: '#22c55e',
   wholesale_price: '#f97316',
   cpi: '#e24b4a',
-export const REFERENCE_LINE_COLOR = '#3b82f6';
+} as const;
 
 // fe-panel v3 §3.3 ④ SoT — 8종 차트 색상 전부 이 객체에서 import
 export const PANEL_CHART_COLORS = {
