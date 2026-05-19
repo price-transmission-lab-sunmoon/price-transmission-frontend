@@ -50,8 +50,12 @@ const MOCK_ROUTES: MockRoute[] = [
   { test: (u) => u === '/meta/analysis-params', data: analysisParamsFixture },
   // 동적 경로(예시) — 후속 feat 브랜치에서 fixture import 후 추가:
   //   { test: (u) => /^\/commodities\/[^/]+\/stream$/.test(u.split('?')[0]), data: streamFixture },
-  //   { test: (u) => /^\/commodities\/[^/]+\/stream\/minimap$/.test(u.split('?')[0]), data: streamMinimapFixture },
   //   { test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]), data: anomalyDetailFixture },
+  // feat/fe-minimap: /stream/minimap 보다 먼저 평가되도록 $ 앵커로 /stream과 분리
+  {
+    test: (u) => /^\/commodities\/[^/]+\/stream\/minimap$/.test(u.split('?')[0]),
+    data: streamMinimapFixture,
+  },
 ];
 
 if (useMock) {
