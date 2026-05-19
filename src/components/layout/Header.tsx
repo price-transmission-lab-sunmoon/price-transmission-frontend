@@ -26,10 +26,12 @@ interface ViewTabConfig {
   label: string;
 }
 
+// PM 별건 #1 — literals.ts VIEW_TABS SoT(4탭) 정합. methodology 포함.
 const VIEW_TABS: ViewTabConfig[] = [
   { id: 'stream', label: '흐름 보기' },
   { id: 'scatter', label: '전달 구조' },
   { id: 'raw-prices', label: '원시 시계열' },
+  { id: 'methodology', label: '방법론' },
 ];
 
 export function Header() {
@@ -96,15 +98,18 @@ export function Header() {
 
   function handleTabClick(tab: ViewTab) {
     setActiveTab(tab);
-    if (location.pathname !== '/') navigate('/');
+    const targetPath = tab === 'methodology' ? '/methodology' : '/';
+    if (location.pathname !== targetPath) navigate(targetPath);
   }
 
-  function handleMethodologyClick() {
-    setActiveTab('methodology');
-    navigate('/methodology');
-  }
-
-  const isMethodology = location.pathname === '/methodology';
+  // URL → activeTab 단방향 동기화. /methodology 직접 진입 시 activeTab=stream 유지 버그 차단.
+  useEffect(() => {
+    if (location.pathname === '/methodology' && activeTab !== 'methodology') {
+      setActiveTab('methodology');
+    } else if (location.pathname === '/' && activeTab === 'methodology') {
+      setActiveTab('stream');
+    }
+  }, [location.pathname, activeTab, setActiveTab]);
 
   return (
     <header
@@ -175,7 +180,8 @@ export function Header() {
             <div
               role="listbox"
               aria-label="주 품목 목록"
-              className="absolute top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 py-1 max-h-72 overflow-y-auto"
+              style={{ zIndex: 200 /* Z_INDEX.DROPDOWN per fe-api-connect §5.5 — z-50은 fe-panel(z=100) 아래로 깔림 */ }}
+              className="absolute top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto"
             >
               {grouped.map(({ cluster, items }) => (
                 <div key={cluster}>
@@ -232,7 +238,8 @@ export function Header() {
             <div
               role="listbox"
               aria-label="보조 품목 목록"
-              className="absolute top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 py-1 max-h-72 overflow-y-auto"
+              style={{ zIndex: 200 /* Z_INDEX.DROPDOWN per fe-api-connect §5.5 — z-50은 fe-panel(z=100) 아래로 깔림 */ }}
+              className="absolute top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto"
             >
               {grouped.map(({ cluster, items }) => (
                 <div key={cluster}>
@@ -261,16 +268,16 @@ export function Header() {
 
         <div className="w-px h-5 bg-slate-700" />
 
-        {/* 뷰 전환 탭 */}
+        {/* 뷰 전환 탭 (4탭 SoT — 방법론 포함) */}
         <nav aria-label="뷰 탭" className="flex items-center gap-1">
           {VIEW_TABS.map((tab) => (
             <button
               key={tab.id}
               aria-label={tab.label}
-              aria-current={activeTab === tab.id && !isMethodology ? 'page' : undefined}
+              aria-current={activeTab === tab.id ? 'page' : undefined}
               onClick={() => handleTabClick(tab.id)}
               className={`h-7 px-3 rounded text-xs font-medium transition-colors ${
-                activeTab === tab.id && !isMethodology
+                activeTab === tab.id
                   ? 'bg-slate-700 text-white'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
@@ -281,23 +288,8 @@ export function Header() {
         </nav>
       </div>
 
-      {/* 우측: 방법론 탭 + FreshnessChip + 도움말 */}
+      {/* 우측: FreshnessChip + 도움말 */}
       <div className="flex items-center gap-3">
-        <button
-          aria-label="방법론 탭"
-          aria-current={isMethodology ? 'page' : undefined}
-          onClick={handleMethodologyClick}
-          className={`h-7 px-3 rounded text-xs font-medium border transition-colors ${
-            isMethodology
-              ? 'border-slate-500 text-white bg-slate-700'
-              : 'border-slate-700 text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          방법론
-        </button>
-
-        <div className="w-px h-5 bg-slate-700" />
-
         <FreshnessChip />
 
         <button

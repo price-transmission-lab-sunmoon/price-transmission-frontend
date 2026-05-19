@@ -1,0 +1,24 @@
+{
+  "anomaly_id": 142,
+  "commodity_id": "wheat",
+  "segment_id": "A",
+  "metric": "breakpoints",
+  "highlight_period": "2026-03",
+  "requested_from": "2000-01",
+  "requested_to": "2026-03",
+  "actual_from": "2000-01",
+  "actual_to": "2026-03",
+  "granularity": "monthly",
+  "total_points": 8,
+  "bp_dates": ["2008-09", "2022-03"],
+  "data": [
+    { "period": "2025-08", "transmission_rate": 0.72, "rolling_mean": 0.79, "q1": 0.51, "q3": 1.07, "in_warmup_period": false, "is_breakpoint": false },
+    { "period": "2025-09", "transmission_rate": 0.85, "rolling_mean": 0.80, "q1": 0.52, "q3": 1.08, "in_warmup_period": false, "is_breakpoint": false },
+    { "period": "2025-10", "transmission_rate": 0.91, "rolling_mean": 0.80, "q1": 0.52, "q3": 1.08, "in_warmup_period": false, "is_breakpoint": false },
+    { "period": "2025-11", "transmission_rate": 0.78, "rolling_mean": 0.80, "q1": 0.52, "q3": 1.09, "in_warmup_period": false, "is_breakpoint": false },
+    { "period": "2025-12", "transmission_rate": 0.95, "rolling_mean": 0.80, "q1": 0.52, "q3": 1.09, "in_warmup_period": false, "is_breakpoint": false },
+    { "period": "2026-01", "transmission_rate": 1.02, "rolling_mean": 0.81, "q1": 0.52, "q3": 1.09, "in_warmup_period": false, "is_breakpoint": false },
+    { "period": "2026-02", "transmission_rate": 1.18, "rolling_mean": 0.81, "q1": 0.52, "q3": 1.09, "in_warmup_period": false, "is_breakpoint": false },
+    { "period": "2026-03", "transmission_rate": 1.43, "rolling_mean": 0.81, "q1": 0.52, "q3": 1.09, "in_warmup_period": false, "is_breakpoint": false }
+  ]
+}

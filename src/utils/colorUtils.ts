@@ -42,4 +42,44 @@ export const RAW_PRICE_COLORS: Record<RawPriceSource, string> = {
   ppi: '#22c55e',
   wholesale_price: '#f97316',
   cpi: '#e24b4a',
+export const REFERENCE_LINE_COLOR = '#3b82f6';
+
+// fe-panel v3 §3.3 ④ SoT — 8종 차트 색상 전부 이 객체에서 import
+export const PANEL_CHART_COLORS = {
+  // TransmissionRateChart
+  transmissionRateLine: '#1f77b4',
+  rollingMeanLine: '#666666',
+  q1q3Band: '#aaaaaa',
+  detectionMarker: '#e24b4a',
+
+  // ZScoreChart
+  zscoreLine: '#9467bd',
+  zscoreWarningLine: '#ef9f27',
+  zscoreAlertLine: '#e24b4a',
+
+  // ECTChart
+  ectLine: '#2ca02c',
+  ectZeroLine: '#000000',
+
+  // IRFChart
+  irfFullLine: '#000000',
+  irfSubperiodLine: '#cccccc',
+  irfConfidenceBand: '#1f77b4',
+  irfPeakMarker: '#e24b4a',
+
+  // MLMapChart
+  mlMapHighlight: '#e24b4a',
+  mlMapNormalFill: '#94a3b8',
+
+  // IQRBoxplot
+  iqrBoxFill: '#cbd5e1',
+  iqrMedianLine: '#475569',
+  iqrCurrentMarker: '#e24b4a',
+
+  // AsymmetryHistogram
+  asymmetryUpBin: '#f97316',
+  asymmetryDownBin: '#06b6d4',
+
+  // BreakpointsChart
+  breakpointsLine: '#e24b4a',
 } as const;

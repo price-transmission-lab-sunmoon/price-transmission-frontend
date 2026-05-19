@@ -2,7 +2,8 @@ import { Header } from './Header';
 import { FilterBar } from './FilterBar';
 import { Banner } from './Banner';
 import { Panel } from './Panel';
-import { Toast } from '@/components/ui/Toast';
+import { OnboardingGuide } from './OnboardingGuide';
+import { HelpFloatingButton } from './HelpFloatingButton';
 import type { ReactNode } from 'react';
 
 interface AppShellProps {
@@ -10,19 +11,26 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const activeTab = useAppStore((s) => s.activeTab);
+  const isMethodology = activeTab === 'methodology';
+
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-white">
       {/* 이달의 이상 요약 배너 — 최상단 고정 (web_plan_vN §3.2) */}
       <Banner />
       <Header />
-      <FilterBar />
+      {/* 방법론 탭에서는 필터 바 미표시 (feature_spec_fe-methodology-tab_vN §1.4) */}
+      {!isMethodology && <FilterBar />}
       <div className="flex flex-1 overflow-hidden">
         <main data-testid="main-area" className="flex-1 overflow-auto p-6">
           {children}
         </main>
-        <Panel />
+        {/* 방법론 탭에서는 패널 미표시 (isPanelOpen=false 보장 + 레이아웃 풀 너비) */}
+        {!isMethodology && <Panel />}
       </div>
-      <Toast />
+      {/* 항상 마운트, 표시는 조건부 (feature_spec_fe-onboarding_vN §1.3) */}
+      <OnboardingGuide />
+      <HelpFloatingButton />
     </div>
   );
 }
