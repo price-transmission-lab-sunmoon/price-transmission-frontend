@@ -6,6 +6,8 @@ import segmentsFixture from '@/fixtures/segments.json';
 import eventsFixture from '@/fixtures/events.json';
 import freshnessFixture from '@/fixtures/freshness.json';
 import anomaliesSummaryFixture from '@/fixtures/anomalies_summary.json';
+import pipelineFixture from '@/fixtures/pipeline.json';
+import analysisParamsFixture from '@/fixtures/analysis_params.json';
 
 const useMock = import.meta.env.VITE_USE_MOCK !== 'false';
 
@@ -43,6 +45,9 @@ const MOCK_ROUTES: MockRoute[] = [
   { test: (u) => u === '/freshness', data: freshnessFixture },
   // feat/fe-layout-filter 추가 — /anomalies/summary (쿼리파라미터 포함 가능)
   { test: (u) => u.split('?')[0] === '/anomalies/summary', data: anomaliesSummaryFixture },
+  // feat/fe-methodology-tab 추가 — /meta/pipeline, /meta/analysis-params
+  { test: (u) => u === '/meta/pipeline', data: pipelineFixture },
+  { test: (u) => u === '/meta/analysis-params', data: analysisParamsFixture },
   // 동적 경로(예시) — 후속 feat 브랜치에서 fixture import 후 추가:
   //   { test: (u) => /^\/commodities\/[^/]+\/stream$/.test(u.split('?')[0]), data: streamFixture },
   //   { test: (u) => /^\/commodities\/[^/]+\/stream\/minimap$/.test(u.split('?')[0]), data: streamMinimapFixture },
