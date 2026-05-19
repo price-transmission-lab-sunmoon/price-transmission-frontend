@@ -41,255 +41,233 @@ export function Minimap({ variant }: MinimapProps) {
   const setFilterFrom = useAppStore((s) => s.setFilterFrom);
   const setFilterTo = useAppStore((s) => s.setFilterTo);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-  const brushGroupRef = useRef<SVGGElement | null>(null);
-  const xScaleRef = useRef<d3.ScaleTime<number, number> | null>(null);
-  const brushRef = useRef<d3.BrushBehavior<unknown> | null>(null);
-  const isInternalRef = useRef(false);
-
-  // Refs for latest filter values — avoids including them in render deps
+  // stale closure 방지용 최신값 ref
   const filterFromRef = useRef(filterFrom);
   const filterToRef = useRef(filterTo);
-  filterFromRef.current = filterFrom;
-  filterToRef.current = filterTo;
+  useEffect(() => {
+    filterFromRef.current = filterFrom;
+    filterToRef.current = filterTo;
+  }, [filterFrom, filterTo]);
 
-  const parseEnv = useCallback(
-    (s: string | null | undefined) => (s ? d3.timeParse('%Y-%m')(s) : null),
-    [],
-  );
+  const [containerWidth, setContainerWidth] = useState(0);
 
-  const parsePeriod = useCallback(
-    (s: string) =>
-      variant === 'stream' ? d3.timeParse('%Y')(s) : d3.timeParse('%Y-%m')(s),
-    [variant],
-  );
+  const { data, isError } = useMinimapData(variant);
 
-  const computeMinPx = useCallback(
-    (xScale: d3.ScaleTime<number, number>) => {
-      const [d0, d1] = xScale.domain() as [Date, Date];
-      const [p0, p1] = xScale.range();
-      const threeMonthMs = MIN_BRUSH_MONTHS * 30.44 * 24 * 3600 * 1000;
-      return (threeMonthMs / (d1.getTime() - d0.getTime())) * (p1 - p0);
-    },
-    [],
-  );
+  // FE-D3-003: ResizeObserver로 컨테이너 크기 복구 감지 → 재렌더링
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      if (w > 0) setContainerWidth(w);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
-  // Main render — depends only on data/variant; reads filter via refs
-  const render = useCallback(() => {
-    if (!data || !svgRef.current || !containerRef.current) return;
-    const width = containerRef.current.getBoundingClientRect().width;
-    if (width === 0) return; // FE-D3-003
+  // ── 메인 D3 렌더링 ──────────────────────────────────────────
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!data || !svg || containerWidth === 0) return;
 
-    const innerW = width - MARGIN.left - MARGIN.right;
-    const innerH = HEIGHT - MARGIN.top - MARGIN.bottom;
+    const { series, anomaly_density, actual_from, actual_to } = data;
 
-    const domainFrom = parseEnv(data.actual_from);
-    const domainTo = parseEnv(data.actual_to);
-    if (!domainFrom || !domainTo) return;
+    // FE-D3-001: 유효 데이터 없음 → 렌더 중단 (fallback UI가 대신 표시됨)
+    const hasData = series.length > 0 && series.some((s) => s.data.length > 0);
+    if (!hasData) return;
 
-    const xScale = d3.scaleTime().domain([domainFrom, domainTo]).range([0, innerW]);
+    const width = containerWidth;
+    const innerWidth = width - MARGIN.left - MARGIN.right;
+    const innerHeight = TOTAL_HEIGHT - MARGIN.top - MARGIN.bottom;
+
+    const parseYear = d3.timeParse('%Y');
+    const parseMonth = d3.timeParse('%Y-%m');
+    const formatMonth = d3.timeFormat('%Y-%m');
+
+    const domainStart = parseMonth(actual_from)!;
+    const domainEnd = parseMonth(actual_to)!;
+
+    const xScale = d3.scaleTime().domain([domainStart, domainEnd]).range([0, innerWidth]);
     xScaleRef.current = xScale;
 
-    type Pt = { date: Date; value: number };
-    type Entry = { key: string; color: string; points: Pt[] };
-    let entries: Entry[] = [];
+    // Y 도메인: 유효한 transmission_rate 전체 범위 (워밍업 제외)
+    const allRates = series.flatMap((s) =>
+      s.data
+        .filter((d) => d.transmission_rate !== null && !d.in_warmup_period)
+        .map((d) => d.transmission_rate as number),
+    );
+    const yMin = allRates.length > 0 ? Math.min(...allRates) : 0;
+    const yMax = allRates.length > 0 ? Math.max(...allRates) : 1;
+    const yScale = d3.scaleLinear().domain([yMin, yMax]).range([innerHeight, 0]);
 
-    if (variant === 'stream') {
-      const sd = data as StreamMinimapResponse;
-      if (!sd.series.some((s) => s.data.length > 0)) {
-        showFallback(svgRef.current, width);
-        return;
-      }
-      entries = sd.series.map((s) => ({
-        key: s.segment_id,
-        color: SEGMENT_COLORS_PRIMARY[s.segment_id as SegmentId] ?? '#94a3b8',
-        points: s.data.flatMap((dp) => {
-          const date = parsePeriod(dp.period);
-          if (!date) return [];
-          if (dp.transmission_rate === null) {
-            if (!dp.in_warmup_period) {
-              console.warn('[Minimap] PARSE-NUM-002: null transmission_rate outside warmup', dp.period);
-            }
-            return [];
-          }
-          return [{ date, value: dp.transmission_rate }];
-        }),
-      }));
-    } else {
-      const rd = data as RawPricesMinimapResponse;
-      if (!rd.series.some((s) => s.data.length > 0)) {
-        showFallback(svgRef.current, width);
-        return;
-      }
-      entries = rd.series.map((s) => ({
-        key: s.source,
-        color: RAW_PRICE_COLORS[s.source as RawPriceSource] ?? '#94a3b8',
-        points: s.data.flatMap((dp) => {
-          const date = parsePeriod(dp.period);
-          if (!date || dp.index_2020 === null) return [];
-          return [{ date, value: dp.index_2020 }];
-        }),
-      }));
-    }
+    // SVG 초기화
+    const root = d3.select(svg);
+    root.selectAll('*').remove();
+    root.attr('width', width).attr('height', TOTAL_HEIGHT);
 
-    const allVals = entries.flatMap((e) => e.points.map((p) => p.value));
-    const [vMin = 0, vMax = 1] = d3.extent(allVals) as [number, number];
-    const pad = Math.max(0.05, 0.05 * Math.abs(vMax - vMin));
-    const yScale = d3.scaleLinear().domain([vMin - pad, vMax + pad]).range([innerH, 0]);
+    const g = root.append('g').attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
-    const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove();
-    svg.attr('width', width).attr('height', HEIGHT);
-    const g = svg.append('g').attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
-
-    // ① Anomaly density bands
-    const density: AnomalyDensityItem[] = data.anomaly_density ?? [];
-    const yearMs = 365.25 * 24 * 3600 * 1000;
-    density.forEach((item) => {
-      const color = densityColor(item);
-      if (!color) return;
-      const date = parsePeriod(item.period);
-      if (!date) return;
-      const x0 = Math.max(0, xScale(date));
-      const x1 = Math.min(innerW, xScale(new Date(date.getTime() + yearMs)));
-      if (x1 <= x0) return;
+    // ① 이상 밀도 배경 밴드
+    const densityMap = new Map(anomaly_density.map((d) => [d.period, d]));
+    const years = d3.timeYear.range(
+      d3.timeYear.floor(domainStart),
+      d3.timeYear.ceil(domainEnd),
+    );
+    years.forEach((year) => {
+      const yearStr = d3.timeFormat('%Y')(year);
+      const item = densityMap.get(yearStr);
+      if (!item) return;
+      const style = getAnomalyBandStyle(item);
+      if (!style) return;
+      const x0 = xScale(year);
+      const x1 = xScale(d3.timeYear.offset(year, 1));
       g.append('rect')
         .attr('x', x0)
         .attr('y', 0)
         .attr('width', x1 - x0)
-        .attr('height', innerH)
-        .attr('fill', color)
-        .attr('fill-opacity', densityOpacity(item));
+        .attr('height', innerHeight)
+        .attr('fill', style.color)
+        .attr('opacity', style.opacity);
     });
 
-    // ② Series curves
-    const line = d3
-      .line<Pt>()
-      .x((p) => xScale(p.date))
-      .y((p) => yScale(p.value));
+    // ② 구간별 전이율 곡선 (배경, opacity 0.3)
+    series.forEach((seriesItem) => {
+      const lineGen = d3
+        .line<StreamDataPoint>()
+        .x((d) => xScale(parseYear(d.period)!))
+        .y((d) => yScale(d.transmission_rate as number))
+        .defined((d) => {
+          if (d.transmission_rate === null) {
+            if (!d.in_warmup_period) {
+              // PARSE-NUM-002: 연간 집계임에도 null인 비정상 케이스
+              console.warn(`[Minimap] PARSE-NUM-002: null transmission_rate at ${d.period}`);
+            }
+            return false;
+          }
+          return true;
+        });
 
-    entries.forEach(({ key, color, points }) => {
       g.append('path')
-        .datum(points)
-        .attr('class', `series-${key}`)
+        .datum(seriesItem.data)
         .attr('fill', 'none')
-        .attr('stroke', color)
-        .attr('stroke-width', 1)
+        .attr('stroke', getSegmentColor(seriesItem.segment_id))
         .attr('stroke-opacity', 0.3)
-        .attr('d', line);
+        .attr('stroke-width', 1)
+        .attr('d', lineGen);
     });
 
-    // ③ X axis
-    const years = domainTo.getFullYear() - domainFrom.getFullYear();
+    // ③ X축 (연도 눈금)
+    const yearSpan = domainEnd.getFullYear() - domainStart.getFullYear();
+    const tickEvery = yearSpan > 15 ? d3.timeYear.every(2) : d3.timeYear.every(1);
     const xAxis = d3
       .axisBottom(xScale)
-      .ticks(d3.timeYear.every(years > 10 ? 2 : 1))
-      .tickFormat(d3.timeFormat('%Y') as (d: Date | d3.NumberValue) => string)
-      .tickSize(3);
+      .ticks(tickEvery)
+      .tickFormat(d3.timeFormat('%Y') as (d: Date | d3.NumberValue) => string);
 
     g.append('g')
-      .attr('transform', `translate(0,${innerH})`)
+      .attr('transform', `translate(0,${innerHeight})`)
       .call(xAxis)
-      .call((ax) => ax.select('.domain').remove())
-      .call((ax) => ax.selectAll('text').attr('fill', '#64748b').attr('font-size', '9px'));
-
-    // ④ Brush
-    const setFrom = setFilterFrom;
-    const setTo = setFilterTo;
-
-    const brush = d3.brushX<unknown>()
-      .extent([[0, 0], [innerW, innerH]])
-      .on('end', (event: d3.D3BrushEvent<unknown>) => {
-        if (!event.selection || isInternalRef.current) return;
-        const [px0, px1] = event.selection as [number, number];
-        const minPx = computeMinPx(xScale);
-        let lo = px0;
-        let hi = px1;
-        if (hi - lo < minPx) {
-          const mid = (lo + hi) / 2;
-          lo = Math.max(0, mid - minPx / 2);
-          hi = Math.min(innerW, lo + minPx);
-          lo = Math.max(0, hi - minPx);
-        }
-        const newFrom = fmtYM(xScale.invert(lo));
-        const newTo = fmtYM(xScale.invert(hi));
-        if (newFrom === filterFromRef.current && newTo === filterToRef.current) return;
-        setFrom(newFrom);
-        setTo(newTo);
+      .call((ax) => {
+        ax.select('.domain').remove();
+        ax.selectAll('.tick line').attr('stroke', '#475569').attr('stroke-opacity', 0.5);
+        ax.selectAll('.tick text').attr('fill', '#94a3b8').attr('font-size', '10px');
       });
 
-    brushRef.current = brush;
-    const brushG = g.append('g').attr('class', 'minimap-brush');
-    brushG.call(brush);
-    brushG.select('.selection')
-      .attr('fill', BRUSH_FILL)
-      .attr('stroke', BRUSH_STROKE)
+    // ④ d3.brushX() 뷰포트 박스
+    const brushGroup = g.append('g');
+    brushGroupDomRef.current = brushGroup.node();
+
+    // 최소 박스 너비: 3개월에 해당하는 픽셀
+    const totalMs = domainEnd.getTime() - domainStart.getTime();
+    const threeMonthMs = 3 * 30.44 * 24 * 60 * 60 * 1000;
+    const minBrushPx = (threeMonthMs / totalMs) * innerWidth;
+
+    const brush = d3
+      .brushX()
+      .extent([
+        [0, 0],
+        [innerWidth, innerHeight],
+      ])
+      .on('end', (event: d3.D3BrushEvent<unknown>) => {
+        if (isProgrammaticRef.current) return;
+        if (!event.selection) return;
+
+        let [x0, x1] = event.selection as [number, number];
+
+        // 최소 너비 클램프
+        if (x1 - x0 < minBrushPx) {
+          x1 = Math.min(x0 + minBrushPx, innerWidth);
+          x0 = x1 - minBrushPx;
+          isProgrammaticRef.current = true;
+          d3.select(brushGroupDomRef.current!).call(brush.move, [x0, x1]);
+          isProgrammaticRef.current = false;
+        }
+
+        const newFrom = formatMonth(xScale.invert(x0));
+        const newTo = formatMonth(xScale.invert(x1));
+
+        // 무한 루프 방지: 값이 실제로 바뀐 경우에만 store 갱신
+        if (newFrom !== filterFromRef.current || newTo !== filterToRef.current) {
+          setFilterFrom(newFrom);
+          setFilterTo(newTo);
+        }
+      });
+
+    brushBehaviorRef.current = brush;
+    brushGroup.call(brush);
+
+    // 브러시 스타일
+    brushGroup
+      .select('.selection')
+      .attr('fill', 'rgba(100, 149, 237, 0.20)')
+      .attr('stroke', '#6495ED')
       .attr('stroke-width', 1);
-    brushGroupRef.current = brushG.node() as SVGGElement;
+    brushGroup.selectAll<SVGElement, unknown>('.handle').attr('fill', '#6495ED');
 
-    // Initial brush from store (or full domain)
-    const initFrom = parseEnv(filterFromRef.current) ?? domainFrom;
-    const initTo = parseEnv(filterToRef.current) ?? domainTo;
-    isInternalRef.current = true;
-    brushG.call(brush.move, [xScale(initFrom), xScale(initTo)]);
-    isInternalRef.current = false;
-  }, [data, variant, parsePeriod, parseEnv, computeMinPx, setFilterFrom, setFilterTo]);
+    // store의 현재 기간으로 초기 브러시 위치 설정
+    const initFrom = filterFromRef.current;
+    const initTo = filterToRef.current;
+    if (initFrom && initTo) {
+      const pFrom = parseMonth(initFrom);
+      const pTo = parseMonth(initTo);
+      if (pFrom && pTo) {
+        isProgrammaticRef.current = true;
+        brushGroup.call(brush.move, [xScale(pFrom), xScale(pTo)]);
+        isProgrammaticRef.current = false;
+      }
+    }
+  }, [data, containerWidth, setFilterFrom, setFilterTo]);
 
+  // ── 브러시 위치 동기화 (store → brush) ──────────────────────
+  // 메인 차트 휠 줌 등 외부에서 filterFrom/filterTo가 바뀔 때 뷰포트 박스 위치 갱신
   useEffect(() => {
-    render();
-  }, [render]);
-
-  // Sync brush when filterFrom/filterTo change from outside (zoom, preset, etc.)
-  useEffect(() => {
+    const brush = brushBehaviorRef.current;
+    const groupDom = brushGroupDomRef.current;
     const xScale = xScaleRef.current;
-    const brush = brushRef.current;
-    const node = brushGroupRef.current;
-    if (!xScale || !brush || !node) return;
+    if (!brush || !groupDom || !xScale) return;
+    if (!filterFrom || !filterTo) return;
 
-    const f = parseEnv(filterFrom);
-    const t = parseEnv(filterTo);
-    if (!f || !t) return;
+    const parseMonth = d3.timeParse('%Y-%m');
+    const pFrom = parseMonth(filterFrom);
+    const pTo = parseMonth(filterTo);
+    if (!pFrom || !pTo) return;
 
-    const lo = xScale(f);
-    const hi = xScale(t);
-    const sel = d3.brushSelection(node) as [number, number] | null;
-    if (sel && Math.abs(sel[0] - lo) < 0.5 && Math.abs(sel[1] - hi) < 0.5) return;
+    isProgrammaticRef.current = true;
+    d3.select(groupDom).call(brush.move, [xScale(pFrom), xScale(pTo)]);
+    isProgrammaticRef.current = false;
+  }, [filterFrom, filterTo]);
 
-    isInternalRef.current = true;
-    d3.select(node).call(brush.move, [lo, hi]);
-    isInternalRef.current = false;
-  }, [filterFrom, filterTo, parseEnv]);
+  // ── FE-D3-001 / API 오류 fallback ────────────────────────────
+  const hasData =
+    data && data.series.length > 0 && data.series.some((s) => s.data.length > 0);
 
-  // ResizeObserver — FE-D3-003
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => render());
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [render]);
-
-  if (isLoading) {
+  if (isError || (data && !hasData)) {
     return (
       <div
-        ref={containerRef}
-        className="bg-slate-800/30 border border-slate-700/50 rounded-lg flex items-center justify-center"
-        style={{ height: HEIGHT }}
+        className="flex items-center justify-center bg-slate-800/30 border border-slate-700/50 rounded-lg"
+        style={{ height: TOTAL_HEIGHT }}
       >
-        <span className="text-slate-600 text-xs">로딩 중...</span>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div
-        ref={containerRef}
-        className="bg-slate-800/30 border border-slate-700/50 rounded-lg flex items-center justify-center"
-        style={{ height: HEIGHT }}
-      >
-        <span className="text-slate-600 text-xs">전체 기간 데이터 없음</span>
+        <span className="text-slate-500 text-xs">전체 기간 데이터 없음</span>
       </div>
     );
   }
