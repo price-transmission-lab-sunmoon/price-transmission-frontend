@@ -1,4 +1,4 @@
-import axios, { type InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { parseApiError } from './error';
 
 import commoditiesFixture from '@/fixtures/commodities.json';
@@ -6,6 +6,27 @@ import segmentsFixture from '@/fixtures/segments.json';
 import eventsFixture from '@/fixtures/events.json';
 import freshnessFixture from '@/fixtures/freshness.json';
 import scatterFixture from '@/fixtures/scatter.json';
+import rawPricesFixture from '@/fixtures/raw_prices.json';
+import rawPricesMinimapFixture from '@/fixtures/raw_prices_minimap.json';
+import rawPricesLay4ErrorFixture from '@/fixtures/raw_prices_lay4_error.json';
+import rawPricesInvalidLayoutFixture from '@/fixtures/raw_prices_invalid_layout.json';
+import streamMinimapFixture from '@/fixtures/stream_minimap.json';
+import anomaliesSummaryFixture from '@/fixtures/anomalies_summary.json';
+import pipelineFixture from '@/fixtures/pipeline.json';
+import analysisParamsFixture from '@/fixtures/analysis_params.json';
+
+// feat/fe-panel fixtures
+import panelDetailFixture from '@/fixtures/panel_detail.json';
+import panelStatSeriesTransmissionRateFixture from '@/fixtures/panel_stat_series_transmission_rate.json';
+import panelStatSeriesZscoreFixture from '@/fixtures/panel_stat_series_zscore.json';
+import panelStatSeriesEctFixture from '@/fixtures/panel_stat_series_ect.json';
+import panelStatSeriesBreakpointsFixture from '@/fixtures/panel_stat_series_breakpoints.json';
+import panelStatSnapshotIqrFixture from '@/fixtures/panel_stat_snapshot_iqr.json';
+import panelStatSnapshotAsymmetryFixture from '@/fixtures/panel_stat_snapshot_asymmetry.json';
+import panelIrfFixture from '@/fixtures/panel_irf.json';
+import panelMlMapIsolationForestFixture from '@/fixtures/panel_ml_map_isolation_forest.json';
+import panelMlMapLofFixture from '@/fixtures/panel_ml_map_lof.json';
+import panelMlMapOcsvmFixture from '@/fixtures/panel_ml_map_ocsvm.json';
 
 const useMock = import.meta.env.VITE_USE_MOCK !== 'false';
 
@@ -37,35 +58,98 @@ interface MockRoute {
   handle: (config: InternalAxiosRequestConfig) => MockResult;
 }
 
-const MOCK_ROUTES: MockRoute[] = [
-  // ── 정적 경로 4종 ───────────────────────────────���──────────
-  {
-    test: (u) => u === '/commodities',
-    handle: () => ({ type: 'success', data: commoditiesFixture }),
-  },
-  {
-    test: (u) => u === '/segments',
-    handle: () => ({ type: 'success', data: segmentsFixture }),
-  },
-  {
-    test: (u) => u === '/events',
-    handle: () => ({ type: 'success', data: eventsFixture }),
-  },
-  {
-    test: (u) => u === '/freshness',
-    handle: () => ({ type: 'success', data: freshnessFixture }),
-  },
+// 3구간 품목 (has_wholesale=false) — layout=4 요청 시 WHOLESALE_NOT_AVAILABLE 반환
+const THREE_SEG_COMMODITIES = new Set([
+  'wheat', 'maize', 'soybean', 'palm_oil', 'sugar', 'coffee', 'beef',
+]);
 
-  // ── scatter (feature_spec_fe-scatter-chart_vN §1.3) ────────
+const MOCK_ROUTES: MockRoute[] = [
+  // 정적 경로 — frame이 직접 제공하는 fixture 4종
+  { test: (u) => u === '/commodities', data: commoditiesFixture },
+  { test: (u) => u === '/segments', data: segmentsFixture },
+  { test: (u) => u === '/events', data: eventsFixture },
+  { test: (u) => u === '/freshness', data: freshnessFixture },
+
+  // feat/fe-panel — 패널 엔드포인트 fixture (anomaly_id 무관하게 단일 더미 반환)
+  { test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]), data: panelDetailFixture },
   {
-    test: (u) => /^\/commodities\/[^/]+\/scatter$/.test(u),
-    handle: () => ({ type: 'success', data: scatterFixture }),
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'transmission_rate';
+    },
+    data: panelStatSeriesTransmissionRateFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'zscore';
+    },
+    data: panelStatSeriesZscoreFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'ect';
+    },
+    data: panelStatSeriesEctFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'breakpoints';
+    },
+    data: panelStatSeriesBreakpointsFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-snapshot$/.test(path) && params.get('metric') === 'iqr';
+    },
+    data: panelStatSnapshotIqrFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-snapshot$/.test(path) && params.get('metric') === 'asymmetry';
+    },
+    data: panelStatSnapshotAsymmetryFixture,
+  },
+  { test: (u) => /^\/anomalies\/\d+\/irf$/.test(u.split('?')[0]), data: panelIrfFixture },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/ml-map$/.test(path) && params.get('model') === 'isolation_forest';
+    },
+    data: panelMlMapIsolationForestFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/ml-map$/.test(path) && params.get('model') === 'lof';
+    },
+    data: panelMlMapLofFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/ml-map$/.test(path) && params.get('model') === 'ocsvm';
+    },
+    data: panelMlMapOcsvmFixture,
   },
 ];
 
-// ────────────────────────────────���────────────────────────────���
+// ──────────────────────────────────────────────────────────────
 // 내부 Mock 통신 마커 타입
-// ───────────────────────────────────────────────────────────��──
+// ──────────────────────────────────────────────────────────────
 interface MockInternal {
   isMockResponse: true;
   isMockError: boolean;
@@ -106,15 +190,15 @@ if (useMock) {
 
       if (mock.isMockError && mock.status !== undefined) {
         // Mock 에러 → AxiosError 형태로 변환 → 하위 parseApiError 인터셉터로 전달
-        const axiosLike = Object.assign(
-          new Error(`Request failed with status code ${mock.status}`),
-          {
-            isAxiosError: true,
-            response: { status: mock.status, data: mock.data },
-            config: mock.config,
-          },
+        const axiosErr = new AxiosError(
+          `Request failed with status code ${mock.status}`,
+          AxiosError.ERR_BAD_REQUEST,
+          mock.config,
+          undefined,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { data: mock.data, status: mock.status, statusText: 'Bad Request', headers: {}, config: mock.config } as any,
         );
-        return Promise.reject(axiosLike);
+        return Promise.reject(axiosErr);
       }
 
       // Mock 성공 → 정상 응답으로 resolve

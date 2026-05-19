@@ -133,10 +133,17 @@ export function OnboardingGuide() {
 
   return (
     <>
-      {/* 배경 클릭 → 온보딩 종료 (§6 강제 온보딩 금지) */}
+      {/* 배경 클릭 → 온보딩 종료 (§6 강제 온보딩 금지).
+          단, 스포트라이트 컷아웃 영역 클릭은 통과시켜 타겟 노드 학습 흐름을 방해하지 않음. */}
       <div
         style={{ position: 'fixed', inset: 0, zIndex: 8999 }}
-        onClick={completeOnboarding}
+        onClick={(e) => {
+          const x = e.clientX;
+          const y = e.clientY;
+          const insideSpot =
+            x >= spotX && x <= spotX + spotW && y >= spotY && y <= spotY + spotH;
+          if (!insideSpot) completeOnboarding();
+        }}
       />
 
       {/* 스포트라이트: box-shadow로 배경 어둡게 + 타겟 영역 강조 링 */}
