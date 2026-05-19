@@ -1,12 +1,12 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import * as d3 from 'd3';
 import { useMinimapData, type MinimapVariant } from '@/hooks/useMinimapData';
 import { useAppStore } from '@/stores/useAppStore';
 import { SEGMENT_COLORS_PRIMARY, RAW_PRICE_COLORS, ANOMALY_COLORS } from '@/utils/colorUtils';
 import type {
-  StreamMinimapResponse,
-  RawPricesMinimapResponse,
   AnomalyDensityItem,
+  StreamSeriesItem,
+  RawPriceSeriesItem,
 } from '@/types/timeseries';
 import type { SegmentId, RawPriceSource } from '@/types/literals';
 
@@ -15,12 +15,11 @@ interface MinimapProps {
 }
 
 const HEIGHT = 64;
-// left/right 24px = 양 끝 연도 라벨("2000"/"2026") 잘림 방지 (text-anchor: middle 기준 약 ±10px)
+const TOTAL_HEIGHT = HEIGHT;
 const MARGIN = { top: 8, bottom: 20, left: 24, right: 24 };
 const BRUSH_FILL = 'rgba(100, 149, 237, 0.20)';
 const BRUSH_STROKE = '#6495ED';
 const MIN_BRUSH_MONTHS = 3;
-const fmtYM = d3.timeFormat('%Y-%m');
 
 function densityColor(item: AnomalyDensityItem): string | null {
   if (item.high_count > 0) return ANOMALY_COLORS.high;
@@ -31,7 +30,13 @@ function densityColor(item: AnomalyDensityItem): string | null {
 
 function densityOpacity(item: AnomalyDensityItem): number {
   if (item.high_count > 0 || item.medium_count > 0) return 0.12;
-  return 0.10;
+  return 0.1;
+}
+
+function getAnomalyBandStyle(item: AnomalyDensityItem): { color: string; opacity: number } | null {
+  const color = densityColor(item);
+  if (!color) return null;
+  return { color, opacity: densityOpacity(item) };
 }
 
 export function Minimap({ variant }: MinimapProps) {
@@ -49,9 +54,26 @@ export function Minimap({ variant }: MinimapProps) {
     filterToRef.current = filterTo;
   }, [filterFrom, filterTo]);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  const { data, isError } = useMinimapData(variant);
+  // D3 object refs (브러시 상태 유지)
+  const xScaleRef = useRef<d3.ScaleTime<number, number> | null>(null);
+  const brushGroupDomRef = useRef<SVGGElement | null>(null);
+  const brushBehaviorRef = useRef<d3.BrushBehavior<unknown> | null>(null);
+  const isProgrammaticRef = useRef(false);
+
+  // variant별 구간/소스 색상 반환
+  const getSegmentColor = useCallback(
+    (item: StreamSeriesItem | RawPriceSeriesItem): string => {
+      if (variant === 'stream') {
+        return SEGMENT_COLORS_PRIMARY[(item as StreamSeriesItem).segment_id as SegmentId] ?? '#94a3b8';
+      }
+      return RAW_PRICE_COLORS[(item as RawPriceSeriesItem).source as RawPriceSource] ?? '#94a3b8';
+    },
+    [variant],
+  );
 
   // FE-D3-003: ResizeObserver로 컨테이너 크기 복구 감지 → 재렌더링
   useEffect(() => {
@@ -70,7 +92,8 @@ export function Minimap({ variant }: MinimapProps) {
     const svg = svgRef.current;
     if (!data || !svg || containerWidth === 0) return;
 
-    const { series, anomaly_density, actual_from, actual_to } = data;
+    const { anomaly_density, actual_from, actual_to } = data;
+    const series = data.series as (StreamSeriesItem | RawPriceSeriesItem)[];
 
     // FE-D3-001: 유효 데이터 없음 → 렌더 중단 (fallback UI가 대신 표시됨)
     const hasData = series.length > 0 && series.some((s) => s.data.length > 0);
@@ -80,24 +103,36 @@ export function Minimap({ variant }: MinimapProps) {
     const innerWidth = width - MARGIN.left - MARGIN.right;
     const innerHeight = TOTAL_HEIGHT - MARGIN.top - MARGIN.bottom;
 
-    const parseYear = d3.timeParse('%Y');
-    const parseMonth = d3.timeParse('%Y-%m');
+    // actual_from/to 는 항상 YYYY-MM 형식 (stream minimap도 "2000-01" 반환)
+    const parseYM = d3.timeParse('%Y-%m');
+    // 데이터 포인트 period: stream="YYYY", raw-prices="YYYY-MM"
+    const parseY = d3.timeParse('%Y');
+    const parsePeriod = (p: string): Date | null =>
+      variant === 'stream' ? parseY(p) : parseYM(p);
     const formatMonth = d3.timeFormat('%Y-%m');
 
-    const domainStart = parseMonth(actual_from)!;
-    const domainEnd = parseMonth(actual_to)!;
+    const domainStart = parseYM(actual_from)!;
+    const domainEnd = parseYM(actual_to)!;
 
     const xScale = d3.scaleTime().domain([domainStart, domainEnd]).range([0, innerWidth]);
     xScaleRef.current = xScale;
 
-    // Y 도메인: 유효한 transmission_rate 전체 범위 (워밍업 제외)
-    const allRates = series.flatMap((s) =>
-      s.data
-        .filter((d) => d.transmission_rate !== null && !d.in_warmup_period)
-        .map((d) => d.transmission_rate as number),
-    );
-    const yMin = allRates.length > 0 ? Math.min(...allRates) : 0;
-    const yMax = allRates.length > 0 ? Math.max(...allRates) : 1;
+    // Y 도메인: variant별 값 추출
+    let allValues: number[];
+    if (variant === 'stream') {
+      allValues = (series as StreamSeriesItem[]).flatMap((s) =>
+        s.data
+          .filter((d) => d.transmission_rate !== null && !d.in_warmup_period)
+          .map((d) => d.transmission_rate as number),
+      );
+    } else {
+      allValues = (series as RawPriceSeriesItem[]).flatMap((s) =>
+        s.data.filter((d) => d.index_2020 !== null).map((d) => d.index_2020 as number),
+      );
+    }
+
+    const yMin = allValues.length > 0 ? Math.min(...allValues) : 0;
+    const yMax = allValues.length > 0 ? Math.max(...allValues) : 1;
     const yScale = d3.scaleLinear().domain([yMin, yMax]).range([innerHeight, 0]);
 
     // SVG 초기화
@@ -107,7 +142,7 @@ export function Minimap({ variant }: MinimapProps) {
 
     const g = root.append('g').attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
-    // ① 이상 밀도 배경 밴드
+    // ① 이상 밀도 배경 밴드 (연도 단위)
     const densityMap = new Map(anomaly_density.map((d) => [d.period, d]));
     const years = d3.timeYear.range(
       d3.timeYear.floor(domainStart),
@@ -132,28 +167,43 @@ export function Minimap({ variant }: MinimapProps) {
 
     // ② 구간별 전이율 곡선 (배경, opacity 0.3)
     series.forEach((seriesItem) => {
-      const lineGen = d3
-        .line<StreamDataPoint>()
-        .x((d) => xScale(parseYear(d.period)!))
-        .y((d) => yScale(d.transmission_rate as number))
-        .defined((d) => {
-          if (d.transmission_rate === null) {
-            if (!d.in_warmup_period) {
-              // PARSE-NUM-002: 연간 집계임에도 null인 비정상 케이스
-              console.warn(`[Minimap] PARSE-NUM-002: null transmission_rate at ${d.period}`);
+      if (variant === 'stream') {
+        const sItem = seriesItem as StreamSeriesItem;
+        const lineGen = d3
+          .line<(typeof sItem.data)[0]>()
+          .x((d) => xScale(parsePeriod(d.period)!))
+          .y((d) => yScale(d.transmission_rate as number))
+          .defined((d) => {
+            if (d.transmission_rate === null) {
+              if (!d.in_warmup_period) {
+                console.warn(`[Minimap] PARSE-NUM-002: null transmission_rate at ${d.period}`);
+              }
+              return false;
             }
-            return false;
-          }
-          return true;
-        });
-
-      g.append('path')
-        .datum(seriesItem.data)
-        .attr('fill', 'none')
-        .attr('stroke', getSegmentColor(seriesItem.segment_id))
-        .attr('stroke-opacity', 0.3)
-        .attr('stroke-width', 1)
-        .attr('d', lineGen);
+            return true;
+          });
+        g.append('path')
+          .datum(sItem.data)
+          .attr('fill', 'none')
+          .attr('stroke', getSegmentColor(sItem))
+          .attr('stroke-opacity', 0.3)
+          .attr('stroke-width', 1)
+          .attr('d', lineGen);
+      } else {
+        const sItem = seriesItem as RawPriceSeriesItem;
+        const lineGen = d3
+          .line<(typeof sItem.data)[0]>()
+          .x((d) => xScale(parsePeriod(d.period)!))
+          .y((d) => yScale(d.index_2020 as number))
+          .defined((d) => d.index_2020 !== null);
+        g.append('path')
+          .datum(sItem.data)
+          .attr('fill', 'none')
+          .attr('stroke', getSegmentColor(sItem))
+          .attr('stroke-opacity', 0.3)
+          .attr('stroke-width', 1)
+          .attr('d', lineGen);
+      }
     });
 
     // ③ X축 (연도 눈금)
@@ -177,9 +227,8 @@ export function Minimap({ variant }: MinimapProps) {
     const brushGroup = g.append('g');
     brushGroupDomRef.current = brushGroup.node();
 
-    // 최소 박스 너비: 3개월에 해당하는 픽셀
     const totalMs = domainEnd.getTime() - domainStart.getTime();
-    const threeMonthMs = 3 * 30.44 * 24 * 60 * 60 * 1000;
+    const threeMonthMs = MIN_BRUSH_MONTHS * 30.44 * 24 * 60 * 60 * 1000;
     const minBrushPx = (threeMonthMs / totalMs) * innerWidth;
 
     const brush = d3
@@ -219,24 +268,25 @@ export function Minimap({ variant }: MinimapProps) {
     // 브러시 스타일
     brushGroup
       .select('.selection')
-      .attr('fill', 'rgba(100, 149, 237, 0.20)')
-      .attr('stroke', '#6495ED')
+      .attr('fill', BRUSH_FILL)
+      .attr('stroke', BRUSH_STROKE)
       .attr('stroke-width', 1);
-    brushGroup.selectAll<SVGElement, unknown>('.handle').attr('fill', '#6495ED');
+    brushGroup.selectAll<SVGElement, unknown>('.handle').attr('fill', BRUSH_STROKE);
 
     // store의 현재 기간으로 초기 브러시 위치 설정
     const initFrom = filterFromRef.current;
     const initTo = filterToRef.current;
     if (initFrom && initTo) {
-      const pFrom = parseMonth(initFrom);
-      const pTo = parseMonth(initTo);
+      // filterFrom/To는 항상 YYYY-MM 형식
+      const pFrom = parseYM(initFrom);
+      const pTo = parseYM(initTo);
       if (pFrom && pTo) {
         isProgrammaticRef.current = true;
         brushGroup.call(brush.move, [xScale(pFrom), xScale(pTo)]);
         isProgrammaticRef.current = false;
       }
     }
-  }, [data, containerWidth, setFilterFrom, setFilterTo]);
+  }, [data, containerWidth, setFilterFrom, setFilterTo, getSegmentColor, variant]);
 
   // ── 브러시 위치 동기화 (store → brush) ──────────────────────
   // 메인 차트 휠 줌 등 외부에서 filterFrom/filterTo가 바뀔 때 뷰포트 박스 위치 갱신
@@ -247,9 +297,9 @@ export function Minimap({ variant }: MinimapProps) {
     if (!brush || !groupDom || !xScale) return;
     if (!filterFrom || !filterTo) return;
 
-    const parseMonth = d3.timeParse('%Y-%m');
-    const pFrom = parseMonth(filterFrom);
-    const pTo = parseMonth(filterTo);
+    const parseYM = d3.timeParse('%Y-%m');
+    const pFrom = parseYM(filterFrom);
+    const pTo = parseYM(filterTo);
     if (!pFrom || !pTo) return;
 
     isProgrammaticRef.current = true;
@@ -260,6 +310,15 @@ export function Minimap({ variant }: MinimapProps) {
   // ── FE-D3-001 / API 오류 fallback ────────────────────────────
   const hasData =
     data && data.series.length > 0 && data.series.some((s) => s.data.length > 0);
+
+  if (isLoading) {
+    return (
+      <div
+        className="bg-slate-800/30 border border-slate-700/50 rounded-lg animate-pulse"
+        style={{ height: HEIGHT }}
+      />
+    );
+  }
 
   if (isError || (data && !hasData)) {
     return (
@@ -281,18 +340,4 @@ export function Minimap({ variant }: MinimapProps) {
       <svg ref={svgRef} style={{ display: 'block' }} />
     </div>
   );
-}
-
-function showFallback(svg: SVGSVGElement, width: number) {
-  const sel = d3.select(svg);
-  sel.selectAll('*').remove();
-  sel.attr('width', width).attr('height', HEIGHT);
-  sel
-    .append('text')
-    .attr('x', width / 2)
-    .attr('y', HEIGHT / 2 + 4)
-    .attr('text-anchor', 'middle')
-    .attr('fill', '#64748b')
-    .attr('font-size', '11px')
-    .text('전체 기간 데이터 없음');
 }

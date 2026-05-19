@@ -4,6 +4,7 @@ import { Banner } from './Banner';
 import { Panel } from './Panel';
 import { OnboardingGuide } from './OnboardingGuide';
 import { HelpFloatingButton } from './HelpFloatingButton';
+import { useAppStore } from '@/stores/useAppStore';
 import type { ReactNode } from 'react';
 
 interface AppShellProps {

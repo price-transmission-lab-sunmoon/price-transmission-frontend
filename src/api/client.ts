@@ -65,27 +65,47 @@ const THREE_SEG_COMMODITIES = new Set([
 ]);
 
 const MOCK_ROUTES: MockRoute[] = [
-  // 정적 경로 — frame이 직접 제공하는 fixture 4종
-  { test: (u) => u === '/commodities', data: commoditiesFixture },
-  { test: (u) => u === '/segments', data: segmentsFixture },
-  { test: (u) => u === '/events', data: eventsFixture },
-  { test: (u) => u === '/freshness', data: freshnessFixture },
-  // feat/fe-layout-filter 추가 — /anomalies/summary (쿼리파라미터 포함 가능)
-  { test: (u) => u.split('?')[0] === '/anomalies/summary', data: anomaliesSummaryFixture },
-  // 동적 경로(예시) — 후속 feat 브랜치에서 fixture import 후 추가:
-  { test: (u) => /^\/commodities\/[^/]+\/stream$/.test(u.split('?')[0]), data: streamFixture },
-  //   { test: (u) => /^\/commodities\/[^/]+\/stream\/minimap$/.test(u.split('?')[0]), data: streamMinimapFixture },
-  //   { test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]), data: anomalyDetailFixture },
+  // ── 정적 경로 ─────────────────────────────────────────────────
+  { test: (u) => u === '/commodities', handle: () => ({ type: 'success', data: commoditiesFixture }) },
+  { test: (u) => u === '/segments', handle: () => ({ type: 'success', data: segmentsFixture }) },
+  { test: (u) => u === '/events', handle: () => ({ type: 'success', data: eventsFixture }) },
+  { test: (u) => u === '/freshness', handle: () => ({ type: 'success', data: freshnessFixture }) },
+  { test: (u) => u.split('?')[0] === '/anomalies/summary', handle: () => ({ type: 'success', data: anomaliesSummaryFixture }) },
+  { test: (u) => u === '/meta/pipeline', handle: () => ({ type: 'success', data: pipelineFixture }) },
+  { test: (u) => u === '/meta/analysis-params', handle: () => ({ type: 'success', data: analysisParamsFixture }) },
 
-  // feat/fe-panel — 패널 엔드포인트 fixture (anomaly_id 무관하게 단일 더미 반환)
-  { test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]), data: panelDetailFixture },
+  // ── 동적 경로 — 시계열 ────────────────────────────────────────
+  { test: (u) => /^\/commodities\/[^/]+\/stream$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: streamFixture }) },
+  { test: (u) => /^\/commodities\/[^/]+\/stream\/minimap$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: streamMinimapFixture }) },
+  { test: (u) => /^\/commodities\/[^/]+\/scatter$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: scatterFixture }) },
+  {
+    test: (u) => /^\/commodities\/[^/]+\/raw-prices$/.test(u.split('?')[0]),
+    handle: (config) => {
+      const url = config.url ?? '';
+      const params = new URLSearchParams(url.includes('?') ? url.split('?')[1] : '');
+      const layout = Number(params.get('layout') ?? 1);
+      const match = url.match(/^\/commodities\/([^/?]+)\/raw-prices/);
+      const commodityId = match?.[1] ?? '';
+      if (layout === 4 && THREE_SEG_COMMODITIES.has(commodityId)) {
+        return { type: 'error', status: 422, data: rawPricesLay4ErrorFixture };
+      }
+      if (layout < 1 || layout > 6) {
+        return { type: 'error', status: 400, data: rawPricesInvalidLayoutFixture };
+      }
+      return { type: 'success', data: rawPricesFixture };
+    },
+  },
+  { test: (u) => /^\/commodities\/[^/]+\/raw-prices\/minimap$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: rawPricesMinimapFixture }) },
+
+  // ── feat/fe-panel — 패널 엔드포인트 ──────────────────────────
+  { test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: panelDetailFixture }) },
   {
     test: (u) => {
       const path = u.split('?')[0];
       const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
       return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'transmission_rate';
     },
-    data: panelStatSeriesTransmissionRateFixture,
+    handle: () => ({ type: 'success', data: panelStatSeriesTransmissionRateFixture }),
   },
   {
     test: (u) => {
@@ -93,7 +113,7 @@ const MOCK_ROUTES: MockRoute[] = [
       const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
       return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'zscore';
     },
-    data: panelStatSeriesZscoreFixture,
+    handle: () => ({ type: 'success', data: panelStatSeriesZscoreFixture }),
   },
   {
     test: (u) => {
@@ -101,7 +121,7 @@ const MOCK_ROUTES: MockRoute[] = [
       const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
       return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'ect';
     },
-    data: panelStatSeriesEctFixture,
+    handle: () => ({ type: 'success', data: panelStatSeriesEctFixture }),
   },
   {
     test: (u) => {
@@ -109,7 +129,7 @@ const MOCK_ROUTES: MockRoute[] = [
       const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
       return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'breakpoints';
     },
-    data: panelStatSeriesBreakpointsFixture,
+    handle: () => ({ type: 'success', data: panelStatSeriesBreakpointsFixture }),
   },
   {
     test: (u) => {
@@ -117,7 +137,7 @@ const MOCK_ROUTES: MockRoute[] = [
       const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
       return /^\/anomalies\/\d+\/stat-snapshot$/.test(path) && params.get('metric') === 'iqr';
     },
-    data: panelStatSnapshotIqrFixture,
+    handle: () => ({ type: 'success', data: panelStatSnapshotIqrFixture }),
   },
   {
     test: (u) => {
@@ -125,16 +145,16 @@ const MOCK_ROUTES: MockRoute[] = [
       const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
       return /^\/anomalies\/\d+\/stat-snapshot$/.test(path) && params.get('metric') === 'asymmetry';
     },
-    data: panelStatSnapshotAsymmetryFixture,
+    handle: () => ({ type: 'success', data: panelStatSnapshotAsymmetryFixture }),
   },
-  { test: (u) => /^\/anomalies\/\d+\/irf$/.test(u.split('?')[0]), data: panelIrfFixture },
+  { test: (u) => /^\/anomalies\/\d+\/irf$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: panelIrfFixture }) },
   {
     test: (u) => {
       const path = u.split('?')[0];
       const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
       return /^\/anomalies\/\d+\/ml-map$/.test(path) && params.get('model') === 'isolation_forest';
     },
-    data: panelMlMapIsolationForestFixture,
+    handle: () => ({ type: 'success', data: panelMlMapIsolationForestFixture }),
   },
   {
     test: (u) => {
@@ -142,7 +162,7 @@ const MOCK_ROUTES: MockRoute[] = [
       const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
       return /^\/anomalies\/\d+\/ml-map$/.test(path) && params.get('model') === 'lof';
     },
-    data: panelMlMapLofFixture,
+    handle: () => ({ type: 'success', data: panelMlMapLofFixture }),
   },
   {
     test: (u) => {
@@ -150,7 +170,7 @@ const MOCK_ROUTES: MockRoute[] = [
       const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
       return /^\/anomalies\/\d+\/ml-map$/.test(path) && params.get('model') === 'ocsvm';
     },
-    data: panelMlMapOcsvmFixture,
+    handle: () => ({ type: 'success', data: panelMlMapOcsvmFixture }),
   },
 ];
 
