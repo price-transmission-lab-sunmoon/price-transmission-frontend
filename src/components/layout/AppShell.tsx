@@ -2,8 +2,8 @@ import { Header } from './Header';
 import { FilterBar } from './FilterBar';
 import { Banner } from './Banner';
 import { Panel } from './Panel';
-import { Toast } from '@/components/ui/Toast';
-import { useAppStore } from '@/stores/useAppStore';
+import { OnboardingGuide } from './OnboardingGuide';
+import { HelpFloatingButton } from './HelpFloatingButton';
 import type { ReactNode } from 'react';
 
 interface AppShellProps {
@@ -28,7 +28,9 @@ export function AppShell({ children }: AppShellProps) {
         {/* 방법론 탭에서는 패널 미표시 (isPanelOpen=false 보장 + 레이아웃 풀 너비) */}
         {!isMethodology && <Panel />}
       </div>
-      <Toast />
+      {/* 항상 마운트, 표시는 조건부 (feature_spec_fe-onboarding_vN §1.3) */}
+      <OnboardingGuide />
+      <HelpFloatingButton />
     </div>
   );
 }
