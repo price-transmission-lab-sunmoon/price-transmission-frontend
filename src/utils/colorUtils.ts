@@ -26,7 +26,7 @@ export const SEGMENT_COLORS_PRIMARY = {
 } as const;
 
 // 구간별 곡선 색상 — 보조 품목 (40% opacity 별도 적용)
-export const SEGMENT_COLORS_SECONDARY = {
+export const SEGMENT_COLORS_SECONDARY: Record<SegmentId, string> = {
   A: '#06b6d4',
   B: '#a855f7',
   D_prime: '#ec4899',

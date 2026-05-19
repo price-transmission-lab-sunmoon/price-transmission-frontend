@@ -2,6 +2,9 @@ import { useAppStore } from '@/stores/useAppStore';
 import { RawPricesChart } from '@/components/charts/RawPricesChart';
 import { Minimap } from '@/components/charts/Minimap';
 
+import { useAppStore } from '@/stores/useAppStore';
+import { ScatterChart } from '@/components/charts/ScatterChart';
+
 export function MainPage() {
   const activeTab = useAppStore((s) => s.activeTab);
 

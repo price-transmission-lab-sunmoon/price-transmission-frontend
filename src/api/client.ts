@@ -5,6 +5,7 @@ import commoditiesFixture from '@/fixtures/commodities.json';
 import segmentsFixture from '@/fixtures/segments.json';
 import eventsFixture from '@/fixtures/events.json';
 import freshnessFixture from '@/fixtures/freshness.json';
+import scatterFixture from '@/fixtures/scatter.json';
 import rawPricesFixture from '@/fixtures/raw_prices.json';
 import rawPricesMinimapFixture from '@/fixtures/raw_prices_minimap.json';
 import rawPricesLay4ErrorFixture from '@/fixtures/raw_prices_lay4_error.json';
@@ -168,7 +169,7 @@ if (useMock) {
       return Promise.reject({
         isMockResponse: true,
         isMockError: result.type === 'error',
-        data: result.data,
+        data: result.type === 'success' ? result.data : result.data,
         status: result.type === 'error' ? result.status : undefined,
         config,
       } satisfies MockInternal);
