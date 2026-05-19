@@ -12,6 +12,7 @@ import rawPricesLay4ErrorFixture from '@/fixtures/raw_prices_lay4_error.json';
 import rawPricesInvalidLayoutFixture from '@/fixtures/raw_prices_invalid_layout.json';
 import streamMinimapFixture from '@/fixtures/stream_minimap.json';
 import anomaliesSummaryFixture from '@/fixtures/anomalies_summary.json';
+import streamFixture from '@/fixtures/stream.json';
 import pipelineFixture from '@/fixtures/pipeline.json';
 import analysisParamsFixture from '@/fixtures/analysis_params.json';
 
@@ -69,6 +70,12 @@ const MOCK_ROUTES: MockRoute[] = [
   { test: (u) => u === '/segments', data: segmentsFixture },
   { test: (u) => u === '/events', data: eventsFixture },
   { test: (u) => u === '/freshness', data: freshnessFixture },
+  // feat/fe-layout-filter 추가 — /anomalies/summary (쿼리파라미터 포함 가능)
+  { test: (u) => u.split('?')[0] === '/anomalies/summary', data: anomaliesSummaryFixture },
+  // 동적 경로(예시) — 후속 feat 브랜치에서 fixture import 후 추가:
+  { test: (u) => /^\/commodities\/[^/]+\/stream$/.test(u.split('?')[0]), data: streamFixture },
+  //   { test: (u) => /^\/commodities\/[^/]+\/stream\/minimap$/.test(u.split('?')[0]), data: streamMinimapFixture },
+  //   { test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]), data: anomalyDetailFixture },
 
   // feat/fe-panel — 패널 엔드포인트 fixture (anomaly_id 무관하게 단일 더미 반환)
   { test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]), data: panelDetailFixture },

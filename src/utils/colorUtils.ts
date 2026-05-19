@@ -1,23 +1,21 @@
-// 색상 상수 SoT — feat/fe-stream-chart §4.1 정의
-// 후속 feat(fe-scatter, fe-raw-timeseries, fe-panel, fe-methodology)는 이 상수만 import하고
-// 색상 리터럴 직접 사용 금지.
+import type { ConfidenceGrade, RawPriceSource, SegmentId } from '@/types/literals';
 
-// 이상 노드 색상 (3등급)
-export const ANOMALY_COLORS = {
+// 이상 노드 색상 (3등급) — feature_spec_fe-stream-chart_vN §4.1 SoT
+export const ANOMALY_COLORS: Record<ConfidenceGrade, string> = {
   high: '#e24b4a',
   medium: '#ef9f27',
   reference: '#c8d850',
 } as const;
 
-// 이상 노드 반지름 (3등급, px)
-export const ANOMALY_RADII = {
+// 이상 노드 반지름 (px) — feature_spec_fe-stream-chart_vN §4.1 SoT
+export const ANOMALY_RADII: Record<ConfidenceGrade, number> = {
   high: 7,
   medium: 5.5,
   reference: 4,
 } as const;
 
 // 구간별 곡선 색상 — 주 품목 (스트림 차트)
-export const SEGMENT_COLORS_PRIMARY = {
+export const SEGMENT_COLORS_PRIMARY: Record<SegmentId, string> = {
   A: '#3b82f6',
   B: '#22c55e',
   D_prime: '#f97316',
@@ -34,6 +32,16 @@ export const SEGMENT_COLORS_SECONDARY: Record<SegmentId, string> = {
   D: '#64748b',
 } as const;
 
+// 스트림 차트 기준선 색상 — feature_spec_fe-stream-chart_vN §4.1 SoT
+export const REFERENCE_LINE_COLOR = '#3b82f6';
+
+// 원시 시계열 소스별 색상 — feature_spec_fe-raw-timeseries_vN §3.3② SoT
+export const RAW_PRICE_COLORS: Record<RawPriceSource, string> = {
+  intl_price_krw: '#a855f7',
+  import_price: '#3b82f6',
+  ppi: '#22c55e',
+  wholesale_price: '#f97316',
+  cpi: '#e24b4a',
 export const REFERENCE_LINE_COLOR = '#3b82f6';
 
 // fe-panel v3 §3.3 ④ SoT — 8종 차트 색상 전부 이 객체에서 import
