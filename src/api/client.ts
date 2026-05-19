@@ -5,6 +5,9 @@ import commoditiesFixture from '@/fixtures/commodities.json';
 import segmentsFixture from '@/fixtures/segments.json';
 import eventsFixture from '@/fixtures/events.json';
 import freshnessFixture from '@/fixtures/freshness.json';
+import anomaliesSummaryFixture from '@/fixtures/anomalies_summary.json';
+import pipelineFixture from '@/fixtures/pipeline.json';
+import analysisParamsFixture from '@/fixtures/analysis_params.json';
 
 // feat/fe-panel fixtures
 import panelDetailFixture from '@/fixtures/panel_detail.json';

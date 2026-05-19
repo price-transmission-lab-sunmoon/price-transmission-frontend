@@ -1,0 +1,74 @@
+{
+  "commodity_id": "wheat",
+  "requested_from": "2000-01",
+  "requested_to": "2026-03",
+  "actual_from": "2000-01",
+  "actual_to": "2026-03",
+  "granularity": "yearly",
+  "total_points": 26,
+  "series": [
+    {
+      "segment_id": "A",
+      "data": [
+        { "period": "2000", "transmission_rate": 0.72, "upstream_pct": 0.0, "downstream_pct": 0.0, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2001", "transmission_rate": 0.68, "upstream_pct": 1.2, "downstream_pct": 0.8, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2002", "transmission_rate": 0.75, "upstream_pct": 0.5, "downstream_pct": 0.4, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2003", "transmission_rate": 0.81, "upstream_pct": 2.1, "downstream_pct": 1.7, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2004", "transmission_rate": 0.79, "upstream_pct": 3.3, "downstream_pct": 2.6, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2005", "transmission_rate": 0.83, "upstream_pct": 1.8, "downstream_pct": 1.5, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2006", "transmission_rate": 0.88, "upstream_pct": 4.2, "downstream_pct": 3.7, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2007", "transmission_rate": 0.95, "upstream_pct": 6.1, "downstream_pct": 5.8, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2008", "transmission_rate": 1.21, "upstream_pct": 8.4, "downstream_pct": 10.2, "in_warmup_period": false, "has_anomaly": true, "anomaly_ids": [15] },
+        { "period": "2009", "transmission_rate": 0.91, "upstream_pct": -2.3, "downstream_pct": -1.8, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2010", "transmission_rate": 0.87, "upstream_pct": 1.1, "downstream_pct": 0.9, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2011", "transmission_rate": 0.93, "upstream_pct": 5.5, "downstream_pct": 5.1, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2012", "transmission_rate": 0.89, "upstream_pct": 2.9, "downstream_pct": 2.6, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2013", "transmission_rate": 0.86, "upstream_pct": 1.5, "downstream_pct": 1.3, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2014", "transmission_rate": 0.84, "upstream_pct": -0.8, "downstream_pct": -0.6, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2015", "transmission_rate": 0.78, "upstream_pct": -3.2, "downstream_pct": -2.5, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2016", "transmission_rate": 0.76, "upstream_pct": -1.4, "downstream_pct": -1.1, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2017", "transmission_rate": 0.80, "upstream_pct": 0.9, "downstream_pct": 0.7, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2018", "transmission_rate": 0.82, "upstream_pct": 2.2, "downstream_pct": 1.8, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2019", "transmission_rate": 0.85, "upstream_pct": 1.6, "downstream_pct": 1.4, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2020", "transmission_rate": 0.94, "upstream_pct": 3.1, "downstream_pct": 2.9, "in_warmup_period": false, "has_anomaly": true, "anomaly_ids": [98] },
+        { "period": "2021", "transmission_rate": 1.08, "upstream_pct": 7.3, "downstream_pct": 7.9, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2022", "transmission_rate": 1.43, "upstream_pct": 18.2, "downstream_pct": 26.1, "in_warmup_period": false, "has_anomaly": true, "anomaly_ids": [142] },
+        { "period": "2023", "transmission_rate": 1.12, "upstream_pct": 9.4, "downstream_pct": 10.6, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2024", "transmission_rate": 0.97, "upstream_pct": 4.8, "downstream_pct": 4.7, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2025", "transmission_rate": 0.88, "upstream_pct": 3.2, "downstream_pct": 2.8, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2026", "transmission_rate": 0.85, "upstream_pct": 5.1, "downstream_pct": 4.3, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] }
+      ]
+    },
+    {
+      "segment_id": "B",
+      "data": [
+        { "period": "2000", "transmission_rate": 0.65, "upstream_pct": 0.0, "downstream_pct": 0.0, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2001", "transmission_rate": 0.61, "upstream_pct": 0.8, "downstream_pct": 0.5, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2004", "transmission_rate": 0.70, "upstream_pct": 2.6, "downstream_pct": 1.9, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2008", "transmission_rate": 1.05, "upstream_pct": 10.2, "downstream_pct": 10.7, "in_warmup_period": false, "has_anomaly": true, "anomaly_ids": [16] },
+        { "period": "2012", "transmission_rate": 0.77, "upstream_pct": 2.6, "downstream_pct": 2.0, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2016", "transmission_rate": 0.69, "upstream_pct": -1.1, "downstream_pct": -0.7, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2020", "transmission_rate": 0.88, "upstream_pct": 2.9, "downstream_pct": 2.5, "in_warmup_period": false, "has_anomaly": true, "anomaly_ids": [99] },
+        { "period": "2022", "transmission_rate": 1.31, "upstream_pct": 26.1, "downstream_pct": 34.3, "in_warmup_period": false, "has_anomaly": true, "anomaly_ids": [143] },
+        { "period": "2026", "transmission_rate": 0.79, "upstream_pct": 4.3, "downstream_pct": 3.4, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] }
+      ]
+    },
+    {
+      "segment_id": "D_prime",
+      "data": [
+        { "period": "2000", "transmission_rate": 0.58, "upstream_pct": 0.0, "downstream_pct": 0.0, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2004", "transmission_rate": 0.62, "upstream_pct": 1.9, "downstream_pct": 1.2, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2008", "transmission_rate": 0.94, "upstream_pct": 10.7, "downstream_pct": 10.1, "in_warmup_period": false, "has_anomaly": true, "anomaly_ids": [17] },
+        { "period": "2014", "transmission_rate": 0.71, "upstream_pct": -0.6, "downstream_pct": -0.3, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] },
+        { "period": "2020", "transmission_rate": 0.81, "upstream_pct": 2.5, "downstream_pct": 2.0, "in_warmup_period": false, "has_anomaly": true, "anomaly_ids": [100] },
+        { "period": "2022", "transmission_rate": 1.18, "upstream_pct": 34.3, "downstream_pct": 40.5, "in_warmup_period": false, "has_anomaly": true, "anomaly_ids": [144] },
+        { "period": "2026", "transmission_rate": 0.74, "upstream_pct": 3.4, "downstream_pct": 2.7, "in_warmup_period": false, "has_anomaly": false, "anomaly_ids": [] }
+      ]
+    }
+  ],
+  "anomaly_density": [
+    { "period": "2008", "high_count": 0, "medium_count": 1, "reference_count": 2 },
+    { "period": "2020", "high_count": 1, "medium_count": 2, "reference_count": 0 },
+    { "period": "2022", "high_count": 3, "medium_count": 1, "reference_count": 0 }
+  ]
+}

@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { MainPage } from '@/pages/MainPage';
+import { MethodologyPage } from '@/pages/MethodologyPage';
 
 export const router = createBrowserRouter([
   {
@@ -8,6 +9,14 @@ export const router = createBrowserRouter([
     element: (
       <AppShell>
         <MainPage />
+      </AppShell>
+    ),
+  },
+  {
+    path: '/methodology',
+    element: (
+      <AppShell>
+        <MethodologyPage />
       </AppShell>
     ),
   },
