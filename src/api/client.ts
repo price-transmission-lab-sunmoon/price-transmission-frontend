@@ -9,6 +9,19 @@ import anomaliesSummaryFixture from '@/fixtures/anomalies_summary.json';
 import pipelineFixture from '@/fixtures/pipeline.json';
 import analysisParamsFixture from '@/fixtures/analysis_params.json';
 
+// feat/fe-panel fixtures
+import panelDetailFixture from '@/fixtures/panel_detail.json';
+import panelStatSeriesTransmissionRateFixture from '@/fixtures/panel_stat_series_transmission_rate.json';
+import panelStatSeriesZscoreFixture from '@/fixtures/panel_stat_series_zscore.json';
+import panelStatSeriesEctFixture from '@/fixtures/panel_stat_series_ect.json';
+import panelStatSeriesBreakpointsFixture from '@/fixtures/panel_stat_series_breakpoints.json';
+import panelStatSnapshotIqrFixture from '@/fixtures/panel_stat_snapshot_iqr.json';
+import panelStatSnapshotAsymmetryFixture from '@/fixtures/panel_stat_snapshot_asymmetry.json';
+import panelIrfFixture from '@/fixtures/panel_irf.json';
+import panelMlMapIsolationForestFixture from '@/fixtures/panel_ml_map_isolation_forest.json';
+import panelMlMapLofFixture from '@/fixtures/panel_ml_map_lof.json';
+import panelMlMapOcsvmFixture from '@/fixtures/panel_ml_map_ocsvm.json';
+
 const useMock = import.meta.env.VITE_USE_MOCK !== 'false';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? '';
@@ -43,18 +56,81 @@ const MOCK_ROUTES: MockRoute[] = [
   { test: (u) => u === '/segments', data: segmentsFixture },
   { test: (u) => u === '/events', data: eventsFixture },
   { test: (u) => u === '/freshness', data: freshnessFixture },
-  // feat/fe-layout-filter 추가 — /anomalies/summary (쿼리파라미터 포함 가능)
-  { test: (u) => u.split('?')[0] === '/anomalies/summary', data: anomaliesSummaryFixture },
-  // feat/fe-methodology-tab 추가 — /meta/pipeline, /meta/analysis-params
-  { test: (u) => u === '/meta/pipeline', data: pipelineFixture },
-  { test: (u) => u === '/meta/analysis-params', data: analysisParamsFixture },
-  // 동적 경로(예시) — 후속 feat 브랜치에서 fixture import 후 추가:
-  //   { test: (u) => /^\/commodities\/[^/]+\/stream$/.test(u.split('?')[0]), data: streamFixture },
-  //   { test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]), data: anomalyDetailFixture },
-  // feat/fe-minimap: /stream/minimap 보다 먼저 평가되도록 $ 앵커로 /stream과 분리
+
+  // feat/fe-panel — 패널 엔드포인트 fixture (anomaly_id 무관하게 단일 더미 반환)
+  { test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]), data: panelDetailFixture },
   {
-    test: (u) => /^\/commodities\/[^/]+\/stream\/minimap$/.test(u.split('?')[0]),
-    data: streamMinimapFixture,
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'transmission_rate';
+    },
+    data: panelStatSeriesTransmissionRateFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'zscore';
+    },
+    data: panelStatSeriesZscoreFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'ect';
+    },
+    data: panelStatSeriesEctFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'breakpoints';
+    },
+    data: panelStatSeriesBreakpointsFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-snapshot$/.test(path) && params.get('metric') === 'iqr';
+    },
+    data: panelStatSnapshotIqrFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/stat-snapshot$/.test(path) && params.get('metric') === 'asymmetry';
+    },
+    data: panelStatSnapshotAsymmetryFixture,
+  },
+  { test: (u) => /^\/anomalies\/\d+\/irf$/.test(u.split('?')[0]), data: panelIrfFixture },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/ml-map$/.test(path) && params.get('model') === 'isolation_forest';
+    },
+    data: panelMlMapIsolationForestFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/ml-map$/.test(path) && params.get('model') === 'lof';
+    },
+    data: panelMlMapLofFixture,
+  },
+  {
+    test: (u) => {
+      const path = u.split('?')[0];
+      const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
+      return /^\/anomalies\/\d+\/ml-map$/.test(path) && params.get('model') === 'ocsvm';
+    },
+    data: panelMlMapOcsvmFixture,
   },
 ];
 

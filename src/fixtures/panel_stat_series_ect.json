@@ -1,0 +1,23 @@
+{
+  "anomaly_id": 142,
+  "commodity_id": "wheat",
+  "segment_id": "A",
+  "metric": "ect",
+  "highlight_period": "2026-03",
+  "requested_from": "2000-01",
+  "requested_to": "2026-03",
+  "actual_from": "2000-01",
+  "actual_to": "2026-03",
+  "granularity": "monthly",
+  "total_points": 8,
+  "data": [
+    { "period": "2025-08", "ect_or_spread": -0.012, "ect_type": "ECT" },
+    { "period": "2025-09", "ect_or_spread": 0.005, "ect_type": "ECT" },
+    { "period": "2025-10", "ect_or_spread": 0.018, "ect_type": "ECT" },
+    { "period": "2025-11", "ect_or_spread": 0.024, "ect_type": "ECT" },
+    { "period": "2025-12", "ect_or_spread": 0.031, "ect_type": "ECT" },
+    { "period": "2026-01", "ect_or_spread": 0.038, "ect_type": "ECT" },
+    { "period": "2026-02", "ect_or_spread": 0.041, "ect_type": "ECT" },
+    { "period": "2026-03", "ect_or_spread": 0.043, "ect_type": "ECT" }
+  ]
+}
