@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider, QueryCache } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router-dom';
 import { router } from '@/router';
-import { handleQueryError } from '@/api/error';
+import { handleQueryError, isPermanentFailure } from '@/api/error';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 const queryClient = new QueryClient({
@@ -13,7 +13,12 @@ const queryClient = new QueryClient({
   }),
   defaultOptions: {
     queries: {
-      retry: 1,
+      // P1-3: 영구 실패 코드(NOT_IMPLEMENTED, 4xx 등)는 retry 안 함.
+      // 네트워크/일시 오류만 최대 2회 재시도.
+      retry: (failureCount, error) => {
+        if (isPermanentFailure(error)) return false;
+        return failureCount < 2;
+      },
       retryDelay: 1000,
       refetchOnWindowFocus: false,
       staleTime: 0,

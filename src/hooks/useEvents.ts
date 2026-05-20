@@ -19,10 +19,21 @@ export function useEvents() {
   });
 
   const setEvents = useAppStore((s) => s.setEvents);
+  const setEventFilter = useAppStore((s) => s.setEventFilter);
 
   useEffect(() => {
-    if (query.data) setEvents(query.data);
-  }, [query.data, setEvents]);
+    if (!query.data) return;
+    setEvents(query.data);
+    // P2-1: 최초 로드 시 사건 필터가 비어있으면 가장 최근 이벤트 1개 자동 활성.
+    // 사용자에게 사건 음영 기능의 존재를 알리는 보조 온보딩 역할.
+    const currentFilter = useAppStore.getState().eventFilter;
+    if (currentFilter.length === 0 && query.data.length > 0) {
+      const latest = [...query.data].sort((a, b) =>
+        b.start_date.localeCompare(a.start_date),
+      )[0];
+      setEventFilter([latest.event_key]);
+    }
+  }, [query.data, setEvents, setEventFilter]);
 
   return query;
 }

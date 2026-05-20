@@ -212,7 +212,8 @@ export const useAppStore = create<AppStore>((set) => ({
 
   // ---------- PanelState ----------
   panelWidth: 360, // FE-PANEL §3.3 ① 기본값
-  expandedSections: new Set<PanelSectionId>(['stat', 'ml', 'path', 'irf']), // 4개 모두 기본 펼침
+  // P3-2: 진입 시 stat 섹션만 펼침. 나머지 3개는 사용자 토글 시 fetch (요청 부담 감소).
+  expandedSections: new Set<PanelSectionId>(['stat']),
   expandedInlineCharts: new Set<InlineChartId>(),
   expandedMLMaps: new Set<MlModel>(),
   setPanelWidth: (w) => set({ panelWidth: Math.min(520, Math.max(280, w)) }),

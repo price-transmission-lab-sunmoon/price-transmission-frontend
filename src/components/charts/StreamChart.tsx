@@ -1,9 +1,10 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as d3 from 'd3';
 import { useAppStore } from '@/stores/useAppStore';
 import { useStreamData } from '@/hooks/useStreamData';
 import { useSecondaryStreamData } from '@/hooks/useSecondaryStreamData';
 import { buildStreamChartData } from '@/services/timeseries';
+import { parseYearMonth } from '@/utils/dateUtils';
 import {
   ANOMALY_COLORS,
   ANOMALY_RADII,
@@ -18,14 +19,35 @@ const ANIMATION_DURATION = 800;
 export function StreamChart() {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // ZOOM-1: 외부 filter 동기화용 zoom + xScale 보존
+  const zoomBehaviorRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+  const xScaleRef = useRef<d3.ScaleTime<number, number> | null>(null);
+  const innerWRef = useRef<number>(0);
+  // push debounce + 자기 push 가드
+  const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPushedRef = useRef<{ from: string | null; to: string | null }>({ from: null, to: null });
 
   const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
+  const secondaryCommodityId = useAppStore((s) => s.secondaryCommodityId);
+  const commodities = useAppStore((s) => s.commodities);
   const activeSegments = useAppStore((s) => s.activeSegments);
   const confidenceFilter = useAppStore((s) => s.confidenceFilter);
   const eventFilter = useAppStore((s) => s.eventFilter);
   const events = useAppStore((s) => s.events);
   const selectedAnomalyId = useAppStore((s) => s.selectedAnomalyId);
   const selectAnomaly = useAppStore((s) => s.selectAnomaly);
+  const filterFrom = useAppStore((s) => s.filterFrom);
+  const filterTo = useAppStore((s) => s.filterTo);
+  const setFilterFrom = useAppStore((s) => s.setFilterFrom);
+  const setFilterTo = useAppStore((s) => s.setFilterTo);
+
+  // P2-3: 주-보조 같은 클러스터면 보조 곡선을 dashed로 표시 → 시각적 구분 강화.
+  const sameCluster = useMemo(() => {
+    if (!secondaryCommodityId) return false;
+    const p = commodities.find((c) => c.commodity_id === primaryCommodityId);
+    const s = commodities.find((c) => c.commodity_id === secondaryCommodityId);
+    return !!(p && s && p.cluster === s.cluster);
+  }, [primaryCommodityId, secondaryCommodityId, commodities]);
 
   const { data: primaryData, isLoading: primaryLoading, isError: primaryError } = useStreamData();
   const { data: secondaryRaw } = useSecondaryStreamData();
@@ -46,13 +68,17 @@ export function StreamChart() {
 
     lastAutoSelectCommodityId.current = primaryCommodityId;
 
+    // 등급 폴백: high → medium → reference 순으로 가장 최근 노드 검색.
+    // P0-2: 백엔드가 high를 반환하지 않아도 패널이 자동 오픈되도록 함.
     const segmentSet = new Set(activeSegments);
-    const candidates = primaryData.anomaly_nodes
-      .filter((n) => n.confidence_grade === 'high' && segmentSet.has(n.segment_id as SegmentId))
-      .sort((a, b) => (b.period > a.period ? 1 : -1));
+    const findLatest = (grade: 'high' | 'medium' | 'reference') =>
+      primaryData.anomaly_nodes
+        .filter((n) => n.confidence_grade === grade && segmentSet.has(n.segment_id as SegmentId))
+        .sort((a, b) => (b.period > a.period ? 1 : -1))[0];
 
-    if (candidates.length > 0) {
-      selectAnomaly(candidates[0].anomaly_id);
+    const candidate = findLatest('high') ?? findLatest('medium') ?? findLatest('reference');
+    if (candidate) {
+      selectAnomaly(candidate.anomaly_id);
     }
   }, [primaryData, primaryCommodityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -96,31 +122,67 @@ export function StreamChart() {
       .attr('width', innerW)
       .attr('height', innerH);
 
-    // Scales
+    // ZOOM-1: base xScale의 domain은 전체 데이터 범위로 고정.
+    // filterFrom/filterTo는 zoom transform으로 viewport 표현. 이렇게 해야 휠 줌이 누적된다.
+    const parseYM = (s: string | null): Date | null => {
+      if (!s) return null;
+      const [y, m] = s.split('-').map(Number);
+      return new Date(y, m - 1, 1);
+    };
     const xScale = d3
       .scaleTime()
       .domain([chartData.domainFrom, chartData.domainTo])
       .range([0, innerW]);
 
-    const allRates = [
-      ...chartData.series.flatMap((s) =>
-        s.data.map((p) => p.transmission_rate).filter((v): v is number => v !== null),
-      ),
-      ...(secondaryChartData?.series.flatMap((s) =>
-        s.data.map((p) => p.transmission_rate).filter((v): v is number => v !== null),
-      ) ?? []),
-    ];
-    const [yMin, yMax] = d3.extent(allRates) as [number, number];
-    const yPad = (yMax - yMin) * 0.1 || 0.05;
+    // YAXIS-1: viewport 동적 Y축.
+    // 사용자 요구: 현재 viewport에 보이는 anomaly 노드 기준으로 Y축을 동적 조절.
+    // 노드가 시야에 잘 잡히도록 [min - 3, max + 3] 패딩 적용.
+    // 노드가 0건이면 series points로 fallback, 그것도 0건이면 [-1, 2] 기본 도메인.
+    const Y_NODE_PAD = 3;
+    const computeYDomain = (viewFrom: Date, viewTo: Date): [number, number] => {
+      const inWindow = (d: Date) => d.getTime() >= viewFrom.getTime() && d.getTime() <= viewTo.getTime();
+
+      // 우선순위 1: viewport 안 anomaly 노드의 transmission_rate
+      const nodeRates = chartData.rawAnomalies
+        .filter((an) => inWindow(an.period))
+        .map((an) => an.transmission_rate);
+
+      if (nodeRates.length > 0) {
+        const lo = Math.min(...nodeRates);
+        const hi = Math.max(...nodeRates);
+        return [lo - Y_NODE_PAD, hi + Y_NODE_PAD];
+      }
+
+      // 우선순위 2: viewport 안 series 데이터의 transmission_rate (노드가 없을 때)
+      const seriesRates = chartData.series.flatMap((s) =>
+        s.data
+          .filter((p) => p.transmission_rate !== null && inWindow(p.period))
+          .map((p) => p.transmission_rate as number),
+      );
+      if (seriesRates.length > 0) {
+        const lo = Math.min(...seriesRates);
+        const hi = Math.max(...seriesRates);
+        const pad = Math.max((hi - lo) * 0.15, 0.5);
+        return [lo - pad, hi + pad];
+      }
+
+      // fallback
+      return [-1, 2];
+    };
+
+    // 초기 도메인: 진입 viewport (filterFrom/filterTo) 또는 전체 데이터 범위
+    const initViewFrom = parseYM(filterFrom) ?? chartData.domainFrom;
+    const initViewTo = parseYM(filterTo) ?? chartData.domainTo;
+    const [initYMin, initYMax] = computeYDomain(initViewFrom, initViewTo);
     const yScale = d3
       .scaleLinear()
-      .domain([Math.max(0, yMin - yPad), yMax + yPad])
-      .range([innerH, 0])
-      .nice();
+      .domain([initYMin, initYMax])
+      .range([innerH, 0]);
 
     // Axes
     const xAxis = d3.axisBottom(xScale).ticks(6).tickFormat(d3.timeFormat('%Y-%m') as never);
-    const yAxis = d3.axisLeft(yScale).ticks(5).tickFormat((d) => `${(+d * 100).toFixed(0)}%`);
+    // BE-1: transmission_rate는 dimensionless ratio. * 100 + '%' 변환 금지.
+    const yAxis = d3.axisLeft(yScale).ticks(5).tickFormat((d) => `${(+d).toFixed(2)}`);
 
     root
       .append('g')
@@ -161,14 +223,47 @@ export function StreamChart() {
     // Chart group (clipped, for zoom)
     const chartGroup = root.append('g').attr('clip-path', `url(#${clipId})`);
 
+    // BE-6: 전이율 기준선 — y=0 (역전 경계), y=1 (정상/과잉 경계).
+    // viewport 도메인에 따라 보이거나 안 보임 (yScale.range 밖이면 자동 안 보임).
+    const drawRefLine = (yVal: number, label: string, color: string) => {
+      // YAXIS-1: viewport 도메인 밖이면 안 그림. zoom에서 갱신될 때도 동일 조건은 yScale.range 안에서 자동 처리됨.
+      const yPx = yScale(yVal);
+      chartGroup
+        .append('line')
+        .attr('class', 'ref-line')
+        .attr('data-yval', yVal)
+        .attr('x1', 0)
+        .attr('x2', innerW)
+        .attr('y1', yPx)
+        .attr('y2', yPx)
+        .attr('stroke', color)
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '4,3')
+        .attr('opacity', 0.5);
+      chartGroup
+        .append('text')
+        .attr('class', 'ref-label')
+        .attr('data-yval', yVal)
+        .attr('x', innerW - 4)
+        .attr('y', yPx - 3)
+        .attr('text-anchor', 'end')
+        .attr('font-size', '9px')
+        .attr('fill', color)
+        .attr('opacity', 0.7)
+        .text(label);
+    };
+    drawRefLine(0, '역전 경계 (0)', '#94a3b8');
+    drawRefLine(1, '정상/과잉 (1)', '#94a3b8');
+
     // Event overlays (filtered by eventFilter)
     const activeEvents = eventFilter.length > 0
       ? events.filter((e) => eventFilter.includes(e.event_key))
       : [];
 
     for (const ev of activeEvents) {
-      const x0 = xScale(new Date(ev.start_date + '-01'));
-      const x1 = xScale(new Date(ev.end_date + '-01'));
+      // P3-1: timezone 일관성 — services/timeseries.parseYYYYMM과 동일 로컬타임 파싱.
+      const x0 = xScale(parseYearMonth(ev.start_date));
+      const x1 = xScale(parseYearMonth(ev.end_date));
       chartGroup
         .append('rect')
         .attr('x', x0)
@@ -238,6 +333,8 @@ export function StreamChart() {
 
       // Entrance animation — dasharray로 라인 reveal. 종료 후 dasharray 제거(zoom 시
       // path geometry 변화로 인한 깜빡임 방지).
+      // P2-3: 보조 곡선이 주 품목과 같은 클러스터면 진짜 점선 패턴 적용 (구분 강화).
+      const finalDash = isSecondary && sameCluster ? '5,4' : null;
       const pathNode = path.node();
       if (pathNode) {
         path.attr('d', lineGen(xScale, yScale));
@@ -250,7 +347,7 @@ export function StreamChart() {
           .ease(d3.easeCubicOut)
           .attr('stroke-dashoffset', 0)
           .on('end', function () {
-            d3.select(this).attr('stroke-dasharray', null).attr('stroke-dashoffset', null);
+            d3.select(this).attr('stroke-dasharray', finalDash).attr('stroke-dashoffset', null);
           });
       }
     };
@@ -266,11 +363,18 @@ export function StreamChart() {
       drawSeries(s.segment_id, s.data, false);
     }
 
-    // Anomaly nodes
+    // Anomaly nodes — UX-4: 줌 레벨 따라 cluster ↔ raw 동적 전환
     const anomalyGroup = chartGroup.append('g').attr('class', 'anomaly-nodes');
+    const CLUSTER_K_THRESHOLD = 1.5;
 
-    for (const an of chartData.anomalies) {
-      const cx = xScale(an.period);
+    const renderAnomalyNodes = (
+      currentXScale: d3.ScaleTime<number, number>,
+      useCluster: boolean,
+    ) => {
+      anomalyGroup.selectAll('*').remove();
+      const list = useCluster ? chartData.anomalies : chartData.rawAnomalies;
+      for (const an of list) {
+      const cx = currentXScale(an.period);
       const cy = yScale(an.transmission_rate);
       const r = ANOMALY_RADII[an.confidence_grade];
       const color = ANOMALY_COLORS[an.confidence_grade];
@@ -314,6 +418,29 @@ export function StreamChart() {
         .attr('cursor', 'pointer')
         .style('filter', isSelected ? 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' : 'none');
 
+      // P1-4: 클러스터 카운트 배지 — cluster_size > 1 인 경우만
+      if (an.cluster_size && an.cluster_size > 1) {
+        const badge = anomalyGroup
+          .append('g')
+          .attr('data-anomaly-cluster', an.anomaly_id)
+          .attr('transform', `translate(${cx + r + 2},${cy - r - 2})`);
+        badge
+          .append('circle')
+          .attr('r', 7)
+          .attr('fill', '#0f172a')
+          .attr('stroke', color)
+          .attr('stroke-width', 1.2);
+        badge
+          .append('text')
+          .attr('text-anchor', 'middle')
+          .attr('dy', '0.32em')
+          .attr('fill', color)
+          .attr('font-size', '9px')
+          .attr('font-weight', '700')
+          .style('pointer-events', 'none')
+          .text(`+${an.cluster_size - 1}`);
+      }
+
       // NEW 배지 — 신규 탐지 노드 (web_plan §4.1)
       if (an.is_new) {
         anomalyGroup
@@ -353,12 +480,21 @@ export function StreamChart() {
           d3.select(this).attr('r', r);
           hideTooltip();
         });
-    }
+      } // end for-anomaly
+    }; // end renderAnomalyNodes
 
-    // Zoom behavior
+    // 최초 렌더: 클러스터 모드
+    renderAnomalyNodes(xScale, true);
+    let lastUseCluster = true;
+
+    // Zoom behavior — ZOOM-1
+    // - base xScale.domain = 전체 데이터 범위. viewport는 transform으로 표현 → 휠 줌이 누적됨.
+    // - 마우스 포인터 기준 focal zoom (d3.zoom 기본 동작).
+    // - 더블클릭 = 2배 확대 (d3.zoom 기본 동작, 마우스 포인터 기준).
+    // - push는 debounce — 줌 멈춘 후 200ms에만 Zustand 갱신 (미니맵 동기).
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, 10])
+      .scaleExtent([0.25, 30])
       .translateExtent([
         [0, 0],
         [innerW, innerH],
@@ -367,18 +503,58 @@ export function StreamChart() {
         [0, 0],
         [innerW, innerH],
       ])
+      .wheelDelta((event) => {
+        return -event.deltaY * (event.deltaMode === 1 ? 0.06 : event.deltaMode ? 1 : 0.0025);
+      })
+      .on('end', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+        if (!event.sourceEvent) return;
+        if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+        pushTimerRef.current = setTimeout(() => {
+          const newXScale = event.transform.rescaleX(xScale);
+          const [d0, d1] = newXScale.domain() as [Date, Date];
+          const toYM = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const fromYM = toYM(d0);
+          const toYMStr = toYM(d1);
+          lastPushedRef.current = { from: fromYM, to: toYMStr };
+          setFilterFrom(fromYM);
+          setFilterTo(toYMStr);
+        }, 200);
+      })
       .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
         const transform = event.transform;
         const newXScale = transform.rescaleX(xScale);
+        // YAXIS-1: viewport에 보이는 노드 기준 yScale 동적 갱신.
+        const [vFrom, vTo] = newXScale.domain() as [Date, Date];
+        const [newYMin, newYMax] = computeYDomain(vFrom, vTo);
+        yScale.domain([newYMin, newYMax]);
 
-        // Redraw axes
+        // Redraw axes (X + Y)
         root
           .select<SVGGElement>('.x-axis')
           .call(d3.axisBottom(newXScale).ticks(6).tickFormat(d3.timeFormat('%Y-%m') as never));
         root.select('.x-axis').selectAll('text').attr('fill', '#94a3b8').attr('font-size', 11);
+        root
+          .select<SVGGElement>('.y-axis')
+          .call(d3.axisLeft(yScale).ticks(5).tickFormat((d) => `${(+d).toFixed(2)}`));
+        root.select('.y-axis').selectAll('text').attr('fill', '#94a3b8').attr('font-size', 11);
         root.selectAll('.domain, .tick line').attr('stroke', '#334155');
 
-        // Redraw lines and areas
+        // Y 그리드 재계산
+        root
+          .select<SVGGElement>('.grid')
+          .call(
+            d3
+              .axisLeft(yScale)
+              .ticks(5)
+              .tickSize(-innerW)
+              .tickFormat('' as never),
+          )
+          .selectAll('line')
+          .attr('stroke', '#1e293b')
+          .attr('stroke-dasharray', '3,3');
+        root.select('.grid .domain').remove();
+
+        // Redraw lines and areas (yScale 도 변경되었으므로 둘 다 반영)
         if (secondaryChartData) {
           for (const s of secondaryChartData.series) {
             chartGroup
@@ -398,25 +574,57 @@ export function StreamChart() {
             .attr('d', areaGen(newXScale, yScale)(s.data) ?? '');
         }
 
-        // Reposition anomaly nodes (main circle + glow + NEW label)
-        for (const an of chartData.anomalies) {
-          const newCx = newXScale(an.period);
-          chartGroup
-            .select<SVGCircleElement>(`[data-anomaly-id="${an.anomaly_id}"]`)
-            .attr('cx', newCx);
-          chartGroup
-            .select<SVGCircleElement>(`[data-anomaly-glow="${an.anomaly_id}"]`)
-            .attr('cx', newCx);
-          chartGroup
-            .select<SVGTextElement>(`[data-anomaly-new="${an.anomaly_id}"]`)
-            .attr('x', newCx);
+        // UX-4: cluster ↔ raw 모드 결정. 모드 전환 시에만 재구성 (애니메이션 재발화 최소화).
+        const useCluster = transform.k <= CLUSTER_K_THRESHOLD;
+        if (useCluster !== lastUseCluster) {
+          renderAnomalyNodes(newXScale, useCluster);
+          lastUseCluster = useCluster;
+        } else {
+          // YAXIS-1: yScale도 변경됐으므로 cy까지 재계산
+          const list = useCluster ? chartData.anomalies : chartData.rawAnomalies;
+          for (const an of list) {
+            const newCx = newXScale(an.period);
+            const newCy = yScale(an.transmission_rate);
+            chartGroup
+              .select<SVGCircleElement>(`[data-anomaly-id="${an.anomaly_id}"]`)
+              .attr('cx', newCx)
+              .attr('cy', newCy);
+            chartGroup
+              .select<SVGCircleElement>(`[data-anomaly-glow="${an.anomaly_id}"]`)
+              .attr('cx', newCx)
+              .attr('cy', newCy);
+            chartGroup
+              .select<SVGTextElement>(`[data-anomaly-new="${an.anomaly_id}"]`)
+              .attr('x', newCx)
+              .attr('y', newCy - ANOMALY_RADII[an.confidence_grade] - 6);
+            chartGroup
+              .select<SVGGElement>(`[data-anomaly-cluster="${an.anomaly_id}"]`)
+              .attr('transform', `translate(${newCx + ANOMALY_RADII[an.confidence_grade] + 2},${newCy - ANOMALY_RADII[an.confidence_grade] - 2})`);
+          }
         }
+
+        // BE-6 기준선 (y=0, y=1) 위치 재계산
+        chartGroup.selectAll<SVGLineElement, unknown>('.ref-line').each(function () {
+          const sel = d3.select(this);
+          const yVal = Number(sel.attr('data-yval'));
+          if (!Number.isNaN(yVal)) {
+            const yPx = yScale(yVal);
+            sel.attr('y1', yPx).attr('y2', yPx);
+          }
+        });
+        chartGroup.selectAll<SVGTextElement, unknown>('.ref-label').each(function () {
+          const sel = d3.select(this);
+          const yVal = Number(sel.attr('data-yval'));
+          if (!Number.isNaN(yVal)) {
+            sel.attr('y', yScale(yVal) - 3);
+          }
+        });
 
         // Reposition event overlays
         let i = 0;
         for (const ev of activeEvents) {
-          const x0 = newXScale(new Date(ev.start_date + '-01'));
-          const x1 = newXScale(new Date(ev.end_date + '-01'));
+          const x0 = newXScale(parseYearMonth(ev.start_date));
+          const x1 = newXScale(parseYearMonth(ev.end_date));
           chartGroup.selectAll('rect').filter((_, idx) => idx === i).attr('x', x0).attr('width', Math.max(0, x1 - x0));
           chartGroup.selectAll('line').filter((_, idx) => idx === i).attr('x1', x0).attr('x2', x0);
           i++;
@@ -424,7 +632,52 @@ export function StreamChart() {
       });
 
     svg.call(zoom);
-  }, [chartData, secondaryChartData, selectedAnomalyId, events, eventFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // ZOOM-1: ref 저장 — 외부 filter 변경 시 transform 적용용
+    zoomBehaviorRef.current = zoom;
+    xScaleRef.current = xScale;
+    innerWRef.current = innerW;
+
+    // 초기 viewport 적용: filterFrom/filterTo가 있으면 그에 해당하는 transform 계산
+    if (filterFrom && filterTo) {
+      const fromDate = parseYM(filterFrom);
+      const toDate = parseYM(filterTo);
+      if (fromDate && toDate && toDate > fromDate) {
+        const fromPx = xScale(fromDate);
+        const toPx = xScale(toDate);
+        const k = innerW / (toPx - fromPx);
+        const tx = -fromPx * k;
+        const initialTransform = d3.zoomIdentity.translate(tx, 0).scale(k);
+        // 프로그래매틱 호출 → onEnd가 무시 (sourceEvent null)
+        svg.call(zoom.transform, initialTransform);
+        lastPushedRef.current = { from: filterFrom, to: filterTo };
+      }
+    }
+  }, [chartData, secondaryChartData, selectedAnomalyId, events, eventFilter, sameCluster, setFilterFrom, setFilterTo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ZOOM-1: 외부 filter 변경 동기화 — FilterBar 프리셋·미니맵 브러시 등 외부 트리거 반영
+  useEffect(() => {
+    const svgEl = svgRef.current;
+    const zoomBehavior = zoomBehaviorRef.current;
+    const xScale = xScaleRef.current;
+    const innerW = innerWRef.current;
+    if (!svgEl || !zoomBehavior || !xScale || innerW <= 0) return;
+    if (!filterFrom || !filterTo) return;
+    // 자기 push 가드 — 방금 zoom이 push한 값이면 다시 transform 호출 안 함
+    if (lastPushedRef.current.from === filterFrom && lastPushedRef.current.to === filterTo) return;
+
+    const fromDate = new Date(Number(filterFrom.split('-')[0]), Number(filterFrom.split('-')[1]) - 1, 1);
+    const toDate = new Date(Number(filterTo.split('-')[0]), Number(filterTo.split('-')[1]) - 1, 1);
+    if (!(toDate > fromDate)) return;
+    const fromPx = xScale(fromDate);
+    const toPx = xScale(toDate);
+    if (toPx <= fromPx) return;
+    const k = innerW / (toPx - fromPx);
+    const tx = -fromPx * k;
+    const newTransform = d3.zoomIdentity.translate(tx, 0).scale(k);
+    d3.select(svgEl).transition().duration(250).call(zoomBehavior.transform, newTransform);
+    lastPushedRef.current = { from: filterFrom, to: filterTo };
+  }, [filterFrom, filterTo]);
 
   // Tooltip helpers (DOM-based)
   function showTooltip(
@@ -443,7 +696,9 @@ export function StreamChart() {
       document.body.appendChild(tip);
     }
     const gradeLabel: Record<string, string> = { high: '고신뢰', medium: '중신뢰', reference: '참고' };
-    tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${period}</div><div>등급: ${gradeLabel[grade] ?? grade}</div><div>전달률: ${(rate * 100).toFixed(1)}%</div><div>패턴: ${pattern}</div>`;
+    // BE-1: 전이율은 비율값 그대로 표시 + 영역 라벨 (역전/정상/과잉).
+    const regime = rate < 0 ? ' (역전)' : rate > 1 ? ' (과잉)' : '';
+    tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${period}</div><div>등급: ${gradeLabel[grade] ?? grade}</div><div>전이율: ${rate.toFixed(2)}${regime}</div><div>패턴: ${pattern}</div>`;
     tip.style.display = 'block';
     moveTooltip(event);
   }

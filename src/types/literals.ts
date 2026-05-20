@@ -48,9 +48,10 @@ export const STAT_SNAPSHOT_METRICS = ['iqr', 'asymmetry'] as const;
 export type StatSnapshotMetric = (typeof STAT_SNAPSHOT_METRICS)[number];
 
 // 원시 시계열 소스 — api_spec_vN /raw-prices series[].source
+// 백엔드 응답 키와 1:1 매칭 (2026-05-20: 'import_price' → 'import_price_usd' 정정)
 export const RAW_PRICE_SOURCES = [
   'intl_price_krw',
-  'import_price',
+  'import_price_usd',
   'ppi',
   'wholesale_price',
   'cpi',

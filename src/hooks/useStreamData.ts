@@ -13,12 +13,12 @@ export function useStreamData() {
   const confidenceFilter = useAppStore((s) => s.confidenceFilter);
   const patternFilter = useAppStore((s) => s.patternFilter);
 
+  // P2-4: query key에서 filterFrom/filterTo 제외 — 줌으로 인한 푸시가 재요청을 유발하지 않도록.
+  // 백엔드는 전체 기간 데이터를 반환하고, 클라이언트가 xScale.domain만 잘라서 렌더링한다.
   return useQuery<StreamResponse>({
     queryKey: [
       'stream',
       primaryCommodityId,
-      filterFrom,
-      filterTo,
       granularity,
       activeSegments,
       confidenceFilter,
@@ -29,7 +29,6 @@ export function useStreamData() {
       if (filterFrom) params.from = filterFrom;
       if (filterTo) params.to = filterTo;
       if (activeSegments.length > 0) params.segments = activeSegments.join(',');
-      // grade 기본값을 클라/서버 모두 'high,medium'으로 명시 정렬 (api_spec_vN §/stream 기본값 정합)
       params.grade = confidenceFilter.length > 0 ? confidenceFilter.join(',') : 'high,medium';
       if (patternFilter.length > 0) params.patterns = patternFilter.join(',');
 
@@ -40,6 +39,6 @@ export function useStreamData() {
       return res.data;
     },
     enabled: primaryCommodityId !== null,
-    retry: 3,
+    staleTime: 5 * 60 * 1000,
   });
 }

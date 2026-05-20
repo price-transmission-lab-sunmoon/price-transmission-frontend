@@ -51,10 +51,11 @@ export class ApiError extends FEError {
   readonly publicCode: string;
 
   constructor(body: ApiErrorBody, httpStatus: number) {
+    // BE-4: 내부 code 보존, public_code가 있으면 publicCode에 별도 보관.
     super(body.code, body.message, body.context ?? {});
     this.name = 'ApiError';
     this.httpStatus = httpStatus;
-    this.publicCode = body.code;
+    this.publicCode = body.public_code ?? body.code;
   }
 }
 
@@ -99,6 +100,7 @@ export function parseApiError(axiosError: unknown): ApiError | FEError {
   return new ApiError(
     {
       code: body.error.code,
+      public_code: body.error.public_code,
       message: body.error.message,
       context: { ...body.error.context, cause: axiosError },
     },
@@ -117,6 +119,37 @@ const CODES_404 = new Set([
   'ML_MAP_NOT_READY',
   'WARMUP_PERIOD_ONLY',
 ]);
+
+// 영구 실패 코드 — retry 무의미. P1-3에서 queryClient.retry 정책에 활용.
+// BE-3 (2026-05-20): 백엔드 신규 내부 코드(API-ANO-001 등) 및 public_code 양쪽 모두 등록.
+export const PERMANENT_FAILURE_CODES = new Set([
+  // public_code
+  'NOT_IMPLEMENTED',
+  'COMMODITY_NOT_FOUND',
+  'ANOMALY_NOT_FOUND',
+  'ML_MAP_NOT_READY',
+  'WARMUP_PERIOD_ONLY',
+  'INVALID_LAYOUT',
+  'INVALID_SEGMENT',
+  'INVALID_GRANULARITY',
+  'INVALID_DATE_RANGE',
+  'INVALID_METRIC',
+  'SNAPSHOT_METRIC_ON_SERIES',
+  'WHOLESALE_NOT_AVAILABLE',
+  'PARSE-SCHEMA-001',
+  // 백엔드 내부 code
+  'API-VAL-001',
+  'API-ANO-001',
+  'API-MET-001',
+  'API-MET-002',
+]);
+
+export function isPermanentFailure(error: unknown): boolean {
+  if (!(error instanceof FEError)) return false;
+  if (PERMANENT_FAILURE_CODES.has(error.code)) return true;
+  if (error instanceof ApiError && PERMANENT_FAILURE_CODES.has(error.publicCode)) return true;
+  return false;
+}
 
 export function handleQueryError(
   error: unknown,
@@ -171,9 +204,10 @@ export function handleQueryError(
     return;
   }
 
-  // 4. ApiError 도메인 코드
+  // 4. ApiError 도메인 코드 — publicCode 기준 분기 (BE-3)
   if (error instanceof ApiError) {
-    if (error.code === 'WHOLESALE_NOT_AVAILABLE') {
+    const pc = error.publicCode;
+    if (pc === 'WHOLESALE_NOT_AVAILABLE') {
       showToast({
         code: 'WHOLESALE_NOT_AVAILABLE',
         variant: 'warning',
@@ -181,7 +215,7 @@ export function handleQueryError(
       });
       return;
     }
-    if (error.code === 'INVALID_LAYOUT') {
+    if (pc === 'INVALID_LAYOUT') {
       showToast({
         code: 'INVALID_LAYOUT',
         variant: 'warning',
@@ -189,7 +223,7 @@ export function handleQueryError(
       });
       return;
     }
-    if (error.code === 'UNTIL_EXCEEDS_TO') {
+    if (pc === 'UNTIL_EXCEEDS_TO') {
       showToast({
         code: 'UNTIL_EXCEEDS_TO',
         variant: 'warning',
@@ -197,10 +231,22 @@ export function handleQueryError(
       });
       return;
     }
+    // BE-3: 신규 백엔드 코드 — Toast 발화. UI 컴포넌트가 자체 fallback 처리한 경우 조용히 처리.
+    if (pc === 'SNAPSHOT_METRIC_ON_SERIES' || pc === 'INVALID_METRIC') {
+      showToast({
+        code: pc,
+        variant: 'warning',
+        message: `지원하지 않는 지표 요청입니다. (${pc})`,
+      });
+      return;
+    }
     // 404 계열 — FE_FALLBACK (Toast 없이 조용히 처리)
-    if (CODES_404.has(error.code)) return;
+    if (CODES_404.has(pc)) return;
 
-    if (error.code === 'PIPELINE_DATA_MISSING' || error.httpStatus >= 500) {
+    // NOT_IMPLEMENTED — 백엔드 패널 엔드포인트 미구현 (Phase 7 이후). Toast 없이 컴포넌트 fallback.
+    if (pc === 'NOT_IMPLEMENTED') return;
+
+    if (pc === 'PIPELINE_DATA_MISSING' || error.httpStatus >= 500) {
       showToast({
         code: 'FE-API-004',
         variant: 'error',
@@ -214,7 +260,7 @@ export function handleQueryError(
       showToast({
         code: 'FE-API-002',
         variant: 'warning',
-        message: `잘못된 요청입니다. (${error.code})`,
+        message: `잘못된 요청입니다. (${pc})`,
       });
       return;
     }

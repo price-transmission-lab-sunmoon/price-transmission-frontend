@@ -91,18 +91,20 @@ export interface StatMetrics {
 }
 
 // ml_summary — 11개 필드
+// BE-5 (2026-05-20): 백엔드 응답상 percentile은 null 가능 (warmup/데이터 결손 케이스).
+// score도 데이터 결손 시 null 반환 가능. UI는 formatNum/null 가드 처리.
 export interface MlSummary {
   ml_vote: number; // 0~3
   ml_detected: boolean;
   if_anomaly: boolean;
-  if_score: number;
-  if_percentile: number;
+  if_score: number | null;
+  if_percentile: number | null;
   lof_anomaly: boolean;
-  lof_score: number;
-  lof_percentile: number;
+  lof_score: number | null;
+  lof_percentile: number | null;
   svm_anomaly: boolean;
-  svm_score: number;
-  svm_percentile: number;
+  svm_score: number | null;
+  svm_percentile: number | null;
 }
 
 // judgment_path — 패턴별 6 step

@@ -37,14 +37,14 @@ const PATTERN_LABEL: Record<string, string> = {
 };
 const SOURCES_ALL: RawPriceSource[] = [
   'intl_price_krw',
-  'import_price',
+  'import_price_usd',
   'ppi',
   'wholesale_price',
   'cpi',
 ];
 const SOURCE_LABEL: Record<RawPriceSource, string> = {
   intl_price_krw: '국제가 (원화)',
-  import_price: '수입단가',
+  import_price_usd: '수입단가',
   ppi: 'PPI',
   wholesale_price: '도매가',
   cpi: 'CPI',
@@ -101,12 +101,10 @@ export function RawPricesChart() {
     }
     if (fallbackHandledRef.current) return;
     if (error instanceof ApiError) {
-      if (
-        error.code === 'WHOLESALE_NOT_AVAILABLE' ||
-        error.code === 'INVALID_LAYOUT'
-      ) {
+      const pc = error.publicCode;
+      if (pc === 'WHOLESALE_NOT_AVAILABLE' || pc === 'INVALID_LAYOUT') {
         fallbackHandledRef.current = true;
-        setToast(error.code === 'WHOLESALE_NOT_AVAILABLE' ? TOAST_LAYOUT4 : TOAST_INVALID);
+        setToast(pc === 'WHOLESALE_NOT_AVAILABLE' ? TOAST_LAYOUT4 : TOAST_INVALID);
         if (layoutNumber !== 1) setLayoutNumber(1);
       }
     }
@@ -448,7 +446,7 @@ export function RawPricesChart() {
   }
 
   // Error state (non-layout errors)
-  if (error && !(error instanceof ApiError && ['WHOLESALE_NOT_AVAILABLE', 'INVALID_LAYOUT'].includes((error as ApiError).code))) {
+  if (error && !(error instanceof ApiError && ['WHOLESALE_NOT_AVAILABLE', 'INVALID_LAYOUT'].includes((error as ApiError).publicCode))) {
     return (
       <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
         데이터를 불러올 수 없습니다.
@@ -492,7 +490,30 @@ export function RawPricesChart() {
 
       {/* Main chart area */}
       <div ref={containerRef} className="flex-1 relative min-h-0">
-        {data && data.series.length === 0 && (
+        {/* UX-2: 백엔드 데이터 미적재 안내 — 더 강한 카드 형태 */}
+        {data && (data.total_points === 0 || data.series.every((s) => s.data.length === 0)) && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <div className="flex flex-col items-center gap-3 px-6 py-5 max-w-md text-center bg-slate-800/90 border border-amber-500/40 rounded-lg shadow-xl">
+              <span
+                className="px-2 py-0.5 rounded text-[10px] font-semibold border"
+                style={{ color: '#fbbf24', borderColor: '#fbbf2480', backgroundColor: '#fbbf2415' }}
+              >
+                백엔드 적재 대기 중
+              </span>
+              <div className="text-amber-200/90 text-sm font-medium leading-snug">
+                원시 시계열 데이터가 아직 DB에 적재되지 않았습니다.
+              </div>
+              <div className="text-slate-400 text-xs leading-relaxed">
+                파이프라인 Phase 0 결과물(국제가·수입단가·PPI·CPI)이<br />
+                적재된 후 자동으로 표시됩니다.
+              </div>
+              <div className="text-slate-500 text-[10px] leading-snug pt-1 border-t border-slate-700/40 w-full">
+                흐름 보기 / 전달 구조 탭은 정상 작동합니다.
+              </div>
+            </div>
+          </div>
+        )}
+        {data && data.series.length === 0 && data.total_points !== 0 && (
           <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-sm">
             이 기간에는 데이터가 없습니다.
           </div>

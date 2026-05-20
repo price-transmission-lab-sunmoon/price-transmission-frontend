@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { useEvents } from '@/hooks/useEvents';
 import { useFreshness } from '@/hooks/useFreshness';
-import { presetToFrom } from '@/utils/dateUtils';
+import { presetToFrom, resolveEffectiveDataEnd } from '@/utils/dateUtils';
 import type { PeriodPreset, ConfidenceGrade, PrimaryPattern, SegmentId } from '@/types/literals';
 
 interface PeriodPresetConfig {
@@ -93,9 +93,15 @@ export function FilterBar() {
 
   function handlePresetClick(preset: PeriodPreset) {
     setPeriodPreset(preset);
-    if (freshness && primaryCommodity) {
-      const from = presetToFrom(preset, freshness.data_up_to, primaryCommodity.analysis_start);
-      setFilterRange(from, freshness.data_up_to);
+    if (primaryCommodity) {
+      // P1-1: freshness.data_up_to가 stale할 수 있으므로 analysis_end와 비교 후 최신값 사용
+      const effectiveEnd = resolveEffectiveDataEnd(
+        freshness?.data_up_to,
+        primaryCommodity.analysis_end,
+      );
+      if (!effectiveEnd) return;
+      const from = presetToFrom(preset, effectiveEnd, primaryCommodity.analysis_start);
+      setFilterRange(from, effectiveEnd);
     }
   }
 

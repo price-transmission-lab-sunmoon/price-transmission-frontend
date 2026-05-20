@@ -1,12 +1,15 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
 import { ANOMALY_COLORS, PANEL_CHART_COLORS } from '@/utils/colorUtils';
 import { usePanelDetail } from '@/hooks/usePanelDetail';
+import { useStreamData } from '@/hooks/useStreamData';
+import { ApiError } from '@/api/error';
+import { formatErrorChainSummary } from '@/api/errorChain';
 import { useStatSeries } from '@/hooks/useStatSeries';
 import { useStatSnapshot } from '@/hooks/useStatSnapshot';
 import { useIRF } from '@/hooks/useIRF';
 import { useMLMap } from '@/hooks/useMLMap';
-import { formatNum, formatPct, confidenceLabel, patternLabel, mlModelLabel } from '@/services/anomaly';
+import { formatNum, formatRatio, ratioRegimeLabel, confidenceLabel, patternLabel, mlModelLabel } from '@/services/anomaly';
 import { TransmissionRateChart } from '@/components/charts/TransmissionRateChart';
 import { ZScoreChart } from '@/components/charts/ZScoreChart';
 import { ECTChart } from '@/components/charts/ECTChart';
@@ -198,10 +201,12 @@ function MlBarRow({
 }: {
   anomalyId: number;
   model: MlModel;
-  score: number;
-  percentile: number;
+  score: number | null;
+  percentile: number | null;
   isAnomaly: boolean;
 }) {
+  // BE-5: score/percentile은 null 가능. UI는 빈 바 + '—' 표시로 폴백.
+  const barWidth = percentile == null ? 0 : Math.max(0, Math.min(100, percentile));
   const expandedMLMaps = useAppStore((s) => s.expandedMLMaps);
   const toggleMLMap = useAppStore((s) => s.toggleMLMap);
   const isOpen = expandedMLMaps.has(model);
@@ -224,7 +229,7 @@ function MlBarRow({
         <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all"
-            style={{ width: `${percentile}%`, backgroundColor: barColor }}
+            style={{ width: `${barWidth}%`, backgroundColor: barColor }}
           />
         </div>
         <span className="text-[10px] font-mono w-10 text-right" style={{ color: barColor }}>
@@ -239,14 +244,54 @@ function MlBarRow({
               로딩 중…
             </div>
           )}
-          {data && (
+          {data && data.total_points > 0 && (
             <MLMapChart
               points={data.points}
               xLabel={data.x_label}
               yLabel={data.y_label}
             />
           )}
+          {data && data.total_points === 0 && (
+            <div className="flex flex-col items-center gap-1 py-3 text-center">
+              <span
+                className="px-1.5 py-0.5 rounded text-[9px] font-semibold border"
+                style={{ color: '#fbbf24', borderColor: '#fbbf2480', backgroundColor: '#fbbf2415' }}
+              >
+                ML 결과 준비 중
+              </span>
+              <span className="text-slate-600 text-[10px] leading-snug">
+                투영 축(PCA vs feature_direct) 확정 후 적재 예정 (OI-15)
+              </span>
+            </div>
+          )}
         </div>
+      )}
+    </div>
+  );
+}
+
+// P0-3 + P3-3: 백엔드 미구현 안내 배지 + 빈 본문 자리표시자 + cause origin 메시지 노출 (디버깅용)
+function NotImplementedNotice({ section, error }: { section: string; error?: unknown }) {
+  const causeSummary = error ? formatErrorChainSummary(error) : null;
+  return (
+    <div className="flex flex-col items-center gap-1 py-3 text-center">
+      <span
+        className="px-1.5 py-0.5 rounded text-[9px] font-semibold border"
+        style={{
+          color: '#fbbf24',
+          borderColor: '#fbbf2480',
+          backgroundColor: '#fbbf2415',
+        }}
+      >
+        백엔드 구현 대기 중
+      </span>
+      <span className="text-slate-600 text-[10px] leading-snug">
+        {section}은 Phase 7 작업 이후 표시됩니다.
+      </span>
+      {causeSummary && (
+        <span className="text-slate-700 text-[9px] font-mono leading-snug max-w-full break-words px-2">
+          {causeSummary}
+        </span>
       )}
     </div>
   );
@@ -297,13 +342,25 @@ export function Panel() {
   const setPanelWidth = useAppStore((s) => s.setPanelWidth);
   const expandedSections = useAppStore((s) => s.expandedSections);
 
-  const { data: detail, isLoading } = usePanelDetail(selectedAnomalyId);
+  const { data: detail, isLoading, error: detailError } = usePanelDetail(selectedAnomalyId);
+
+  // P0-3: detail 미구현(NOT_IMPLEMENTED) 시 stream anomaly_nodes에서 메타 폴백 추출.
+  const { data: streamData } = useStreamData();
+  const fallbackNode = useMemo(() => {
+    if (detail || selectedAnomalyId == null || !streamData) return null;
+    return streamData.anomaly_nodes.find((n) => n.anomaly_id === selectedAnomalyId) ?? null;
+  }, [detail, selectedAnomalyId, streamData]);
+
+  const isBackendNotImplemented =
+    detailError instanceof ApiError && detailError.publicCode === 'NOT_IMPLEMENTED';
 
   const irfEnabled = expandedSections.has('irf');
-  const { data: irfData, isLoading: irfLoading } = useIRF({
+  const { data: irfData, isLoading: irfLoading, error: irfError } = useIRF({
     anomalyId: selectedAnomalyId,
     enabled: irfEnabled,
   });
+  const irfNotImplemented =
+    irfError instanceof ApiError && irfError.publicCode === 'NOT_IMPLEMENTED';
 
   const handleDrag = useCallback(
     (dx: number) => {
@@ -313,15 +370,49 @@ export function Panel() {
   );
 
   if (!isPanelOpen) {
+    // P2-2: 자동선택 실패 케이스 안내 강화.
+    // stream 데이터 로드 완료 + 가용 노드 0건 → 사용자가 다른 품목으로 이동할 수 있도록 추천.
+    const streamLoaded = streamData !== undefined;
+    const hasAnyAnomaly = streamLoaded && streamData.anomaly_nodes.length > 0;
+    const commodities = useAppStore.getState().commodities;
+    const recommended = commodities
+      .filter((c) => c.has_anomaly_this_month && c.commodity_id !== useAppStore.getState().primaryCommodityId)
+      .slice(0, 3);
+
     return (
       <aside
         data-testid="panel"
         style={{ width: panelWidth }}
-        className="relative shrink-0 bg-slate-900 border-l border-slate-700/60 flex items-center justify-center"
+        className="relative shrink-0 bg-slate-900 border-l border-slate-700/60 flex flex-col items-center justify-center px-4 text-center gap-3"
       >
-        <p className="text-slate-500 text-xs px-4 text-center leading-relaxed">
-          이상 데이터를 선택하면<br />분석 수치가 표시됩니다.
-        </p>
+        {streamLoaded && !hasAnyAnomaly ? (
+          <>
+            <p className="text-slate-400 text-xs leading-relaxed">
+              이 품목에는 현재 기간 내<br />탐지된 이상이 없습니다.
+            </p>
+            <p className="text-slate-600 text-[10px] leading-snug">
+              필터 기간을 넓히거나 다른 품목을 살펴보세요.
+            </p>
+            {recommended.length > 0 && (
+              <div className="flex flex-col gap-1.5 w-full pt-1">
+                <span className="text-slate-500 text-[10px]">이달 이상 탐지 품목</span>
+                {recommended.map((c) => (
+                  <button
+                    key={c.commodity_id}
+                    onClick={() => useAppStore.getState().setPrimaryCommodity(c.commodity_id)}
+                    className="px-2 py-1 rounded text-[11px] bg-slate-800 border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white transition-colors"
+                  >
+                    {c.name_kr}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-slate-500 text-xs leading-relaxed">
+            이상 데이터를 선택하면<br />분석 수치가 표시됩니다.
+          </p>
+        )}
       </aside>
     );
   }
@@ -371,6 +462,13 @@ export function Panel() {
                 <span className="font-mono text-[11px]">{detail.period}</span>
               </>
             )}
+            {!detail && fallbackNode && (
+              <>
+                <span>구간 {fallbackNode.segment_id === 'D_prime' ? "D'" : fallbackNode.segment_id}</span>
+                <span className="text-slate-600">·</span>
+                <span className="font-mono text-[11px]">{fallbackNode.period}</span>
+              </>
+            )}
           </div>
           <button
             aria-label="패널 닫기"
@@ -401,6 +499,34 @@ export function Panel() {
             )}
           </div>
         )}
+
+        {/* P0-3: detail 미구현 시 stream meta로 폴백 배지 */}
+        {!detail && fallbackNode && (
+          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+            <ConfidenceBadge grade={fallbackNode.confidence_grade} />
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700">
+              {patternLabel(fallbackNode.primary_pattern)}
+            </span>
+            {fallbackNode.is_new && (
+              <span
+                className="px-1.5 py-0.5 rounded text-[10px] font-semibold border"
+                style={{
+                  color: ANOMALY_COLORS.high,
+                  borderColor: ANOMALY_COLORS.high,
+                  backgroundColor: `${ANOMALY_COLORS.high}20`,
+                }}
+              >
+                NEW
+              </span>
+            )}
+          </div>
+        )}
+
+        {isBackendNotImplemented && (
+          <div className="mt-2 px-2 py-1.5 rounded bg-amber-900/15 border border-amber-700/30 text-[10px] text-amber-300/80 leading-snug">
+            분석 수치 패널은 백엔드 Phase 7 구현 후 연결됩니다. 현재는 노드 메타정보만 표시됩니다.
+          </div>
+        )}
       </div>
 
       {/* Sections */}
@@ -410,14 +536,21 @@ export function Panel() {
           <SectionHeader title="계량경제학 수치" sectionKey="stat" />
           {expandedSections.has('stat') && (
             <div className="p-3 space-y-2">
+              {!detail && isBackendNotImplemented && (
+                <NotImplementedNotice section="계량경제학 수치" error={detailError} />
+              )}
               {detail && (
                 <div className="space-y-0.5 mb-3">
                   <StatRow
-                    label="전달률"
-                    value={formatPct(detail.stat_metrics.transmission_rate)}
+                    label="전이율"
+                    value={(() => {
+                      const r = detail.stat_metrics.transmission_rate;
+                      const reg = ratioRegimeLabel(r);
+                      return reg ? `${formatRatio(r)} (${reg})` : formatRatio(r);
+                    })()}
                     highlight={
-                      detail.stat_metrics.transmission_rate !== null &&
-                      detail.stat_metrics.transmission_rate > 1.0
+                      detail.stat_metrics.iqr_outlier ||
+                      detail.stat_metrics.zscore_alert
                     }
                   />
                   <StatRow
@@ -479,6 +612,9 @@ export function Panel() {
           <SectionHeader title="ML 판정" sectionKey="ml" />
           {expandedSections.has('ml') && (
             <div className="p-3 space-y-1">
+              {!detail && isBackendNotImplemented && (
+                <NotImplementedNotice section="ML 판정" error={detailError} />
+              )}
               {detail && (
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className="text-slate-500 text-[11px]">ML 투표:</span>
@@ -515,6 +651,9 @@ export function Panel() {
           <SectionHeader title="패턴 판정 경로" sectionKey="path" />
           {expandedSections.has('path') && (
             <div className="p-3">
+              {!detail && isBackendNotImplemented && (
+                <NotImplementedNotice section="패턴 판정 경로" error={detailError} />
+              )}
               {detail?.judgment_path.map((step) => (
                 <div key={step.step} className="flex items-start gap-2 py-1">
                   <div
@@ -548,11 +687,12 @@ export function Panel() {
           <SectionHeader title="IRF 차트" sectionKey="irf" />
           {expandedSections.has('irf') && (
             <div className="p-3">
-              {irfLoading && (
+              {irfLoading && !irfNotImplemented && (
                 <div className="flex items-center justify-center h-20 text-slate-600 text-[10px]">
                   로딩 중…
                 </div>
               )}
+              {irfNotImplemented && <NotImplementedNotice section="IRF 차트" error={irfError} />}
               {irfData && <IRFChart irfs={irfData.irfs} />}
             </div>
           )}
