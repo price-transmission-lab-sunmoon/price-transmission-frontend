@@ -378,7 +378,7 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 
 ---
 
-## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정 (rev.5)
+## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정 (rev.6)
 
 > **다음 항목은 사용자가 명시적으로 요구한 UX 결정사항이다. 리팩토링 시 반드시 보존한다.**
 > **회기 진입 시 이 섹션 먼저 read → 모든 변경은 이 계약을 충족해야 함.**
@@ -390,12 +390,13 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 - **X축은 사용자가 정한 viewport 그대로 유지**. 자동 보정·snap·후속 이동 금지.
 - filter push (스토어 동기)만 zoom end 후 200ms debounce.
 
-### Y축 — 정직한 스케일 (신뢰도 우선)
-- **줌·팬 중 Y축 고정**. viewport 변화에 따라 Y 도메인 재계산 금지.
-- Y 도메인은 **chartData 진입 시 1회 산출 후 고정**. 다음 chartData 변경 시까지 유지.
-- 도메인 계산: **viewport 안 anomaly rate + series rate 통합 min/max + 10% 패딩** (최소 0.2).
+### Y축 — viewport 동적 sync (정확성 우선) — 2026-05-21 rev.6 갱신
+- **줌·팬 시 Y 도메인 재계산**. viewport 변화마다 화면 안 데이터에 정확히 맞춤.
+  - 이전 rev.5의 "Y축 고정" 정책 폐기 — 줌해도 그래프가 viewport에 차지 않아 빈 공간 많고 부정확.
+- 도메인 계산: **viewport 안 anomaly + series 통합 min/max + 10% 패딩** (최소 0.2).
 - **anomaly ±3 패딩 정책 금지** (변동성 시각적 과장 원인).
 - fallback `[-0.5, 1.5]` (역전~과잉 범위 기본 가독).
+- 구현: `applyTransform` 안에서 `computeYDomain(chartData, secondaryChartData, viewFrom, viewTo)` 호출 → newY scale 생성 → `yScaleRef.current` 교체 + `drawYAxis/drawGrid/refLine y/노드 cy/path d` 모두 newY 기준 갱신.
 
 ### 노드 표현
 - **+N 클러스터 배지 금지**.
