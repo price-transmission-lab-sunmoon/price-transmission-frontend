@@ -109,6 +109,43 @@ export function computeYDomain(
   return [-1, 2];
 }
 
+// warmup 배경 band 계산.
+// 모든 segment의 in_warmup_period=true 점들의 합집합을 시간순으로 정렬 → 연속 run 묶음.
+// 반환: [start, end] Date 튜플 리스트. end는 마지막 warmup 점의 다음 month 시작점
+// (band 폭이 1개월치는 되도록).
+export function computeWarmupBands(
+  series: StreamChartData['series'],
+): Array<[Date, Date]> {
+  if (series.length === 0) return [];
+  const warmupSet = new Set<number>();
+  for (const s of series) {
+    for (const p of s.data) {
+      // 어떤 segment 라도 warmup이면 그 month는 warmup으로 본다 (합집합).
+      if (p.in_warmup_period) warmupSet.add(p.period.getTime());
+    }
+  }
+  if (warmupSet.size === 0) return [];
+  const sorted = [...warmupSet].sort((a, b) => a - b);
+  const bands: Array<[Date, Date]> = [];
+  let runStart = sorted[0];
+  let prev = sorted[0];
+  for (let i = 1; i < sorted.length; i++) {
+    const cur = sorted[i];
+    // 한 달 간격 (대략 28~31일) 초과면 새 run.
+    if (cur - prev > 1000 * 60 * 60 * 24 * 45) {
+      bands.push([new Date(runStart), addMonth(new Date(prev))]);
+      runStart = cur;
+    }
+    prev = cur;
+  }
+  bands.push([new Date(runStart), addMonth(new Date(prev))]);
+  return bands;
+}
+
+function addMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 1);
+}
+
 export function parseFilterYM(s: string | null): Date | null {
   if (!s) return null;
   const [y, m] = s.split('-').map(Number);

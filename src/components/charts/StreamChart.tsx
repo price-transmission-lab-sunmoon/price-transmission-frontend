@@ -12,7 +12,7 @@ import {
   SEGMENT_COLORS_SECONDARY,
 } from '@/utils/colorUtils';
 import type { SegmentId } from '@/types/literals';
-import { computeYDomain, dateToYM, parseFilterYM } from './streamChartHelpers';
+import { computeWarmupBands, computeYDomain, dateToYM, parseFilterYM } from './streamChartHelpers';
 
 const MARGIN = { top: 20, right: 24, bottom: 36, left: 52 };
 const ANIMATION_DURATION = 800;
@@ -97,8 +97,13 @@ export function StreamChart() {
     const innerW = width - MARGIN.left - MARGIN.right;
     const innerH = height - MARGIN.top - MARGIN.bottom;
     if (innerW <= 0 || innerH <= 0) return;
+    // ResizeObserver 첫 fire 전 0크기 진입 차단 — 2회 setup 방지.
+    if (containerSize.w === 0 || containerSize.h === 0) return;
 
     const svg = d3.select(svgRef.current);
+    // 진행 중 transition 강제 종료 → dasharray·dashoffset 잔존·재진입 충돌 방지.
+    svg.interrupt();
+    svg.selectAll('*').interrupt();
     svg.selectAll('*').remove();
     svg.attr('width', width).attr('height', height);
 
@@ -193,6 +198,37 @@ export function StreamChart() {
     drawRefLine(0, '역전 경계 (0)', '#94a3b8');
     drawRefLine(1, '정상/과잉 (1)', '#94a3b8');
 
+    // ─── warmup 배경 band — 분석 신뢰도 낮은 초기 구간 ─
+    // 라인은 끊지 않음. 회색 vertical band 로 한 번에 표시.
+    // events 오버레이보다 먼저 그려서 events가 위에 오도록.
+    const warmupGroup = chartGroup.append('g').attr('class', 'warmup-bands');
+    const warmupBands = computeWarmupBands(chartData.series);
+    for (let i = 0; i < warmupBands.length; i++) {
+      const [b0, b1] = warmupBands[i];
+      const x0 = xScale(b0);
+      const x1 = xScale(b1);
+      const g = warmupGroup.append('g').attr('data-warmup-idx', i);
+      g.append('rect')
+        .attr('class', 'warmup-rect')
+        .attr('x', x0)
+        .attr('y', 0)
+        .attr('width', Math.max(0, x1 - x0))
+        .attr('height', innerH)
+        .attr('fill', '#475569')
+        .attr('opacity', 0.18);
+      // 텍스트 라벨 — 첫 band 상단에만
+      if (i === 0) {
+        g.append('text')
+          .attr('class', 'warmup-label')
+          .attr('x', x0 + 6)
+          .attr('y', 14)
+          .attr('font-size', '10px')
+          .attr('fill', '#94a3b8')
+          .attr('opacity', 0.85)
+          .text('warmup');
+      }
+    }
+
     // ─── 이벤트 오버레이 (data-event-key로 selectable) ─
     const eventGroup = chartGroup.append('g').attr('class', 'events');
     const activeEvents = eventFilter.length > 0 ? events.filter((e) => eventFilter.includes(e.event_key)) : [];
@@ -220,18 +256,11 @@ export function StreamChart() {
     }
 
     // ─── line/area generators ─────────────────────────
-    // 메인 라인: warmup 제외, solid
-    // warmup 라인: 전체 데이터 (warmup 포함), dashed dim — 연속성 유지
+    // 정책: 단일 라인. warmup·null 둘 다 라인을 끊지 않음.
+    //  - null은 drawSeries에서 사전 필터 (그 점이 데이터에서 빠짐)
+    //  - warmup은 데이터에 포함하되 라인은 끊지 않음. 별도 배경 band로 시각화.
     type ChartPt = { period: Date; transmission_rate: number | null; in_warmup_period?: boolean };
     const lineGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
-      d3
-        .line<ChartPt>()
-        .defined((p) => p.transmission_rate !== null && !p.in_warmup_period)
-        .x((p) => xSc(p.period))
-        .y((p) => ySc(p.transmission_rate!))
-        .curve(d3.curveMonotoneX);
-
-    const warmupLineGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
       d3
         .line<ChartPt>()
         .defined((p) => p.transmission_rate !== null)
@@ -242,7 +271,7 @@ export function StreamChart() {
     const areaGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
       d3
         .area<ChartPt>()
-        .defined((p) => p.transmission_rate !== null && !p.in_warmup_period)
+        .defined((p) => p.transmission_rate !== null)
         .x((p) => xSc(p.period))
         .y0(ySc(0))
         .y1((p) => ySc(p.transmission_rate!))
@@ -252,7 +281,7 @@ export function StreamChart() {
 
     const drawSeries = (
       segId: SegmentId,
-      data: { period: Date; transmission_rate: number | null }[],
+      data: ChartPt[],
       isSecondary: boolean,
       prefix = '',
     ) => {
@@ -260,30 +289,20 @@ export function StreamChart() {
       const color = colorMap[segId] ?? '#94a3b8';
       const opacity = isSecondary ? 0.4 : 1;
 
+      // null 사전 필터 — defined 의존 없이 라인이 완전 연속이 되도록.
+      const clean = data.filter((p) => p.transmission_rate !== null);
+
       seriesGroup
         .append('path')
-        .datum(data)
+        .datum(clean)
         .attr('class', `${prefix}area-${segId}`)
         .attr('fill', color)
         .attr('opacity', isSecondary ? 0.08 : 0.15)
         .attr('d', areaGen(xScale, yScale));
 
-      // warmup-dim line — warmup 포함 전체. dashed + opacity 낮음. 메인 solid 아래 레이어.
-      // 비-워밍업 구간은 메인 solid가 덮음 → 결과적으로 warmup만 점선 표시 효과.
-      seriesGroup
-        .append('path')
-        .datum(data)
-        .attr('class', `${prefix}warmup-${segId}`)
-        .attr('fill', 'none')
-        .attr('stroke', color)
-        .attr('stroke-width', isSecondary ? 1.5 : 2)
-        .attr('opacity', opacity * 0.35)
-        .attr('stroke-dasharray', '4,3')
-        .attr('d', warmupLineGen(xScale, yScale));
-
       const path = seriesGroup
         .append('path')
-        .datum(data)
+        .datum(clean)
         .attr('class', `${prefix}line-${segId}`)
         .attr('fill', 'none')
         .attr('stroke', color)
@@ -397,18 +416,18 @@ export function StreamChart() {
       drawXAxis(newX);
       root.selectAll('.domain, .tick line').attr('stroke', '#334155');
 
-      // path 갱신 — Y는 fixed. warmup 라인도 함께 갱신.
+      // path 갱신 — Y는 fixed. null 사전 필터로 라인 연속성 유지.
       if (secondaryChartData) {
         for (const s of secondaryChartData.series) {
-          seriesGroup.select(`.sec-line-${s.segment_id}`).attr('d', lineGen(newX, ySc)(s.data) ?? '');
-          seriesGroup.select(`.sec-warmup-${s.segment_id}`).attr('d', warmupLineGen(newX, ySc)(s.data) ?? '');
-          seriesGroup.select(`.sec-area-${s.segment_id}`).attr('d', areaGen(newX, ySc)(s.data) ?? '');
+          const clean = s.data.filter((p) => p.transmission_rate !== null);
+          seriesGroup.select(`.sec-line-${s.segment_id}`).attr('d', lineGen(newX, ySc)(clean) ?? '');
+          seriesGroup.select(`.sec-area-${s.segment_id}`).attr('d', areaGen(newX, ySc)(clean) ?? '');
         }
       }
       for (const s of chartData.series) {
-        seriesGroup.select(`.line-${s.segment_id}`).attr('d', lineGen(newX, ySc)(s.data) ?? '');
-        seriesGroup.select(`.warmup-${s.segment_id}`).attr('d', warmupLineGen(newX, ySc)(s.data) ?? '');
-        seriesGroup.select(`.area-${s.segment_id}`).attr('d', areaGen(newX, ySc)(s.data) ?? '');
+        const clean = s.data.filter((p) => p.transmission_rate !== null);
+        seriesGroup.select(`.line-${s.segment_id}`).attr('d', lineGen(newX, ySc)(clean) ?? '');
+        seriesGroup.select(`.area-${s.segment_id}`).attr('d', areaGen(newX, ySc)(clean) ?? '');
       }
 
       // 노드 — bucket spread 폐기. cx = 정확 시점.
@@ -429,6 +448,16 @@ export function StreamChart() {
       refLineGroup
         .selectAll<SVGLineElement, unknown>('.ref-line')
         .attr('x2', innerW);
+
+      // warmup band X 위치 갱신
+      for (let i = 0; i < warmupBands.length; i++) {
+        const [b0, b1] = warmupBands[i];
+        const x0 = newX(b0);
+        const x1 = newX(b1);
+        const g = warmupGroup.select(`[data-warmup-idx="${i}"]`);
+        g.select('.warmup-rect').attr('x', x0).attr('width', Math.max(0, x1 - x0));
+        if (i === 0) g.select('.warmup-label').attr('x', x0 + 6);
+      }
 
       // 이벤트 오버레이 — data-event-key로 정확 매칭
       for (const ev of activeEvents) {

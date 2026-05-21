@@ -378,7 +378,7 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 
 ---
 
-## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정 (rev.2)
+## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정 (rev.3)
 
 > **다음 항목은 사용자가 명시적으로 요구한 UX 결정사항이다. 리팩토링 시 반드시 보존한다.**
 > **회기 진입 시 이 섹션 먼저 read → 모든 변경은 이 계약을 충족해야 함.**
@@ -408,10 +408,22 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
   - step/linear: 사용자가 "각진 그래프 별로"라 명시
   - monotoneX: 단조성 보장, overshoot 없음, sparse monthly에 안정
 
-### warmup 구간 표시
-- `in_warmup_period === true` 구간은 데이터를 끊지 말고 **dashed + opacity 35%**로 표시.
-- 구현: 메인 solid 라인 (warmup 제외) + warmup-dim 라인 (전체 데이터 포함, dashed) 2개 path 레이어링.
-- 메인 solid가 위에 → 비-워밍업 구간은 solid가 덮음 → 결과적으로 warmup만 점선.
+### 라인 연속성 — 단일 라인 정책
+- **segment당 path 1개**. 이중 path (warmup-line + main) 금지 — monotoneX 이웃 의존성으로 boundary 어긋남 발생.
+- `lineGen.defined = (p) => p.transmission_rate !== null` 만 체크 (warmup 제외 금지).
+- **null 점은 사전 필터** (`data.filter(p => p.transmission_rate !== null)`)로 데이터에서 빼고 라인에 전달 → 라인이 완전 연속.
+- 사용자 명시 요구 (2026-05-21): "끊김 없이 연속된 선을 확보". 정직성보다 연속성 우선.
+
+### warmup 구간 표시 — 배경 band
+- `in_warmup_period === true` 구간은 **회색 vertical band** (`#475569` opacity 0.18) 로 표시.
+- 라인은 끊지 않음. 라인 일부에 dasharray 적용하지 말 것.
+- 구현: `computeWarmupBands(series)` 헬퍼로 모든 segment의 warmup 합집합 → 연속 run 단위 band 묶음.
+- 첫 band 상단에 "warmup" 라벨.
+- events 오버레이보다 먼저 그려서 events가 위에 오도록.
+
+### 방어 패턴
+- setup useEffect 진입에 `containerSize.w === 0 || .h === 0` 가드 — ResizeObserver 첫 fire 전 0크기 진입으로 2회 setup 발생 방지.
+- setup 진입 시 `svg.interrupt(); svg.selectAll('*').interrupt()` 호출 — 진행 중 transition 잔존 방지.
 
 ### 이벤트 오버레이
 - `data-event-key` attr selector 사용. `selectAll('rect')` 인덱스 매칭 금지.
