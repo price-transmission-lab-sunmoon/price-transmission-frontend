@@ -143,7 +143,9 @@ export const useAppStore = create<AppStore>((set) => ({
   granularity: 'monthly',
   // IS-4: periodPreset 초기값 null (커스텀 범위)
   periodPreset: null,
-  confidenceFilter: ['high', 'medium'],
+  // reference 등급도 첫 화면 표시 — high가 0건일 때 "이상 거의 없음" 오인 방지.
+  // 사용자가 noise 줄이고 싶으면 FilterBar에서 reference 끔.
+  confidenceFilter: ['high', 'medium', 'reference'],
   patternFilter: [], // 빈 배열 = 전체
   eventFilter: [], // 전체 해제 (web_plan_vN §3.4 초기값)
   activeSegments: [], // 품목 선택 시 segments로 채움

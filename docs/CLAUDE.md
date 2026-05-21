@@ -378,7 +378,7 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 
 ---
 
-## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정 (rev.4)
+## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정 (rev.5)
 
 > **다음 항목은 사용자가 명시적으로 요구한 UX 결정사항이다. 리팩토링 시 반드시 보존한다.**
 > **회기 진입 시 이 섹션 먼저 read → 모든 변경은 이 계약을 충족해야 함.**
@@ -440,6 +440,19 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 - D3 헬퍼는 `src/components/charts/streamChartHelpers.ts`에 분리.
 - StreamChart.tsx의 setup useEffect는 헬퍼 함수로 단계 분리 (drawXAxis/drawYAxis/renderNodes/applyTransform).
 - SVG `<animate>` 금지. CSS `@keyframes` 사용 (`.anomaly-pulse-high` in index.css).
+
+### 페이지 첫 진입 초기화 정책 (2026-05-21 확정)
+- **자동 viewport = 최근 3년** (`analysis_end - 3y ~ analysis_end`). 전체 데이터 (10~17년) 첫 화면 압축 금지.
+  - 전체 압축 표시는 라인 지그재그 + 변동성 시각적 과장 유발.
+  - `periodPreset='3y'`로 명시 → FilterBar UI 라벨과 실 상태 일치.
+- **이벤트 자동 활성 금지**. `eventFilter=[]` 유지. 사용자가 명시적 토글해야 음영 표시.
+  - 자동 음영은 anomaly가 "이벤트 때문"이라는 인지 편향 유발.
+- **자동 anomaly 선택 + 패널 자동 열림 금지**. 첫 진입 = 패널 닫힘.
+  - 매번 같은 노드 강제 강조 + 차트 가림.
+  - 사용자가 노드 클릭해야 패널 오픈.
+- **confidenceFilter 기본값 = `['high','medium','reference']`** (전체).
+  - high가 0건일 때 "이상 거의 없음" 오인 방지.
+  - noise 줄임은 사용자 명시적 토글로.
 
 ---
 

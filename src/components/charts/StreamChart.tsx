@@ -60,22 +60,9 @@ export function StreamChart() {
   const { data: primaryData, isLoading: primaryLoading, isError: primaryError } = useStreamData();
   const { data: secondaryRaw } = useSecondaryStreamData();
 
-  // Auto-select latest anomaly on commodity change
-  const lastAutoSelectCommodityId = useRef<string | null>(undefined as unknown as null);
-  useEffect(() => {
-    if (!primaryData) return;
-    if (activeSegments.length === 0) return;
-    const isNewCommodity = lastAutoSelectCommodityId.current !== primaryCommodityId;
-    if (!isNewCommodity && selectedAnomalyId !== null) return;
-    lastAutoSelectCommodityId.current = primaryCommodityId;
-    const segmentSet = new Set(activeSegments);
-    const findLatest = (grade: 'high' | 'medium' | 'reference') =>
-      primaryData.anomaly_nodes
-        .filter((n) => n.confidence_grade === grade && segmentSet.has(n.segment_id as SegmentId))
-        .sort((a, b) => (b.period > a.period ? 1 : -1))[0];
-    const candidate = findLatest('high') ?? findLatest('medium') ?? findLatest('reference');
-    if (candidate) selectAnomaly(candidate.anomaly_id);
-  }, [primaryData, primaryCommodityId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 자동 anomaly 선택 + 패널 자동 열림 폐기 (2026-05-21).
+  // 사용자 클릭 없이 패널이 열리면 차트 가림 + 매번 같은 노드 강제 강조.
+  // 첫 진입 = 패널 닫힘. 사용자가 노드 클릭해야 패널 오픈.
 
   const chartData = useMemo(() => {
     if (!primaryData) return null;
