@@ -148,6 +148,37 @@ function addMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth() + 1, 1);
 }
 
+// viewport span (개월) 기준 X축 tick interval 선택.
+// 최대확대 시 1개월 단위 보장. d3.axisBottom().ticks(6) 자동 선택은 6개월~3년 viewport에서
+// quarter(3개월)를 선택해 사용자가 "최대확대해도 3개월 단위"로 인지하는 원인.
+// 정책:
+//   ≤12개월: 1개월
+//   ≤24개월: 2개월
+//   ≤36개월: 3개월
+//   ≤60개월: 6개월
+//   ≤120개월: 1년
+//   >120개월: 2년
+export function pickXTickInterval(domain: [Date, Date]): d3.TimeInterval {
+  const months = monthsBetween(domain[0], domain[1]);
+  if (months <= 12) return d3.timeMonth.every(1)!;
+  if (months <= 24) return d3.timeMonth.every(2)!;
+  if (months <= 36) return d3.timeMonth.every(3)!;
+  if (months <= 60) return d3.timeMonth.every(6)!;
+  if (months <= 120) return d3.timeYear.every(1)!;
+  return d3.timeYear.every(2)!;
+}
+
+// tickFormat — viewport 짧으면 YYYY-MM, 길면 YYYY 만.
+export function pickXTickFormat(domain: [Date, Date]): (d: Date) => string {
+  const months = monthsBetween(domain[0], domain[1]);
+  if (months <= 60) return d3.timeFormat('%Y-%m');
+  return d3.timeFormat('%Y');
+}
+
+function monthsBetween(a: Date, b: Date): number {
+  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+}
+
 export function parseFilterYM(s: string | null): Date | null {
   if (!s) return null;
   const [y, m] = s.split('-').map(Number);

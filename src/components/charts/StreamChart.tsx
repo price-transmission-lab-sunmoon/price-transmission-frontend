@@ -12,7 +12,14 @@ import {
   SEGMENT_COLORS_SECONDARY,
 } from '@/utils/colorUtils';
 import type { SegmentId } from '@/types/literals';
-import { computeWarmupBands, computeYDomain, dateToYM, parseFilterYM } from './streamChartHelpers';
+import {
+  computeWarmupBands,
+  computeYDomain,
+  dateToYM,
+  parseFilterYM,
+  pickXTickFormat,
+  pickXTickInterval,
+} from './streamChartHelpers';
 
 const MARGIN = { top: 20, right: 24, bottom: 36, left: 52 };
 const ANIMATION_DURATION = 800;
@@ -130,7 +137,16 @@ export function StreamChart() {
       g.selectAll('text').attr('fill', '#94a3b8').attr('font-size', 11);
 
     const drawXAxis = (scale: d3.ScaleTime<number, number>) => {
-      xAxisG.call(d3.axisBottom(scale).ticks(6).tickFormat(d3.timeFormat('%Y-%m') as never));
+      // viewport span에 따라 동적 tick interval. 최대확대 시 1개월 단위 보장.
+      const domain = scale.domain() as [Date, Date];
+      const interval = pickXTickInterval(domain);
+      const fmt = pickXTickFormat(domain);
+      xAxisG.call(
+        d3
+          .axisBottom(scale)
+          .ticks(interval)
+          .tickFormat(((d: Date) => fmt(d)) as never),
+      );
       styleAxisText(xAxisG);
     };
     const drawYAxis = (scale: d3.ScaleLinear<number, number>) => {
@@ -380,31 +396,39 @@ export function StreamChart() {
 
     renderNodes(xScale, yScale);
 
-    // ─── 줌 redraw (RAF throttled) ────────────────────
+    // ─── 줌 redraw ────────────────────────────────────
+    // 정책 (2026-05-21 갱신): viewport 변화마다 Y 도메인 재계산.
+    // 화면에 보이는 anomaly + series 통합 min/max + 10% 패딩 (최소 0.2).
+    // 줌·팬 시 그래프가 viewport에 꽉 차게 보이도록 정확 표시.
     const applyTransform = (transform: d3.ZoomTransform) => {
       const newX = transform.rescaleX(xScale);
-      const ySc = yScaleRef.current!;
+      const [viewFrom, viewTo] = newX.domain() as [Date, Date];
+      const [yMin, yMax] = computeYDomain(chartData, secondaryChartData, viewFrom, viewTo);
+      const newY = d3.scaleLinear().domain([yMin, yMax]).range([innerH, 0]);
+      yScaleRef.current = newY;
 
       drawXAxis(newX);
+      drawYAxis(newY);
+      drawGrid(newY);
       root.selectAll('.domain, .tick line').attr('stroke', '#334155');
 
-      // path 갱신 — Y는 fixed. null 사전 필터로 라인 연속성 유지. area 폐기.
+      // path 갱신 — newX·newY 둘 다 적용. null 사전 필터로 연속성 유지.
       if (secondaryChartData) {
         for (const s of secondaryChartData.series) {
           const clean = s.data.filter((p) => p.transmission_rate !== null);
-          seriesGroup.select(`.sec-line-${s.segment_id}`).attr('d', lineGen(newX, ySc)(clean) ?? '');
+          seriesGroup.select(`.sec-line-${s.segment_id}`).attr('d', lineGen(newX, newY)(clean) ?? '');
         }
       }
       for (const s of chartData.series) {
         const clean = s.data.filter((p) => p.transmission_rate !== null);
-        seriesGroup.select(`.line-${s.segment_id}`).attr('d', lineGen(newX, ySc)(clean) ?? '');
+        seriesGroup.select(`.line-${s.segment_id}`).attr('d', lineGen(newX, newY)(clean) ?? '');
       }
 
-      // 노드 — bucket spread 폐기. cx = 정확 시점.
+      // 노드 — bucket spread 폐기. cx = 정확 시점. cy = newY 기준.
       const list = chartData.anomalies;
       for (const an of list) {
         const cx = newX(an.period);
-        const cy = ySc(an.transmission_rate);
+        const cy = newY(an.transmission_rate);
         const r = ANOMALY_RADII[an.confidence_grade];
         anomalyGroup.select(`[data-anomaly-id="${an.anomaly_id}"]`).attr('cx', cx).attr('cy', cy);
         anomalyGroup.select(`[data-anomaly-glow="${an.anomaly_id}"]`).attr('cx', cx).attr('cy', cy);
@@ -414,10 +438,18 @@ export function StreamChart() {
           .attr('y', cy - r - 6);
       }
 
-      // 기준선 X 갱신 (Y는 yScale 변화 없음)
-      refLineGroup
-        .selectAll<SVGLineElement, unknown>('.ref-line')
-        .attr('x2', innerW);
+      // 기준선 — X(innerW 고정) + Y(newY로 재계산)
+      refLineGroup.selectAll<SVGLineElement, unknown>('.ref-line').each(function () {
+        const sel = d3.select(this);
+        const yVal = +sel.attr('data-yval');
+        const yPx = newY(yVal);
+        sel.attr('x2', innerW).attr('y1', yPx).attr('y2', yPx);
+      });
+      refLineGroup.selectAll<SVGTextElement, unknown>('.ref-label').each(function () {
+        const sel = d3.select(this);
+        const yVal = +sel.attr('data-yval');
+        sel.attr('x', innerW - 4).attr('y', newY(yVal) - 3);
+      });
 
       // warmup band X 위치 갱신
       for (let i = 0; i < warmupBands.length; i++) {
@@ -563,16 +595,28 @@ export function StreamChart() {
   }
 
   // ─── resize ────────────────────────────────────
+  // ⚠️ 첫 fire가 0×0 일 수 있다 (mount 직후 layout 미완). setContainerSize는 prev 비교로 skip되고,
+  //    setup useEffect의 `containerSize.w===0` 가드에 막혀 영영 차트가 안 그려진다.
+  //    → 0 fire 무시 + mount 시 getBoundingClientRect로 즉시 sync 측정.
   useEffect(() => {
-    if (!containerRef.current) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const sync = (w: number, h: number) => {
+      if (w <= 0 || h <= 0) return;
+      const rw = Math.round(w);
+      const rh = Math.round(h);
+      setContainerSize((prev) => (prev.w === rw && prev.h === rh ? prev : { w: rw, h: rh }));
+    };
+    // 즉시 sync — paint 후 useEffect 시점엔 layout 적용됨.
+    const rect = el.getBoundingClientRect();
+    sync(rect.width, rect.height);
+
     const observer = new ResizeObserver((entries) => {
       const e = entries[0];
       if (!e) return;
-      const w = Math.round(e.contentRect.width);
-      const h = Math.round(e.contentRect.height);
-      setContainerSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+      sync(e.contentRect.width, e.contentRect.height);
     });
-    observer.observe(containerRef.current);
+    observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
