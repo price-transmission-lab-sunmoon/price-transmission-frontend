@@ -49,9 +49,14 @@ export function bucketOffsetPx(info: NodeBucketInfo): number {
   return info.size > 1 ? (info.idx - (info.size - 1) / 2) * NODE_SPREAD_PX : 0;
 }
 
-// viewport 도메인 안에 보이는 anomaly transmission_rate ±3 패딩.
-// fallback: series rates ±15% / 절대 fallback [-1, 2].
-const Y_NODE_PAD = 3;
+// viewport Y 도메인 — anomaly rate + series rate 통합 min/max + 10% 패딩.
+// 정책 (신뢰도 우선):
+//  - anomaly만 기준 ±3 패딩 정책 폐기 (변동성 시각적 과장 원인).
+//  - 통합 데이터 (anomaly + 모든 series) min/max 사용.
+//  - 패딩 = (hi-lo) * 0.10, 최소 0.2 (너무 작아서 라인이 축 닿는 것 방지).
+//  - fallback: 데이터 없으면 [-0.5, 1.5] (역전~과잉 범위 기본 가독).
+const Y_PAD_RATIO = 0.10;
+const Y_PAD_MIN = 0.2;
 
 export function computeYDomain(
   chartData: StreamChartData,
@@ -62,51 +67,48 @@ export function computeYDomain(
   const inWindow = (d: Date) =>
     d.getTime() >= viewFrom.getTime() && d.getTime() <= viewTo.getTime();
 
-  const nodeRates: number[] = [];
-  for (const an of chartData.anomalies) if (inWindow(an.period)) nodeRates.push(an.transmission_rate);
+  const all: number[] = [];
+
+  // anomaly nodes
+  for (const an of chartData.anomalies) {
+    if (inWindow(an.period)) all.push(an.transmission_rate);
+  }
   if (secondaryChartData) {
-    for (const an of secondaryChartData.anomalies) if (inWindow(an.period)) nodeRates.push(an.transmission_rate);
-  }
-
-  if (nodeRates.length > 0) {
-    let lo = Infinity;
-    let hi = -Infinity;
-    for (const r of nodeRates) {
-      if (r < lo) lo = r;
-      if (r > hi) hi = r;
+    for (const an of secondaryChartData.anomalies) {
+      if (inWindow(an.period)) all.push(an.transmission_rate);
     }
-    return [lo - Y_NODE_PAD, hi + Y_NODE_PAD];
   }
 
-  const seriesRates: number[] = [];
+  // series rates (warmup 포함 — 라인이 통과하므로 Y 도메인에서 누락하면 라인이 잘림)
   for (const s of chartData.series) {
     for (const p of s.data) {
-      if (p.transmission_rate !== null && !p.in_warmup_period && inWindow(p.period)) {
-        seriesRates.push(p.transmission_rate);
+      if (p.transmission_rate !== null && inWindow(p.period)) {
+        all.push(p.transmission_rate);
       }
     }
   }
   if (secondaryChartData) {
     for (const s of secondaryChartData.series) {
       for (const p of s.data) {
-        if (p.transmission_rate !== null && !p.in_warmup_period && inWindow(p.period)) {
-          seriesRates.push(p.transmission_rate);
+        if (p.transmission_rate !== null && inWindow(p.period)) {
+          all.push(p.transmission_rate);
         }
       }
     }
   }
-  if (seriesRates.length > 0) {
+
+  if (all.length > 0) {
     let lo = Infinity;
     let hi = -Infinity;
-    for (const r of seriesRates) {
+    for (const r of all) {
       if (r < lo) lo = r;
       if (r > hi) hi = r;
     }
-    const pad = Math.max((hi - lo) * 0.15, 0.5);
+    const pad = Math.max((hi - lo) * Y_PAD_RATIO, Y_PAD_MIN);
     return [lo - pad, hi + pad];
   }
 
-  return [-1, 2];
+  return [-0.5, 1.5];
 }
 
 // warmup 배경 band 계산.

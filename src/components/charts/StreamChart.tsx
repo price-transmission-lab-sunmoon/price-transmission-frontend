@@ -267,15 +267,8 @@ export function StreamChart() {
         .x((p) => xSc(p.period))
         .y((p) => ySc(p.transmission_rate!))
         .curve(d3.curveMonotoneX);
-
-    const areaGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
-      d3
-        .area<ChartPt>()
-        .defined((p) => p.transmission_rate !== null)
-        .x((p) => xSc(p.period))
-        .y0(ySc(0))
-        .y1((p) => ySc(p.transmission_rate!))
-        .curve(d3.curveMonotoneX);
+    // area fill 폐기 — y=0~rate 의 면적은 "전이율의 시간적분"으로 물리적 의미 없음.
+    // 시각적으로 큰 산처럼 보여 변동성 과장. multi-segment overlay에서 더 심함.
 
     const seriesGroup = chartGroup.append('g').attr('class', 'series');
 
@@ -291,14 +284,6 @@ export function StreamChart() {
 
       // null 사전 필터 — defined 의존 없이 라인이 완전 연속이 되도록.
       const clean = data.filter((p) => p.transmission_rate !== null);
-
-      seriesGroup
-        .append('path')
-        .datum(clean)
-        .attr('class', `${prefix}area-${segId}`)
-        .attr('fill', color)
-        .attr('opacity', isSecondary ? 0.08 : 0.15)
-        .attr('d', areaGen(xScale, yScale));
 
       const path = seriesGroup
         .append('path')
@@ -416,18 +401,16 @@ export function StreamChart() {
       drawXAxis(newX);
       root.selectAll('.domain, .tick line').attr('stroke', '#334155');
 
-      // path 갱신 — Y는 fixed. null 사전 필터로 라인 연속성 유지.
+      // path 갱신 — Y는 fixed. null 사전 필터로 라인 연속성 유지. area 폐기.
       if (secondaryChartData) {
         for (const s of secondaryChartData.series) {
           const clean = s.data.filter((p) => p.transmission_rate !== null);
           seriesGroup.select(`.sec-line-${s.segment_id}`).attr('d', lineGen(newX, ySc)(clean) ?? '');
-          seriesGroup.select(`.sec-area-${s.segment_id}`).attr('d', areaGen(newX, ySc)(clean) ?? '');
         }
       }
       for (const s of chartData.series) {
         const clean = s.data.filter((p) => p.transmission_rate !== null);
         seriesGroup.select(`.line-${s.segment_id}`).attr('d', lineGen(newX, ySc)(clean) ?? '');
-        seriesGroup.select(`.area-${s.segment_id}`).attr('d', areaGen(newX, ySc)(clean) ?? '');
       }
 
       // 노드 — bucket spread 폐기. cx = 정확 시점.

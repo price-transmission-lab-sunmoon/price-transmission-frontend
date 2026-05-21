@@ -378,7 +378,7 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 
 ---
 
-## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정 (rev.3)
+## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정 (rev.4)
 
 > **다음 항목은 사용자가 명시적으로 요구한 UX 결정사항이다. 리팩토링 시 반드시 보존한다.**
 > **회기 진입 시 이 섹션 먼저 read → 모든 변경은 이 계약을 충족해야 함.**
@@ -390,10 +390,12 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 - **X축은 사용자가 정한 viewport 그대로 유지**. 자동 보정·snap·후속 이동 금지.
 - filter push (스토어 동기)만 zoom end 후 200ms debounce.
 
-### Y축
+### Y축 — 정직한 스케일 (신뢰도 우선)
 - **줌·팬 중 Y축 고정**. viewport 변화에 따라 Y 도메인 재계산 금지.
 - Y 도메인은 **chartData 진입 시 1회 산출 후 고정**. 다음 chartData 변경 시까지 유지.
-- 초기 Y 도메인 계산은 viewport(filterFrom/To) 안 anomaly transmission_rate ±3 패딩.
+- 도메인 계산: **viewport 안 anomaly rate + series rate 통합 min/max + 10% 패딩** (최소 0.2).
+- **anomaly ±3 패딩 정책 금지** (변동성 시각적 과장 원인).
+- fallback `[-0.5, 1.5]` (역전~과잉 범위 기본 가독).
 
 ### 노드 표현
 - **+N 클러스터 배지 금지**.
@@ -407,6 +409,12 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
   - catmull-rom: overshoot (값이 없는 곳까지 곡선 부풀어 misleading)
   - step/linear: 사용자가 "각진 그래프 별로"라 명시
   - monotoneX: 단조성 보장, overshoot 없음, sparse monthly에 안정
+
+### Area fill — 금지
+- y=0~rate area fill **사용 금지**.
+- 이유: 전이율의 시간 적분은 물리적 의미 없음. 시각적 무게가 큰 산처럼 보여 변동성 과장.
+- multi-segment overlay 시 area 누적으로 더 심함.
+- 라인만으로 추세 표현. 신뢰도 도메인에 적합.
 
 ### 라인 연속성 — 단일 라인 정책
 - **segment당 path 1개**. 이중 path (warmup-line + main) 금지 — monotoneX 이웃 의존성으로 boundary 어긋남 발생.
