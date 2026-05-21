@@ -49,11 +49,6 @@ export function bucketOffsetPx(info: NodeBucketInfo): number {
   return info.size > 1 ? (info.idx - (info.size - 1) / 2) * NODE_SPREAD_PX : 0;
 }
 
-// bucket 대표(첫번째 노드)의 size — 배지 표시용. 대표가 아니면 0 (배지 없음).
-export function bucketBadgeSize(info: NodeBucketInfo): number {
-  return info.idx === 0 && info.size > 1 ? info.size : 0;
-}
-
 // viewport 도메인 안에 보이는 anomaly transmission_rate ±3 패딩.
 // fallback: series rates ±15% / 절대 fallback [-1, 2].
 const Y_NODE_PAD = 3;

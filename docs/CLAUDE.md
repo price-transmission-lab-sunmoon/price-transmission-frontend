@@ -378,4 +378,37 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 
 ---
 
+## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정
+
+> **다음 항목은 사용자가 명시적으로 요구한 UX 결정사항이다. 리팩토링 시 반드시 보존한다.**
+
+### 줌 동작
+- **휠 즉각 반응**: `on('zoom')` 핸들러는 transform을 **직접 동기 적용**. RAF throttle 금지 (휠 응답 지연 원인).
+- **줌 멈춤 = 차트 멈춤**: 줌 종료 후 어떠한 후속 애니메이션·transition도 금지. 사용자가 손 뗀 순간 차트도 정지.
+- **X축은 사용자가 정한 viewport 그대로 유지**. 자동 보정·snap·후속 이동 금지.
+
+### Y축
+- **줌·팬 중 Y축 고정**. viewport 변화에 따라 Y 도메인 재계산 금지.
+- Y 도메인은 **chartData 진입 시 1회 산출 후 고정**. 다음 chartData 변경 시까지 유지.
+- 초기 Y 도메인 계산은 viewport(filterFrom/To) 안 anomaly transmission_rate ±3 패딩.
+
+### 노드 표현
+- **+N 클러스터 배지 금지**. 정보 손실 + 시각 혼란 + 줌 모드 전환 시 깨짐 → 사용 안 함.
+- 노드 겹침은 **pixel-distance bucket spread (좌우 분산)**로만 해결.
+- 시간 기반 cluster (서비스 레이어 `clusterAnomalies`) 금지. 단일 진실 공급원: 렌더 레이어 픽셀 bucket.
+- bucket 안 노드는 클릭 가능한 개별 원으로 모두 렌더. 숨김 금지.
+
+### 곡선
+- `curveStepAfter` 또는 `curveStep` 사용. catmull-rom·monotone 등 spline 금지 (월별 sparse data에 거짓 중간값 생성).
+
+### 이벤트 오버레이
+- `data-event-key` attr selector 사용. `selectAll('rect')` 인덱스 매칭 금지.
+
+### 코드 구조
+- D3 헬퍼는 `src/components/charts/streamChartHelpers.ts`에 분리.
+- StreamChart.tsx의 setup useEffect는 헬퍼 함수로 단계 분리 (drawXAxis/drawYAxis/renderNodes/applyTransform).
+- SVG `<animate>` 금지. CSS `@keyframes` 사용 (`.anomaly-pulse-high` in index.css).
+
+---
+
 *이 파일은 `docs/team_ai_collab_vN.md §3.1` 운용 원칙에 따라 관리된다. 디렉토리 구조·API 설계·예외 코드가 변경되면 CLAUDE.md를 즉시 갱신하고 단독 커밋한다.*

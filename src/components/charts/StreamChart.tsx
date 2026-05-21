@@ -13,7 +13,6 @@ import {
 } from '@/utils/colorUtils';
 import type { SegmentId } from '@/types/literals';
 import {
-  bucketBadgeSize,
   bucketOffsetPx,
   computeNodeBuckets,
   computeYDomain,
@@ -40,10 +39,6 @@ export function StreamChart() {
   // zoom 종료 debounce + 자기 push 가드
   const zoomEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPushedRef = useRef<{ from: string | null; to: string | null }>({ from: null, to: null });
-
-  // RAF throttle for zoom redraw
-  const rafRef = useRef<number | null>(null);
-  const pendingTransformRef = useRef<d3.ZoomTransform | null>(null);
 
   const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
   const secondaryCommodityId = useAppStore((s) => s.secondaryCommodityId);
@@ -238,7 +233,7 @@ export function StreamChart() {
         .defined((p) => p.transmission_rate !== null && !p.in_warmup_period)
         .x((p) => xSc(p.period))
         .y((p) => ySc(p.transmission_rate!))
-        .curve(d3.curveMonotoneX);
+        .curve(d3.curveStepAfter);
 
     const areaGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
       d3
@@ -247,7 +242,7 @@ export function StreamChart() {
         .x((p) => xSc(p.period))
         .y0(ySc(0))
         .y1((p) => ySc(p.transmission_rate!))
-        .curve(d3.curveMonotoneX);
+        .curve(d3.curveStepAfter);
 
     const seriesGroup = chartGroup.append('g').attr('class', 'series');
 
@@ -344,24 +339,6 @@ export function StreamChart() {
           .attr('cursor', 'pointer')
           .style('filter', isSelected ? 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' : 'none');
 
-        // 클러스터 배지 — bucket 대표 노드(idx===0)이고 size>1
-        const badge = bucketBadgeSize(info);
-        if (badge > 0) {
-          const bg = anomalyGroup
-            .append('g')
-            .attr('data-anomaly-cluster', an.anomaly_id)
-            .attr('transform', `translate(${cx + r + 2},${cy - r - 2})`);
-          bg.append('circle').attr('r', 7).attr('fill', '#0f172a').attr('stroke', color).attr('stroke-width', 1.2);
-          bg.append('text')
-            .attr('text-anchor', 'middle')
-            .attr('dy', '0.32em')
-            .attr('fill', color)
-            .attr('font-size', '9px')
-            .attr('font-weight', '700')
-            .style('pointer-events', 'none')
-            .text(`+${badge - 1}`);
-        }
-
         if (an.is_new) {
           anomalyGroup
             .append('text')
@@ -426,33 +403,6 @@ export function StreamChart() {
           .select(`[data-anomaly-new="${an.anomaly_id}"]`)
           .attr('x', cx)
           .attr('y', cy - r - 6);
-
-        // 배지 표시/위치 — bucket size 변화 따라 동적으로 등장·소멸
-        const badge = bucketBadgeSize(info);
-        const badgeNode = anomalyGroup.select(`[data-anomaly-cluster="${an.anomaly_id}"]`);
-        if (badge > 0) {
-          if (badgeNode.empty()) {
-            const color = ANOMALY_COLORS[an.confidence_grade];
-            const bg = anomalyGroup
-              .append('g')
-              .attr('data-anomaly-cluster', an.anomaly_id)
-              .attr('transform', `translate(${cx + r + 2},${cy - r - 2})`);
-            bg.append('circle').attr('r', 7).attr('fill', '#0f172a').attr('stroke', color).attr('stroke-width', 1.2);
-            bg.append('text')
-              .attr('text-anchor', 'middle')
-              .attr('dy', '0.32em')
-              .attr('fill', color)
-              .attr('font-size', '9px')
-              .attr('font-weight', '700')
-              .style('pointer-events', 'none')
-              .text(`+${badge - 1}`);
-          } else {
-            badgeNode.attr('transform', `translate(${cx + r + 2},${cy - r - 2})`);
-            badgeNode.select('text').text(`+${badge - 1}`);
-          }
-        } else if (!badgeNode.empty()) {
-          badgeNode.remove();
-        }
       }
 
       // 기준선 X 갱신 (Y는 yScale 변화 없음)
@@ -470,16 +420,12 @@ export function StreamChart() {
       }
     };
 
-    const scheduleRedraw = () => {
-      if (rafRef.current !== null) return;
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = null;
-        const t = pendingTransformRef.current;
-        if (t) applyTransform(t);
-      });
-    };
-
     // ─── 줌 동작 ─────────────────────────────────────
+    // 설계 계약 (CLAUDE.md 참조):
+    //  - 휠 즉각 반응 = transform 동기 적용. RAF throttle 금지.
+    //  - 줌 멈춤 = 차트 멈춤. Y는 chartData 진입 시 1회 산출 후 고정.
+    //  - 줌 종료 후 추가 애니메이션·transition 금지.
+    //  - filter push만 debounce (스토어 동기).
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.25, 30])
@@ -487,8 +433,7 @@ export function StreamChart() {
       .extent([[0, 0], [innerW, innerH]])
       .wheelDelta((event) => -event.deltaY * (event.deltaMode === 1 ? 0.06 : event.deltaMode ? 1 : 0.0025))
       .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-        pendingTransformRef.current = event.transform;
-        scheduleRedraw();
+        applyTransform(event.transform);
       })
       .on('end', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
         if (!event.sourceEvent) return;
@@ -496,27 +441,6 @@ export function StreamChart() {
         zoomEndTimerRef.current = setTimeout(() => {
           const newX = event.transform.rescaleX(xScale);
           const [d0, d1] = newX.domain() as [Date, Date];
-
-          // Y축 새 viewport 기준 transition으로 갱신
-          const [newYMin, newYMax] = computeYDomain(chartData, secondaryChartData, d0, d1);
-          const ySc = yScaleRef.current!;
-          const oldDomain = ySc.domain() as [number, number];
-          if (Math.abs(oldDomain[0] - newYMin) > 0.01 || Math.abs(oldDomain[1] - newYMax) > 0.01) {
-            const interp = d3.interpolate(oldDomain, [newYMin, newYMax]);
-            d3.transition('y-axis')
-              .duration(300)
-              .ease(d3.easeCubicOut)
-              .tween('y-domain', () => (t: number) => {
-                ySc.domain(interp(t));
-                drawYAxis(ySc);
-                drawGrid(ySc);
-                root.selectAll('.domain, .tick line').attr('stroke', '#334155');
-                // path + node Y 갱신 (X는 현재 transform 기준)
-                applyTransform(event.transform);
-              });
-          }
-
-          // filter push
           const fromYM = dateToYM(d0);
           const toYM = dateToYM(d1);
           lastPushedRef.current = { from: fromYM, to: toYM };
@@ -543,10 +467,6 @@ export function StreamChart() {
     }
 
     return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
       if (zoomEndTimerRef.current) {
         clearTimeout(zoomEndTimerRef.current);
         zoomEndTimerRef.current = null;
