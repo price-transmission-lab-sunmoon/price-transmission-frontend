@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* StreamChart — high-grade anomaly 펄스. SVG <animate> 폐기.
+   CSS keyframe → 재렌더에도 누적되지 않고 GPU 가속됨. */
+@keyframes anomaly-pulse {
+  0%   { r: var(--pulse-min, 8px);  opacity: 0.35; }
+  50%  { r: var(--pulse-max, 12px); opacity: 0.10; }
+  100% { r: var(--pulse-min, 8px);  opacity: 0.35; }
+}
+
+.anomaly-pulse-high {
+  animation: anomaly-pulse 1.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}

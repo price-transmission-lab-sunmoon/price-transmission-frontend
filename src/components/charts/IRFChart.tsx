@@ -104,7 +104,56 @@ export function IRFChart({ irfs, height = 240 }: Props) {
 
     g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(maxHorizon)).attr('color', '#64748b');
     g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', '#64748b');
+
+    // FX-5: hover overlay (horizon 기반)
+    if (fullCurve) {
+      const guide = g.append('g').attr('class', 'hover-guide').style('display', 'none');
+      guide
+        .append('line')
+        .attr('y1', 0).attr('y2', h)
+        .attr('stroke', '#64748b').attr('stroke-width', 1)
+        .attr('stroke-dasharray', '3,3').attr('opacity', 0.7);
+      const dot = guide.append('circle').attr('r', 4)
+        .attr('fill', '#f1f5f9').attr('stroke', '#0f172a').attr('stroke-width', 1.5);
+
+      let tip = document.getElementById('irf-chart-tip');
+      if (!tip) {
+        tip = document.createElement('div');
+        tip.id = 'irf-chart-tip';
+        tip.style.cssText =
+          'position:fixed;pointer-events:none;background:#1e293b;border:1px solid #475569;border-radius:6px;padding:6px 10px;font-size:11px;color:#f1f5f9;z-index:9999;white-space:nowrap;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.4);';
+        document.body.appendChild(tip);
+      }
+
+      g.append('rect')
+        .attr('width', w).attr('height', h)
+        .attr('fill', 'transparent').style('cursor', 'crosshair')
+        .on('mouseenter', () => { guide.style('display', null); if (tip) tip.style.display = 'block'; })
+        .on('mouseleave', () => { guide.style('display', 'none'); if (tip) tip.style.display = 'none'; })
+        .on('mousemove', function (event: MouseEvent) {
+          const [mx, my] = d3.pointer(event, this);
+          const hz = Math.round(x.invert(mx));
+          const pt = fullCurve.data.find((d) => d.horizon === hz);
+          if (!pt) return;
+          const px = x(pt.horizon);
+          const py = y(pt.irf_downstream);
+          guide.select('line').attr('x1', px).attr('x2', px);
+          dot.attr('cx', px).attr('cy', py);
+          if (tip) {
+            tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">h = ${hz}개월</div>
+              <div style="display:flex;justify-content:space-between;gap:10px"><span>IRF</span><span style="font-family:monospace">${pt.irf_downstream.toFixed(4)}</span></div>
+              <div style="display:flex;justify-content:space-between;gap:10px;color:#94a3b8"><span>95% CI</span><span style="font-family:monospace">[${pt.irf_lower_ci.toFixed(3)}, ${pt.irf_upper_ci.toFixed(3)}]</span></div>`;
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (rect) {
+              tip.style.left = `${rect.left + MARGIN.left + px + 14}px`;
+              tip.style.top = `${rect.top + MARGIN.top + my - 8}px`;
+            }
+          }
+        });
+    }
   }, [irfs, height]);
+
+  useEffect(() => () => { const t = document.getElementById('irf-chart-tip'); if (t) t.remove(); }, []);
 
   if (irfs.length === 0) {
     return (

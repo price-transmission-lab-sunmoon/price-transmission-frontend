@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { parse } from 'date-fns';
 import { PANEL_CHART_COLORS } from '@/utils/colorUtils';
+import { attachHoverOverlay, removeHoverTooltip } from '@/utils/chartHover';
 import type { EctDataPoint } from '@/types/anomaly';
 
 interface Props {
@@ -91,7 +92,30 @@ export function ECTChart({ data, ectType, height = 200 }: Props) {
 
     g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(4)).attr('color', '#64748b');
     g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', '#64748b');
+
+    // FX-5: hover overlay
+    attachHoverOverlay({
+      g,
+      containerRef,
+      data: valid,
+      x,
+      y,
+      width: w,
+      height: h,
+      margin: MARGIN,
+      getDate: (d) => parseMonth(d.period),
+      tooltipId: 'ect-chart-tip',
+      buildHover: (d) => ({
+        datum: d,
+        date: parseMonth(d.period),
+        values: [
+          { label: ectType ?? 'ECT', value: d.ect_or_spread, color: PANEL_CHART_COLORS.ectLine },
+        ],
+      }),
+    });
   }, [data, ectType, height]);
+
+  useEffect(() => () => removeHoverTooltip('ect-chart-tip'), []);
 
   if (data.length === 0) {
     return (
