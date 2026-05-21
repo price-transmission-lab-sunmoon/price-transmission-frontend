@@ -378,14 +378,17 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 
 ---
 
-## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정
+## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정 (rev.2)
 
 > **다음 항목은 사용자가 명시적으로 요구한 UX 결정사항이다. 리팩토링 시 반드시 보존한다.**
+> **회기 진입 시 이 섹션 먼저 read → 모든 변경은 이 계약을 충족해야 함.**
 
 ### 줌 동작
-- **휠 즉각 반응**: `on('zoom')` 핸들러는 transform을 **직접 동기 적용**. RAF throttle 금지 (휠 응답 지연 원인).
-- **줌 멈춤 = 차트 멈춤**: 줌 종료 후 어떠한 후속 애니메이션·transition도 금지. 사용자가 손 뗀 순간 차트도 정지.
+- **휠 즉각 반응**: `on('zoom')` 핸들러는 transform을 **직접 동기 적용**. RAF throttle 금지.
+- **줌 멈춤 = 차트 멈춤**: 줌 종료 후 어떠한 후속 애니메이션·transition도 금지.
+- **scaleExtent = `[1, 30]`**. 줌아웃 `k<1` 절대 금지 — 차트 폭이 viewport보다 좁아지는 버그 원인.
 - **X축은 사용자가 정한 viewport 그대로 유지**. 자동 보정·snap·후속 이동 금지.
+- filter push (스토어 동기)만 zoom end 후 200ms debounce.
 
 ### Y축
 - **줌·팬 중 Y축 고정**. viewport 변화에 따라 Y 도메인 재계산 금지.
@@ -393,13 +396,22 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 - 초기 Y 도메인 계산은 viewport(filterFrom/To) 안 anomaly transmission_rate ±3 패딩.
 
 ### 노드 표현
-- **+N 클러스터 배지 금지**. 정보 손실 + 시각 혼란 + 줌 모드 전환 시 깨짐 → 사용 안 함.
-- 노드 겹침은 **pixel-distance bucket spread (좌우 분산)**로만 해결.
-- 시간 기반 cluster (서비스 레이어 `clusterAnomalies`) 금지. 단일 진실 공급원: 렌더 레이어 픽셀 bucket.
-- bucket 안 노드는 클릭 가능한 개별 원으로 모두 렌더. 숨김 금지.
+- **+N 클러스터 배지 금지**.
+- **X-spread 금지**: bucket-offset으로 X 변위시키지 말 것. 노드는 자기 `period`의 정확한 X 위치에 렌더 (대량 노드일 때 ±수백px 변위 → 2015 노드가 2025로 점프하는 버그 원인).
+- 겹치면 **z-order로 stack**. 정렬: `reference → medium → high` 순으로 그려서 높은 등급이 위로.
+- 시간 기반 cluster (서비스 레이어 `clusterAnomalies`) 금지. 단일 진실 공급원: 노드 = anomaly_nodes 1:1 매핑.
+- 모든 노드는 클릭 가능. 숨김 금지.
 
 ### 곡선
-- `curveStepAfter` 또는 `curveStep` 사용. catmull-rom·monotone 등 spline 금지 (월별 sparse data에 거짓 중간값 생성).
+- **`curveMonotoneX` 사용**. step·linear·catmull-rom 금지.
+  - catmull-rom: overshoot (값이 없는 곳까지 곡선 부풀어 misleading)
+  - step/linear: 사용자가 "각진 그래프 별로"라 명시
+  - monotoneX: 단조성 보장, overshoot 없음, sparse monthly에 안정
+
+### warmup 구간 표시
+- `in_warmup_period === true` 구간은 데이터를 끊지 말고 **dashed + opacity 35%**로 표시.
+- 구현: 메인 solid 라인 (warmup 제외) + warmup-dim 라인 (전체 데이터 포함, dashed) 2개 path 레이어링.
+- 메인 solid가 위에 → 비-워밍업 구간은 solid가 덮음 → 결과적으로 warmup만 점선.
 
 ### 이벤트 오버레이
 - `data-event-key` attr selector 사용. `selectAll('rect')` 인덱스 매칭 금지.

@@ -12,13 +12,7 @@ import {
   SEGMENT_COLORS_SECONDARY,
 } from '@/utils/colorUtils';
 import type { SegmentId } from '@/types/literals';
-import {
-  bucketOffsetPx,
-  computeNodeBuckets,
-  computeYDomain,
-  dateToYM,
-  parseFilterYM,
-} from './streamChartHelpers';
+import { computeYDomain, dateToYM, parseFilterYM } from './streamChartHelpers';
 
 const MARGIN = { top: 20, right: 24, bottom: 36, left: 52 };
 const ANIMATION_DURATION = 800;
@@ -226,6 +220,8 @@ export function StreamChart() {
     }
 
     // ─── line/area generators ─────────────────────────
+    // 메인 라인: warmup 제외, solid
+    // warmup 라인: 전체 데이터 (warmup 포함), dashed dim — 연속성 유지
     type ChartPt = { period: Date; transmission_rate: number | null; in_warmup_period?: boolean };
     const lineGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
       d3
@@ -233,7 +229,15 @@ export function StreamChart() {
         .defined((p) => p.transmission_rate !== null && !p.in_warmup_period)
         .x((p) => xSc(p.period))
         .y((p) => ySc(p.transmission_rate!))
-        .curve(d3.curveStepAfter);
+        .curve(d3.curveMonotoneX);
+
+    const warmupLineGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
+      d3
+        .line<ChartPt>()
+        .defined((p) => p.transmission_rate !== null)
+        .x((p) => xSc(p.period))
+        .y((p) => ySc(p.transmission_rate!))
+        .curve(d3.curveMonotoneX);
 
     const areaGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
       d3
@@ -242,7 +246,7 @@ export function StreamChart() {
         .x((p) => xSc(p.period))
         .y0(ySc(0))
         .y1((p) => ySc(p.transmission_rate!))
-        .curve(d3.curveStepAfter);
+        .curve(d3.curveMonotoneX);
 
     const seriesGroup = chartGroup.append('g').attr('class', 'series');
 
@@ -263,6 +267,19 @@ export function StreamChart() {
         .attr('fill', color)
         .attr('opacity', isSecondary ? 0.08 : 0.15)
         .attr('d', areaGen(xScale, yScale));
+
+      // warmup-dim line — warmup 포함 전체. dashed + opacity 낮음. 메인 solid 아래 레이어.
+      // 비-워밍업 구간은 메인 solid가 덮음 → 결과적으로 warmup만 점선 표시 효과.
+      seriesGroup
+        .append('path')
+        .datum(data)
+        .attr('class', `${prefix}warmup-${segId}`)
+        .attr('fill', 'none')
+        .attr('stroke', color)
+        .attr('stroke-width', isSecondary ? 1.5 : 2)
+        .attr('opacity', opacity * 0.35)
+        .attr('stroke-dasharray', '4,3')
+        .attr('d', warmupLineGen(xScale, yScale));
 
       const path = seriesGroup
         .append('path')
@@ -301,12 +318,15 @@ export function StreamChart() {
 
     const renderNodes = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) => {
       anomalyGroup.selectAll('*').remove();
-      const list = chartData.anomalies;
-      const buckets = computeNodeBuckets(list, xSc);
+      // 정렬: 낮은 등급 먼저 → 높은 등급 위로 (z-order로 클릭 우선순위 보장).
+      // 노드 X spread 폐기: 자기 시점에 정직하게 위치. 겹치면 stack.
+      const gradeOrder = { reference: 0, medium: 1, high: 2 } as const;
+      const list = [...chartData.anomalies].sort(
+        (a, b) => gradeOrder[a.confidence_grade] - gradeOrder[b.confidence_grade],
+      );
 
       for (const an of list) {
-        const info = buckets.get(an.anomaly_id) ?? { idx: 0, size: 1 };
-        const cx = xSc(an.period) + bucketOffsetPx(info);
+        const cx = xSc(an.period);
         const cy = ySc(an.transmission_rate);
         const r = ANOMALY_RADII[an.confidence_grade];
         const color = ANOMALY_COLORS[an.confidence_grade];
@@ -377,24 +397,24 @@ export function StreamChart() {
       drawXAxis(newX);
       root.selectAll('.domain, .tick line').attr('stroke', '#334155');
 
-      // path 갱신 — Y는 fixed
+      // path 갱신 — Y는 fixed. warmup 라인도 함께 갱신.
       if (secondaryChartData) {
         for (const s of secondaryChartData.series) {
           seriesGroup.select(`.sec-line-${s.segment_id}`).attr('d', lineGen(newX, ySc)(s.data) ?? '');
+          seriesGroup.select(`.sec-warmup-${s.segment_id}`).attr('d', warmupLineGen(newX, ySc)(s.data) ?? '');
           seriesGroup.select(`.sec-area-${s.segment_id}`).attr('d', areaGen(newX, ySc)(s.data) ?? '');
         }
       }
       for (const s of chartData.series) {
         seriesGroup.select(`.line-${s.segment_id}`).attr('d', lineGen(newX, ySc)(s.data) ?? '');
+        seriesGroup.select(`.warmup-${s.segment_id}`).attr('d', warmupLineGen(newX, ySc)(s.data) ?? '');
         seriesGroup.select(`.area-${s.segment_id}`).attr('d', areaGen(newX, ySc)(s.data) ?? '');
       }
 
-      // 노드 — bucket 재계산 + cx/cy 갱신
+      // 노드 — bucket spread 폐기. cx = 정확 시점.
       const list = chartData.anomalies;
-      const buckets = computeNodeBuckets(list, newX);
       for (const an of list) {
-        const info = buckets.get(an.anomaly_id) ?? { idx: 0, size: 1 };
-        const cx = newX(an.period) + bucketOffsetPx(info);
+        const cx = newX(an.period);
         const cy = ySc(an.transmission_rate);
         const r = ANOMALY_RADII[an.confidence_grade];
         anomalyGroup.select(`[data-anomaly-id="${an.anomaly_id}"]`).attr('cx', cx).attr('cy', cy);
@@ -428,7 +448,7 @@ export function StreamChart() {
     //  - filter push만 debounce (스토어 동기).
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.25, 30])
+      .scaleExtent([1, 30])
       .translateExtent([[0, 0], [innerW, innerH]])
       .extent([[0, 0], [innerW, innerH]])
       .wheelDelta((event) => -event.deltaY * (event.deltaMode === 1 ? 0.06 : event.deltaMode ? 1 : 0.0025))
