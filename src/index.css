@@ -260,6 +260,35 @@ body {
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* Range slider thumb — brand teal with surface ring */
+input[type='range'] {
+  outline: none;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--brand);
+  border: 2px solid var(--bg-surface);
+  border-radius: 50%;
+  box-shadow: var(--e2);
+  cursor: pointer;
+  margin-top: -4px;
+}
+input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--brand);
+  border: 2px solid var(--bg-surface);
+  border-radius: 50%;
+  box-shadow: var(--e2);
+  cursor: pointer;
+}
+input[type='range']:focus-visible::-webkit-slider-thumb {
+  box-shadow: var(--ring-brand);
+}
+
 /* ============================================================
    Reduced motion — accessibility mandate
    ============================================================ */

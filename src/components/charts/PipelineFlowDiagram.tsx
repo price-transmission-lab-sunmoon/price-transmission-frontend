@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
+import { CHART_THEME } from '@/utils/chartTheme';
+import { Z_INDEX } from '@/utils/zIndex';
+import { IconButton } from '@/components/ui/IconButton';
+import { Icon } from '@/components/ui/Icon';
 import type { PipelineNode, PipelineEdge } from '@/types/meta';
 
-const NODE_W = 140;
-const NODE_H = 44;
-const PHASE_GAP = 88; // 위→아래 row 간격
-const NODE_GAP = 24;  // 같은 row 내 노드 간격
-const PAD_TOP = 20;
+const NODE_W = 160;
+const NODE_H = 48;
+const PHASE_GAP = 96;
+const NODE_GAP = 28;
+const PAD_TOP = 24;
 const PAD_BOTTOM = 32;
 
 interface NodePos {
@@ -31,7 +35,6 @@ interface Props {
 function buildLayout(nodes: PipelineNode[], containerWidth: number): NodePos[] {
   if (!containerWidth || nodes.length === 0) return [];
 
-  // phase_number 별로 그룹화
   const phaseMap = new Map<number, PipelineNode[]>();
   for (const node of nodes) {
     const g = phaseMap.get(node.phase_number) ?? [];
@@ -66,7 +69,6 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
   const [containerWidth, setContainerWidth] = useState(0);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-  // 컨테이너 크기 감지 — FE-D3-003: 크기 0이면 ResizeObserver로 재시도
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -80,7 +82,6 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
     return () => ro.disconnect();
   }, []);
 
-  // D3 렌더링
   useEffect(() => {
     if (!svgRef.current || containerWidth === 0 || nodes.length === 0) return;
 
@@ -94,7 +95,7 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
     svg.attr('width', containerWidth).attr('height', svgHeight);
     setTooltip(null);
 
-    // 화살표 마커
+    // 화살표 마커 (warm border color)
     svg
       .append('defs')
       .append('marker')
@@ -106,7 +107,7 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
       .attr('orient', 'auto')
       .append('polygon')
       .attr('points', '0 0, 7 3, 0 6')
-      .attr('fill', '#475569');
+      .attr('fill', 'var(--border-strong)');
 
     // 엣지
     const edgeG = svg.append('g');
@@ -114,14 +115,16 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
       const src = nodeMap.get(edge.source);
       const tgt = nodeMap.get(edge.target);
       if (!src || !tgt) {
-        console.warn(`[PipelineFlowDiagram] PARSE-ARR-002: edge node not found — source="${edge.source}" target="${edge.target}"`);
+        console.warn(
+          `[PipelineFlowDiagram] PARSE-ARR-002: edge node not found — source="${edge.source}" target="${edge.target}"`,
+        );
         continue;
       }
 
       const x1 = src.x + NODE_W / 2;
       const y1 = src.y + NODE_H;
       const x2 = tgt.x + NODE_W / 2;
-      const y2 = tgt.y - 2; // 화살표 시작점
+      const y2 = tgt.y - 2;
 
       const my = (y1 + y2) / 2;
       const d = `M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`;
@@ -130,11 +133,12 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
         .append('path')
         .attr('d', d)
         .attr('fill', 'none')
-        .attr('stroke', '#475569')
+        .attr('stroke', 'var(--border-strong)')
         .attr('stroke-width', 1.5)
+        .attr('stroke-linecap', 'round')
         .attr('marker-end', 'url(#arrow-pipeline)');
 
-      // 엣지 라벨 (분기 조건)
+      // 엣지 라벨 — pill style on canvas bg
       if (edge.label) {
         const lx = (x1 + x2) / 2;
         const ly = my;
@@ -146,24 +150,25 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')
           .attr('font-size', '10')
-          .attr('font-family', 'sans-serif')
-          .attr('fill', '#64748b')
+          .attr('font-family', CHART_THEME.fontFamilyMono)
+          .attr('fill', CHART_THEME.axisText)
           .text(edge.label);
 
-        // 라벨 배경
         const bbox = (text.node() as SVGTextElement).getBBox();
         bg
           .insert('rect', 'text')
-          .attr('x', bbox.x - 3)
+          .attr('x', bbox.x - 5)
           .attr('y', bbox.y - 2)
-          .attr('width', bbox.width + 6)
+          .attr('width', bbox.width + 10)
           .attr('height', bbox.height + 4)
-          .attr('rx', 3)
-          .attr('fill', '#0f172a');
+          .attr('rx', 10)
+          .attr('fill', 'var(--bg-canvas)')
+          .attr('stroke', 'var(--border-default)')
+          .attr('stroke-width', 1);
       }
     }
 
-    // 노드
+    // 노드 — surface bg with hover brand-tint
     const nodeG = svg.append('g');
     for (const { node, x, y } of layout) {
       const g = nodeG
@@ -173,49 +178,50 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
         .attr('tabindex', '0')
         .attr('aria-label', `${node.label}: ${node.description}`);
 
-      // 박스
       g.append('rect')
         .attr('width', NODE_W)
         .attr('height', NODE_H)
-        .attr('rx', 6)
-        .attr('fill', '#1e293b')
-        .attr('stroke', '#334155')
-        .attr('stroke-width', 1.5);
+        .attr('rx', 10)
+        .attr('fill', 'var(--bg-surface)')
+        .attr('stroke', 'var(--border-default)')
+        .attr('stroke-width', 1);
 
-      // 호버 효과용 투명 오버레이
       g.append('rect')
         .attr('width', NODE_W)
         .attr('height', NODE_H)
-        .attr('rx', 6)
+        .attr('rx', 10)
         .attr('fill', 'transparent')
         .on('mouseover', function () {
-          d3.select(this.parentNode as Element)
-            .select('rect:first-child')
-            .attr('stroke', '#64748b');
+          const box = d3.select(this.parentNode as Element).select('rect:first-child');
+          box
+            .attr('fill', 'var(--brand-subtle)')
+            .attr('stroke', 'var(--brand)')
+            .attr('stroke-width', 1.5);
         })
         .on('mouseout', function () {
-          d3.select(this.parentNode as Element)
-            .select('rect:first-child')
-            .attr('stroke', '#334155');
+          const box = d3.select(this.parentNode as Element).select('rect:first-child');
+          box
+            .attr('fill', 'var(--bg-surface)')
+            .attr('stroke', 'var(--border-default)')
+            .attr('stroke-width', 1);
         })
         .on('click', () => {
           setTooltip({ x, y, label: node.label, description: node.description });
         });
 
-      // 라벨 텍스트
       g.append('text')
         .attr('x', NODE_W / 2)
         .attr('y', NODE_H / 2)
         .attr('dy', '0.35em')
         .attr('text-anchor', 'middle')
-        .attr('font-size', '12')
-        .attr('font-family', 'sans-serif')
-        .attr('fill', '#e2e8f0')
+        .attr('font-size', '13')
+        .attr('font-family', 'var(--font-sans)')
+        .attr('font-weight', '500')
+        .attr('fill', 'var(--text-primary)')
         .attr('pointer-events', 'none')
         .text(node.label);
     }
 
-    // SVG 클릭 시 툴팁 닫기
     svg.on('click', (event: MouseEvent) => {
       if ((event.target as Element).tagName === 'svg') setTooltip(null);
     });
@@ -225,9 +231,12 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
 
   return (
     <div ref={containerRef} className="relative w-full select-none">
-      {/* 버전 표시 */}
-      <div className="absolute top-2 right-2 text-[11px] text-slate-500 pointer-events-none z-10">
-        파이프라인 버전: {version}
+      {/* 버전 표시 — pill */}
+      <div
+        className="absolute top-3 right-3 px-2.5 py-1 bg-canvas border border-border-default rounded-sm text-[10px] font-semibold uppercase tracking-widest font-mono text-tertiary pointer-events-none"
+        style={{ zIndex: 10 }}
+      >
+        v{version}
       </div>
 
       <svg ref={svgRef} className="w-full" />
@@ -236,24 +245,26 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
       {tooltip && (() => {
         const pos = layout.find((p) => p.node.label === tooltip.label);
         if (!pos) return null;
-        const tipLeft = Math.max(8, Math.min(pos.x, containerWidth - 216));
-        const tipTop = pos.y > 120 ? pos.y - 88 : pos.y + NODE_H + 8;
+        const tipLeft = Math.max(8, Math.min(pos.x, containerWidth - 268));
+        const tipTop = pos.y > 120 ? pos.y - 104 : pos.y + NODE_H + 12;
         return (
           <div
-            className="absolute z-20 w-52 bg-slate-800 border border-slate-600 rounded-lg p-3 shadow-xl pointer-events-auto"
-            style={{ left: tipLeft, top: tipTop }}
+            className="absolute w-[260px] bg-surface border border-border-default rounded-lg p-4 shadow-e4 pointer-events-auto"
+            style={{ left: tipLeft, top: tipTop, zIndex: Z_INDEX.DROPDOWN }}
           >
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <span className="text-slate-200 text-xs font-semibold">{tooltip.label}</span>
-              <button
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <span className="text-primary text-[14px] font-semibold">{tooltip.label}</span>
+              <IconButton
                 aria-label="툴팁 닫기"
-                className="text-slate-500 hover:text-slate-300 text-sm leading-none shrink-0"
                 onClick={() => setTooltip(null)}
-              >
-                ×
-              </button>
+                variant="ghost"
+                size="sm"
+                icon={<Icon name="x" size={14} />}
+              />
             </div>
-            <p className="text-slate-400 text-xs leading-relaxed">{tooltip.description}</p>
+            <p className="text-secondary text-[13px] leading-[1.625] m-0">
+              {tooltip.description}
+            </p>
           </div>
         );
       })()}

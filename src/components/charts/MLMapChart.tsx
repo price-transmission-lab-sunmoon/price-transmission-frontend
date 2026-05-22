@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { PANEL_CHART_COLORS, ANOMALY_COLORS } from '@/utils/colorUtils';
+import { CHART_THEME } from '@/utils/chartTheme';
 import type { MlMapPoint } from '@/types/anomaly';
 
 interface Props {
@@ -82,15 +83,15 @@ export function MLMapChart({ points, xLabel, yLabel, height = 240 }: Props) {
       .attr('stroke-width', 2);
 
     // axes
-    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(4)).attr('color', '#64748b');
-    g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', '#64748b');
+    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(4)).attr('color', CHART_THEME.axisText);
+    g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', CHART_THEME.axisText);
 
     // axis labels from API response
     if (xLabel) {
       g.append('text')
         .attr('x', w / 2).attr('y', h + 32)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '10px').attr('fill', '#94a3b8')
+        .attr('font-size', '10px').attr('fill', CHART_THEME.axisText)
         .text(xLabel);
     }
     if (yLabel) {
@@ -98,14 +99,14 @@ export function MLMapChart({ points, xLabel, yLabel, height = 240 }: Props) {
         .attr('transform', `rotate(-90)`)
         .attr('x', -h / 2).attr('y', -36)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '10px').attr('fill', '#94a3b8')
+        .attr('font-size', '10px').attr('fill', CHART_THEME.axisText)
         .text(yLabel);
     }
   }, [points, xLabel, yLabel, height]);
 
   if (points.length === 0) {
     return (
-      <div className="flex items-center justify-center text-slate-500 text-xs" style={{ height }}>
+      <div className="flex items-center justify-center text-tertiary text-[12px]" style={{ height }}>
         ML 결과맵 데이터가 없습니다.
       </div>
     );

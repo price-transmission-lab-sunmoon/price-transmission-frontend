@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { parse } from 'date-fns';
 import { PANEL_CHART_COLORS } from '@/utils/colorUtils';
+import { CHART_THEME } from '@/utils/chartTheme';
 import { attachHoverOverlay, removeHoverTooltip } from '@/utils/chartHover';
 import type { TransmissionRateDataPoint } from '@/types/anomaly';
 
@@ -81,8 +82,8 @@ export function BreakpointsChart({ data, bpDates = [], height = 200 }: Props) {
         .attr('stroke-dasharray', '4 2');
     });
 
-    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(4)).attr('color', '#64748b');
-    g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', '#64748b');
+    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(4)).attr('color', CHART_THEME.axisText);
+    g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', CHART_THEME.axisText);
 
     // FX-5: hover overlay
     attachHoverOverlay({
@@ -111,7 +112,7 @@ export function BreakpointsChart({ data, bpDates = [], height = 200 }: Props) {
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center text-slate-500 text-xs" style={{ height }}>
+      <div className="flex items-center justify-center text-tertiary text-[12px]" style={{ height }}>
         해당 기간 데이터가 없습니다.
       </div>
     );

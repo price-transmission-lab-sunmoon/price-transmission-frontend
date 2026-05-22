@@ -11,6 +11,9 @@ import {
   SEGMENT_COLORS_PRIMARY,
   SEGMENT_COLORS_SECONDARY,
 } from '@/utils/colorUtils';
+import { CHART_THEME } from '@/utils/chartTheme';
+import { createChartTooltip } from '@/utils/chartTooltip';
+import { StateView } from '@/components/ui/StateView';
 import type { SegmentId } from '@/types/literals';
 import {
   computeWarmupBands,
@@ -21,10 +24,13 @@ import {
   pickXTickInterval,
 } from './streamChartHelpers';
 
-const MARGIN = { top: 20, right: 24, bottom: 36, left: 52 };
+// rev.6 spec margins — top/right/bottom/left bumped for breathing room
+// (warmup label, event labels, y-axis title).
+const MARGIN = { top: 28, right: 32, bottom: 36, left: 56 };
 const ANIMATION_DURATION = 800;
 const ZOOM_END_DEBOUNCE_MS = 200;
 const CLIP_ID = 'stream-chart-clip';
+const TOOLTIP_ID = 'stream-chart-tooltip';
 
 export function StreamChart() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -69,7 +75,6 @@ export function StreamChart() {
 
   // 자동 anomaly 선택 + 패널 자동 열림 폐기 (2026-05-21).
   // 사용자 클릭 없이 패널이 열리면 차트 가림 + 매번 같은 노드 강제 강조.
-  // 첫 진입 = 패널 닫힘. 사용자가 노드 클릭해야 패널 오픈.
 
   const chartData = useMemo(() => {
     if (!primaryData) return null;
@@ -95,7 +100,6 @@ export function StreamChart() {
     if (containerSize.w === 0 || containerSize.h === 0) return;
 
     const svg = d3.select(svgRef.current);
-    // 진행 중 transition 강제 종료 → dasharray·dashoffset 잔존·재진입 충돌 방지.
     svg.interrupt();
     svg.selectAll('*').interrupt();
     svg.selectAll('*').remove();
@@ -114,7 +118,7 @@ export function StreamChart() {
     // xScale: 전체 도메인 고정 (viewport는 zoom transform으로)
     const xScale = d3.scaleTime().domain([chartData.domainFrom, chartData.domainTo]).range([0, innerW]);
 
-    // 초기 Y 도메인: filterFrom/To viewport 기준
+    // 초기 Y 도메인: filterFrom/To viewport 기준 (rev.6 viewport dynamic sync)
     const initViewFrom = parseFilterYM(filterFrom) ?? chartData.domainFrom;
     const initViewTo = parseFilterYM(filterTo) ?? chartData.domainTo;
     const [initYMin, initYMax] = computeYDomain(chartData, secondaryChartData, initViewFrom, initViewTo);
@@ -134,10 +138,13 @@ export function StreamChart() {
     const gridG = root.append('g').attr('class', 'grid');
 
     const styleAxisText = (g: d3.Selection<SVGGElement, unknown, null, undefined>) =>
-      g.selectAll('text').attr('fill', '#94a3b8').attr('font-size', 11);
+      g
+        .selectAll('text')
+        .attr('fill', CHART_THEME.axisText)
+        .attr('font-size', CHART_THEME.fontSize)
+        .attr('font-family', CHART_THEME.fontFamilyMono);
 
     const drawXAxis = (scale: d3.ScaleTime<number, number>) => {
-      // viewport span에 따라 동적 tick interval. 최대확대 시 1개월 단위 보장.
       const domain = scale.domain() as [Date, Date];
       const interval = pickXTickInterval(domain);
       const fmt = pickXTickFormat(domain);
@@ -145,34 +152,57 @@ export function StreamChart() {
         d3
           .axisBottom(scale)
           .ticks(interval)
+          .tickSize(0)
+          .tickPadding(10)
           .tickFormat(((d: Date) => fmt(d)) as never),
       );
       styleAxisText(xAxisG);
     };
     const drawYAxis = (scale: d3.ScaleLinear<number, number>) => {
-      yAxisG.call(d3.axisLeft(scale).ticks(5).tickFormat((d) => `${(+d).toFixed(2)}`));
+      yAxisG.call(
+        d3
+          .axisLeft(scale)
+          .ticks(5)
+          .tickSize(0)
+          .tickPadding(10)
+          .tickFormat((d) => `${(+d).toFixed(2)}`),
+      );
       styleAxisText(yAxisG);
+      yAxisG.select('.domain').remove();
     };
     const drawGrid = (scale: d3.ScaleLinear<number, number>) => {
       gridG
         .call(d3.axisLeft(scale).ticks(5).tickSize(-innerW).tickFormat('' as never))
         .selectAll('line')
-        .attr('stroke', '#1e293b')
-        .attr('stroke-dasharray', '3,3');
+        .attr('stroke', CHART_THEME.gridLine)
+        .attr('stroke-dasharray', CHART_THEME.gridDasharray);
       gridG.select('.domain').remove();
     };
 
     drawXAxis(xScale);
     drawYAxis(yScale);
     drawGrid(yScale);
-    root.selectAll('.domain, .tick line').attr('stroke', '#334155');
+    root.selectAll('.domain, .tick line').attr('stroke', CHART_THEME.axisLine);
+
+    // Y-axis title — uppercase, tracking-wider
+    root
+      .append('text')
+      .attr('class', 'y-title')
+      .attr('transform', `translate(${-44},${innerH / 2}) rotate(-90)`)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', 11)
+      .attr('font-weight', 600)
+      .attr('letter-spacing', '0.08em')
+      .attr('fill', CHART_THEME.axisText)
+      .attr('font-family', CHART_THEME.fontFamilyMono)
+      .text('TRANSMISSION');
 
     // ─── 클립된 차트 영역 ────────────────────────────
     const chartGroup = root.append('g').attr('clip-path', `url(#${CLIP_ID})`);
 
-    // 기준선 y=0 / y=1
+    // 기준선 y=1 (완전 전달) + y=0 (역전 경계) — brand teal at low opacity
     const refLineGroup = chartGroup.append('g').attr('class', 'ref-lines');
-    const drawRefLine = (yVal: number, label: string, color: string) => {
+    const drawRefLine = (yVal: number, label: string) => {
       const yPx = yScale(yVal);
       refLineGroup
         .append('line')
@@ -182,28 +212,29 @@ export function StreamChart() {
         .attr('x2', innerW)
         .attr('y1', yPx)
         .attr('y2', yPx)
-        .attr('stroke', color)
-        .attr('stroke-width', 1)
-        .attr('stroke-dasharray', '4,3')
+        .attr('stroke', CHART_THEME.baselineRef)
+        .attr('stroke-width', 1.25)
+        .attr('stroke-dasharray', CHART_THEME.baselineRefDash)
         .attr('opacity', 0.5);
       refLineGroup
         .append('text')
         .attr('class', 'ref-label')
         .attr('data-yval', yVal)
         .attr('x', innerW - 4)
-        .attr('y', yPx - 3)
+        .attr('y', yPx - 4)
         .attr('text-anchor', 'end')
-        .attr('font-size', '9px')
-        .attr('fill', color)
-        .attr('opacity', 0.7)
+        .attr('font-size', '10px')
+        .attr('font-weight', 600)
+        .attr('fill', CHART_THEME.baselineRef)
+        .attr('opacity', 0.85)
+        .attr('font-family', CHART_THEME.fontFamilyMono)
         .text(label);
     };
-    drawRefLine(0, '역전 경계 (0)', '#94a3b8');
-    drawRefLine(1, '정상/과잉 (1)', '#94a3b8');
+    drawRefLine(0, '역전 경계 (0)');
+    drawRefLine(1, '완전 전달 (1.0)');
 
-    // ─── warmup 배경 band — 분석 신뢰도 낮은 초기 구간 ─
-    // 라인은 끊지 않음. 회색 vertical band 로 한 번에 표시.
-    // events 오버레이보다 먼저 그려서 events가 위에 오도록.
+    // ─── warmup 배경 band ─────────────────────────────
+    // 라인은 끊지 않음. 회색 vertical band. events 보다 먼저 그려서 events가 위에.
     const warmupGroup = chartGroup.append('g').attr('class', 'warmup-bands');
     const warmupBands = computeWarmupBands(chartData.series);
     for (let i = 0; i < warmupBands.length; i++) {
@@ -217,24 +248,24 @@ export function StreamChart() {
         .attr('y', 0)
         .attr('width', Math.max(0, x1 - x0))
         .attr('height', innerH)
-        .attr('fill', '#475569')
-        .attr('opacity', 0.18);
-      // 텍스트 라벨 — 첫 band 상단에만
+        .attr('fill', CHART_THEME.warmupBand);
       if (i === 0) {
         g.append('text')
           .attr('class', 'warmup-label')
           .attr('x', x0 + 6)
           .attr('y', 14)
           .attr('font-size', '10px')
-          .attr('fill', '#94a3b8')
-          .attr('opacity', 0.85)
-          .text('warmup');
+          .attr('font-weight', 600)
+          .attr('letter-spacing', '0.08em')
+          .attr('fill', CHART_THEME.warmupLabel)
+          .text('WARMUP');
       }
     }
 
-    // ─── 이벤트 오버레이 (data-event-key로 selectable) ─
+    // ─── 이벤트 오버레이 (data-event-key) ─────────────
     const eventGroup = chartGroup.append('g').attr('class', 'events');
-    const activeEvents = eventFilter.length > 0 ? events.filter((e) => eventFilter.includes(e.event_key)) : [];
+    const activeEvents =
+      eventFilter.length > 0 ? events.filter((e) => eventFilter.includes(e.event_key)) : [];
     for (const ev of activeEvents) {
       const x0 = xScale(parseYearMonth(ev.start_date));
       const x1 = xScale(parseYearMonth(ev.end_date));
@@ -246,22 +277,20 @@ export function StreamChart() {
         .attr('width', Math.max(0, x1 - x0))
         .attr('height', innerH)
         .attr('fill', ev.color_hex)
-        .attr('opacity', 0.12);
+        .attr('opacity', 0.1);
       g.append('line')
         .attr('class', 'ev-line')
         .attr('x1', x0)
         .attr('x2', x0)
         .attr('y1', 0)
         .attr('y2', innerH)
-        .attr('stroke', ev.color_hex)
+        .attr('stroke', CHART_THEME.eventLine)
         .attr('stroke-width', 1)
+        .attr('stroke-dasharray', CHART_THEME.eventLineDash)
         .attr('opacity', 0.5);
     }
 
-    // ─── line/area generators ─────────────────────────
-    // 정책: 단일 라인. warmup·null 둘 다 라인을 끊지 않음.
-    //  - null은 drawSeries에서 사전 필터 (그 점이 데이터에서 빠짐)
-    //  - warmup은 데이터에 포함하되 라인은 끊지 않음. 별도 배경 band로 시각화.
+    // ─── line generators (single path per segment — rev.6) ─
     type ChartPt = { period: Date; transmission_rate: number | null; in_warmup_period?: boolean };
     const lineGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
       d3
@@ -270,8 +299,7 @@ export function StreamChart() {
         .x((p) => xSc(p.period))
         .y((p) => ySc(p.transmission_rate!))
         .curve(d3.curveMonotoneX);
-    // area fill 폐기 — y=0~rate 의 면적은 "전이율의 시간적분"으로 물리적 의미 없음.
-    // 시각적으로 큰 산처럼 보여 변동성 과장. multi-segment overlay에서 더 심함.
+    // area fill 폐기 — y=0~rate 면적은 물리적 의미 없음 (rev.6 contract).
 
     const seriesGroup = chartGroup.append('g').attr('class', 'series');
 
@@ -282,10 +310,10 @@ export function StreamChart() {
       prefix = '',
     ) => {
       const colorMap = isSecondary ? SEGMENT_COLORS_SECONDARY : SEGMENT_COLORS_PRIMARY;
-      const color = colorMap[segId] ?? '#94a3b8';
-      const opacity = isSecondary ? 0.4 : 1;
+      const color = colorMap[segId] ?? CHART_THEME.axisText;
+      const opacity = isSecondary ? 0.7 : 1;
 
-      // null 사전 필터 — defined 의존 없이 라인이 완전 연속이 되도록.
+      // null 사전 필터 — 라인이 완전 연속.
       const clean = data.filter((p) => p.transmission_rate !== null);
 
       const path = seriesGroup
@@ -294,10 +322,12 @@ export function StreamChart() {
         .attr('class', `${prefix}line-${segId}`)
         .attr('fill', 'none')
         .attr('stroke', color)
-        .attr('stroke-width', isSecondary ? 1.5 : 2)
+        .attr('stroke-width', isSecondary ? 1.5 : 2.25)
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-linejoin', 'round')
         .attr('opacity', opacity);
 
-      const finalDash = isSecondary && sameCluster ? '5,4' : null;
+      const finalDash = isSecondary ? '4,3' : null;
       const pathNode = path.node();
       if (pathNode) {
         path.attr('d', lineGen(xScale, yScale));
@@ -320,13 +350,13 @@ export function StreamChart() {
     }
     for (const s of chartData.series) drawSeries(s.segment_id, s.data, false);
 
-    // ─── 노드 렌더 ─────────────────────────────────────
+    // ─── 노드 렌더 (3-layer: pulse → white ring → dot) ───
     const anomalyGroup = chartGroup.append('g').attr('class', 'anomaly-nodes');
 
     const renderNodes = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) => {
       anomalyGroup.selectAll('*').remove();
-      // 정렬: 낮은 등급 먼저 → 높은 등급 위로 (z-order로 클릭 우선순위 보장).
-      // 노드 X spread 폐기: 자기 시점에 정직하게 위치. 겹치면 stack.
+      // 정렬: reference → medium → high (낮은 등급 먼저, 높은 등급 위로).
+      // X spread 폐기: 자기 시점에 정직하게 위치. 겹치면 stack.
       const gradeOrder = { reference: 0, medium: 1, high: 2 } as const;
       const list = [...chartData.anomalies].sort(
         (a, b) => gradeOrder[a.confidence_grade] - gradeOrder[b.confidence_grade],
@@ -338,57 +368,88 @@ export function StreamChart() {
         const r = ANOMALY_RADII[an.confidence_grade];
         const color = ANOMALY_COLORS[an.confidence_grade];
         const isSelected = an.anomaly_id === selectedAnomalyId;
+        const isReference = an.confidence_grade === 'reference';
 
-        // glow (high/medium 공통). CSS class로 펄스 — SVG <animate> 폐기.
-        if (an.confidence_grade === 'high' || an.confidence_grade === 'medium') {
+        // Layer 1: pulse halo (high only — CSS @keyframes, never SVG <animate>)
+        if (an.confidence_grade === 'high') {
           anomalyGroup
             .append('circle')
             .attr('data-anomaly-glow', an.anomaly_id)
-            .attr('class', an.confidence_grade === 'high' ? 'anomaly-pulse-high' : 'anomaly-glow-medium')
+            .attr('class', 'anomaly-pulse-high')
             .attr('cx', cx)
             .attr('cy', cy)
             .attr('r', r + 3)
             .attr('fill', color)
-            .attr('opacity', 0.25)
-            .style('filter', `blur(${an.confidence_grade === 'high' ? 3 : 2}px)`)
             .style('pointer-events', 'none');
         }
 
+        // Layer 2: white ring (separator from line)
+        if (!isReference) {
+          anomalyGroup
+            .append('circle')
+            .attr('data-anomaly-ring', an.anomaly_id)
+            .attr('cx', cx)
+            .attr('cy', cy)
+            .attr('r', r + 2.5)
+            .attr('fill', 'var(--bg-surface)')
+            .style('pointer-events', 'none');
+        }
+
+        // Layer 3: main dot — reference = outline-only ring
         const circle = anomalyGroup
           .append('circle')
           .attr('data-anomaly-id', an.anomaly_id)
           .attr('cx', cx)
           .attr('cy', cy)
           .attr('r', r)
-          .attr('fill', color)
-          .attr('stroke', isSelected ? '#ffffff' : 'transparent')
-          .attr('stroke-width', isSelected ? 2 : 0)
+          .attr('fill', isReference ? 'var(--bg-surface)' : color)
+          .attr(
+            'stroke',
+            isSelected ? 'var(--brand)' : isReference ? color : 'transparent',
+          )
+          .attr('stroke-width', isSelected ? 3 : isReference ? 2 : 0)
           .attr('cursor', 'pointer')
-          .style('filter', isSelected ? 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' : 'none');
+          .style(
+            'filter',
+            isSelected ? 'drop-shadow(0 0 8px rgba(13, 148, 136, 0.5))' : 'none',
+          );
 
+        // NEW dot top-right
         if (an.is_new) {
           anomalyGroup
-            .append('text')
+            .append('circle')
             .attr('data-anomaly-new', an.anomaly_id)
-            .attr('x', cx)
-            .attr('y', cy - r - 6)
-            .attr('text-anchor', 'middle')
-            .attr('fill', color)
-            .attr('font-size', '9px')
-            .attr('font-weight', '700')
-            .style('pointer-events', 'none')
-            .text('NEW');
+            .attr('cx', cx + r + 1)
+            .attr('cy', cy - r - 1)
+            .attr('r', 2.5)
+            .attr('fill', 'var(--warning)')
+            .attr('stroke', 'var(--bg-surface)')
+            .attr('stroke-width', 1)
+            .style('pointer-events', 'none');
         }
 
         circle.on('click', () => selectAnomaly(an.anomaly_id));
         circle
           .on('mouseenter', function (event: MouseEvent) {
-            d3.select(this).attr('r', r * 1.4);
-            showTooltip(event, an.periodStr, an.confidence_grade, an.transmission_rate, an.primary_pattern);
+            d3.select(this)
+              .transition()
+              .duration(120)
+              .attr('r', r * 1.35);
+            showTooltip(
+              event,
+              an.periodStr,
+              an.confidence_grade,
+              an.transmission_rate,
+              an.primary_pattern,
+              an.is_new,
+            );
           })
           .on('mousemove', (event: MouseEvent) => moveTooltip(event))
           .on('mouseleave', function () {
-            d3.select(this).attr('r', r);
+            d3.select(this)
+              .transition()
+              .duration(120)
+              .attr('r', r);
             hideTooltip();
           });
       }
@@ -396,10 +457,7 @@ export function StreamChart() {
 
     renderNodes(xScale, yScale);
 
-    // ─── 줌 redraw ────────────────────────────────────
-    // 정책 (2026-05-21 갱신): viewport 변화마다 Y 도메인 재계산.
-    // 화면에 보이는 anomaly + series 통합 min/max + 10% 패딩 (최소 0.2).
-    // 줌·팬 시 그래프가 viewport에 꽉 차게 보이도록 정확 표시.
+    // ─── 줌 redraw (rev.6: viewport Y dynamic sync) ────
     const applyTransform = (transform: d3.ZoomTransform) => {
       const newX = transform.rescaleX(xScale);
       const [viewFrom, viewTo] = newX.domain() as [Date, Date];
@@ -410,9 +468,9 @@ export function StreamChart() {
       drawXAxis(newX);
       drawYAxis(newY);
       drawGrid(newY);
-      root.selectAll('.domain, .tick line').attr('stroke', '#334155');
+      root.selectAll('.domain, .tick line').attr('stroke', CHART_THEME.axisLine);
 
-      // path 갱신 — newX·newY 둘 다 적용. null 사전 필터로 연속성 유지.
+      // path 갱신 — null 사전 필터로 연속성 유지.
       if (secondaryChartData) {
         for (const s of secondaryChartData.series) {
           const clean = s.data.filter((p) => p.transmission_rate !== null);
@@ -424,7 +482,7 @@ export function StreamChart() {
         seriesGroup.select(`.line-${s.segment_id}`).attr('d', lineGen(newX, newY)(clean) ?? '');
       }
 
-      // 노드 — bucket spread 폐기. cx = 정확 시점. cy = newY 기준.
+      // 노드 위치 — X spread 폐기, cx = 정확 시점, cy = newY.
       const list = chartData.anomalies;
       for (const an of list) {
         const cx = newX(an.period);
@@ -432,13 +490,14 @@ export function StreamChart() {
         const r = ANOMALY_RADII[an.confidence_grade];
         anomalyGroup.select(`[data-anomaly-id="${an.anomaly_id}"]`).attr('cx', cx).attr('cy', cy);
         anomalyGroup.select(`[data-anomaly-glow="${an.anomaly_id}"]`).attr('cx', cx).attr('cy', cy);
+        anomalyGroup.select(`[data-anomaly-ring="${an.anomaly_id}"]`).attr('cx', cx).attr('cy', cy);
         anomalyGroup
           .select(`[data-anomaly-new="${an.anomaly_id}"]`)
-          .attr('x', cx)
-          .attr('y', cy - r - 6);
+          .attr('cx', cx + r + 1)
+          .attr('cy', cy - r - 1);
       }
 
-      // 기준선 — X(innerW 고정) + Y(newY로 재계산)
+      // 기준선
       refLineGroup.selectAll<SVGLineElement, unknown>('.ref-line').each(function () {
         const sel = d3.select(this);
         const yVal = +sel.attr('data-yval');
@@ -448,10 +507,10 @@ export function StreamChart() {
       refLineGroup.selectAll<SVGTextElement, unknown>('.ref-label').each(function () {
         const sel = d3.select(this);
         const yVal = +sel.attr('data-yval');
-        sel.attr('x', innerW - 4).attr('y', newY(yVal) - 3);
+        sel.attr('x', innerW - 4).attr('y', newY(yVal) - 4);
       });
 
-      // warmup band X 위치 갱신
+      // warmup band
       for (let i = 0; i < warmupBands.length; i++) {
         const [b0, b1] = warmupBands[i];
         const x0 = newX(b0);
@@ -461,7 +520,7 @@ export function StreamChart() {
         if (i === 0) g.select('.warmup-label').attr('x', x0 + 6);
       }
 
-      // 이벤트 오버레이 — data-event-key로 정확 매칭
+      // 이벤트
       for (const ev of activeEvents) {
         const x0 = newX(parseYearMonth(ev.start_date));
         const x1 = newX(parseYearMonth(ev.end_date));
@@ -471,12 +530,7 @@ export function StreamChart() {
       }
     };
 
-    // ─── 줌 동작 ─────────────────────────────────────
-    // 설계 계약 (CLAUDE.md 참조):
-    //  - 휠 즉각 반응 = transform 동기 적용. RAF throttle 금지.
-    //  - 줌 멈춤 = 차트 멈춤. Y는 chartData 진입 시 1회 산출 후 고정.
-    //  - 줌 종료 후 추가 애니메이션·transition 금지.
-    //  - filter push만 debounce (스토어 동기).
+    // ─── 줌 동작 (rev.6 contract — 변경 금지) ──────────
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 30])
@@ -523,7 +577,8 @@ export function StreamChart() {
         zoomEndTimerRef.current = null;
       }
     };
-  }, [chartData, secondaryChartData, events, eventFilter, sameCluster, setFilterFrom, setFilterTo, containerSize]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartData, secondaryChartData, events, eventFilter, sameCluster, setFilterFrom, setFilterTo, containerSize]);
 
   // ─── 선택 상태 토글 (재구성 회피) ─────────────────
   useEffect(() => {
@@ -536,9 +591,12 @@ export function StreamChart() {
         const id = Number(sel.attr('data-anomaly-id'));
         const isSelected = id === selectedAnomalyId;
         sel
-          .attr('stroke', isSelected ? '#ffffff' : 'transparent')
-          .attr('stroke-width', isSelected ? 2 : 0)
-          .style('filter', isSelected ? 'drop-shadow(0 0 4px rgba(255,255,255,0.6))' : 'none');
+          .attr('stroke', isSelected ? 'var(--brand)' : 'transparent')
+          .attr('stroke-width', isSelected ? 3 : 0)
+          .style(
+            'filter',
+            isSelected ? 'drop-shadow(0 0 8px rgba(13, 148, 136, 0.5))' : 'none',
+          );
       });
   }, [selectedAnomalyId]);
 
@@ -567,37 +625,54 @@ export function StreamChart() {
     lastPushedRef.current = { from: filterFrom, to: filterTo };
   }, [filterFrom, filterTo]);
 
-  // ─── tooltip DOM helpers ────────────────────────
-  function showTooltip(event: MouseEvent, period: string, grade: string, rate: number, pattern: string) {
-    let tip = document.getElementById('stream-chart-tooltip');
-    if (!tip) {
-      tip = document.createElement('div');
-      tip.id = 'stream-chart-tooltip';
-      tip.style.cssText =
-        'position:fixed;pointer-events:none;background:#1e293b;border:1px solid #334155;border-radius:6px;padding:8px 12px;font-size:12px;color:#f1f5f9;z-index:9999;white-space:nowrap;';
-      document.body.appendChild(tip);
-    }
-    const gradeLabel: Record<string, string> = { high: '고신뢰', medium: '중신뢰', reference: '참고' };
+  // ─── tooltip DOM helpers (light theme — createChartTooltip) ─
+  function showTooltip(
+    event: MouseEvent,
+    period: string,
+    grade: string,
+    rate: number,
+    pattern: string,
+    isNew: boolean,
+  ) {
+    const tip = createChartTooltip(TOOLTIP_ID);
+    const gradeLabel: Record<string, string> = {
+      high: '고신뢰',
+      medium: '중신뢰',
+      reference: '참고',
+    };
+    const gradeColor: Record<string, string> = {
+      high: ANOMALY_COLORS.high,
+      medium: ANOMALY_COLORS.medium,
+      reference: ANOMALY_COLORS.reference,
+    };
     const regime = rate < 0 ? ' (역전)' : rate > 1 ? ' (과잉)' : '';
-    tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${period}</div><div>등급: ${gradeLabel[grade] ?? grade}</div><div>전이율: ${rate.toFixed(2)}${regime}</div><div>패턴: ${pattern}</div>`;
+    tip.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${gradeColor[grade]}"></span>
+        <span style="font-weight:600;color:${gradeColor[grade]};font-size:11px;letter-spacing:0.08em;text-transform:uppercase">${gradeLabel[grade] ?? grade}</span>
+        ${isNew ? '<span style="margin-left:auto;font-size:9px;font-weight:700;color:var(--warning);background:var(--warning-subtle);border:1px solid var(--warning-border);padding:1px 4px;border-radius:3px">NEW</span>' : ''}
+      </div>
+      <div style="font-weight:600;font-size:13px;color:var(--text-primary);margin-bottom:3px">${period}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-tertiary)">
+        전이율 ${rate.toFixed(2)}${regime} · ${pattern}
+      </div>
+    `;
     tip.style.display = 'block';
     moveTooltip(event);
   }
   function moveTooltip(event: MouseEvent) {
-    const tip = document.getElementById('stream-chart-tooltip');
+    const tip = document.getElementById(TOOLTIP_ID);
     if (!tip) return;
-    tip.style.left = `${event.clientX + 12}px`;
+    tip.style.left = `${event.clientX + 14}px`;
     tip.style.top = `${event.clientY - 8}px`;
   }
   function hideTooltip() {
-    const tip = document.getElementById('stream-chart-tooltip');
+    const tip = document.getElementById(TOOLTIP_ID);
     if (tip) tip.style.display = 'none';
   }
 
   // ─── resize ────────────────────────────────────
-  // ⚠️ 첫 fire가 0×0 일 수 있다 (mount 직후 layout 미완). setContainerSize는 prev 비교로 skip되고,
-  //    setup useEffect의 `containerSize.w===0` 가드에 막혀 영영 차트가 안 그려진다.
-  //    → 0 fire 무시 + mount 시 getBoundingClientRect로 즉시 sync 측정.
+  // 첫 fire가 0×0 가능 (mount 직후 layout 미완). 0 무시 + 즉시 sync.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -607,7 +682,6 @@ export function StreamChart() {
       const rh = Math.round(h);
       setContainerSize((prev) => (prev.w === rw && prev.h === rh ? prev : { w: rw, h: rh }));
     };
-    // 즉시 sync — paint 후 useEffect 시점엔 layout 적용됨.
     const rect = el.getBoundingClientRect();
     sync(rect.width, rect.height);
 
@@ -621,24 +695,44 @@ export function StreamChart() {
   }, []);
 
   if (!primaryCommodityId) {
-    return <div className="flex items-center justify-center h-full text-slate-500 text-sm">품목을 선택하세요</div>;
+    return (
+      <div className="flex items-center justify-center h-full">
+        <StateView variant="empty" size="inline" icon="list" title="품목을 선택하세요" />
+      </div>
+    );
   }
   if (primaryLoading) {
-    return <div className="flex items-center justify-center h-full text-slate-400 text-sm">로딩 중…</div>;
+    return <StateView variant="loading" size="large" title="데이터를 불러오는 중…" />;
   }
   if (primaryError) {
-    return <div className="flex items-center justify-center h-full text-red-400 text-sm">데이터를 불러오지 못했습니다</div>;
+    return (
+      <StateView
+        variant="error"
+        size="large"
+        title="데이터를 불러오지 못했습니다"
+        description="잠시 후 다시 시도해주세요."
+      />
+    );
   }
 
   const noAnomalies = chartData != null && chartData.anomalies.length === 0;
 
   return (
-    <div ref={containerRef} data-testid="stream-chart" className="w-full h-full min-h-[320px] relative">
+    <div
+      ref={containerRef}
+      data-testid="stream-chart"
+      className="w-full h-full min-h-[360px] relative bg-surface border border-border-default rounded-xl shadow-e2 overflow-hidden"
+    >
       <svg ref={svgRef} className="w-full h-full overflow-visible" />
       {noAnomalies && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
-          <div className="text-slate-300 text-sm">이 기간에는 탐지된 이상이 없습니다.</div>
-          <div className="text-slate-500 text-xs">필터 기간을 넓히거나 다른 품목을 살펴보세요.</div>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <StateView
+            variant="empty"
+            size="large"
+            icon="chart-bar-square"
+            title="이 기간에는 탐지된 이상이 없습니다"
+            description="필터 기간을 넓히거나 다른 품목을 살펴보세요."
+          />
         </div>
       )}
     </div>

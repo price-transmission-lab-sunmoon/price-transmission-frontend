@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import { useMinimapData, type MinimapVariant } from '@/hooks/useMinimapData';
 import { useAppStore } from '@/stores/useAppStore';
 import { SEGMENT_COLORS_PRIMARY, RAW_PRICE_COLORS, ANOMALY_COLORS } from '@/utils/colorUtils';
+import { CHART_THEME } from '@/utils/chartTheme';
 import type {
   AnomalyDensityItem,
   StreamSeriesItem,
@@ -14,11 +15,11 @@ interface MinimapProps {
   variant: MinimapVariant;
 }
 
-const HEIGHT = 64;
+const HEIGHT = 70;
 const TOTAL_HEIGHT = HEIGHT;
 const MARGIN = { top: 8, bottom: 20, left: 24, right: 24 };
-const BRUSH_FILL = 'rgba(100, 149, 237, 0.20)';
-const BRUSH_STROKE = '#6495ED';
+const BRUSH_FILL = 'rgba(13, 148, 136, 0.08)';
+const BRUSH_STROKE = 'var(--brand)';
 const MIN_BRUSH_MONTHS = 3;
 
 function densityColor(item: AnomalyDensityItem): string | null {
@@ -68,9 +69,9 @@ export function Minimap({ variant }: MinimapProps) {
   const getSegmentColor = useCallback(
     (item: StreamSeriesItem | RawPriceSeriesItem): string => {
       if (variant === 'stream') {
-        return SEGMENT_COLORS_PRIMARY[(item as StreamSeriesItem).segment_id as SegmentId] ?? '#94a3b8';
+        return SEGMENT_COLORS_PRIMARY[(item as StreamSeriesItem).segment_id as SegmentId] ?? CHART_THEME.axisText;
       }
-      return RAW_PRICE_COLORS[(item as RawPriceSeriesItem).source as RawPriceSource] ?? '#94a3b8';
+      return RAW_PRICE_COLORS[(item as RawPriceSeriesItem).source as RawPriceSource] ?? CHART_THEME.axisText;
     },
     [variant],
   );
@@ -224,8 +225,11 @@ export function Minimap({ variant }: MinimapProps) {
       .call(xAxis)
       .call((ax) => {
         ax.select('.domain').remove();
-        ax.selectAll('.tick line').attr('stroke', '#475569').attr('stroke-opacity', 0.5);
-        ax.selectAll('.tick text').attr('fill', '#94a3b8').attr('font-size', '10px');
+        ax.selectAll('.tick line').attr('stroke', CHART_THEME.axisLine);
+        ax.selectAll('.tick text')
+          .attr('fill', CHART_THEME.axisText)
+          .attr('font-size', '10px')
+          .attr('font-family', CHART_THEME.fontFamilyMono);
       });
 
     // ④ d3.brushX() 뷰포트 박스
@@ -319,8 +323,8 @@ export function Minimap({ variant }: MinimapProps) {
   if (isLoading) {
     return (
       <div
-        className="bg-slate-800/30 border border-slate-700/50 rounded-lg animate-pulse"
-        style={{ height: HEIGHT }}
+        className="skeleton-bar rounded-md"
+        style={{ height: HEIGHT, animation: 'shimmer 1.6s linear infinite' }}
       />
     );
   }
@@ -328,10 +332,10 @@ export function Minimap({ variant }: MinimapProps) {
   if (isError || (data && !hasData)) {
     return (
       <div
-        className="flex items-center justify-center bg-slate-800/30 border border-slate-700/50 rounded-lg"
+        className="flex items-center justify-center bg-surface border border-border-default rounded-md"
         style={{ height: TOTAL_HEIGHT }}
       >
-        <span className="text-slate-500 text-xs">전체 기간 데이터 없음</span>
+        <span className="text-tertiary text-[12px]">전체 기간 데이터 없음</span>
       </div>
     );
   }
@@ -339,7 +343,7 @@ export function Minimap({ variant }: MinimapProps) {
   return (
     <div
       ref={containerRef}
-      className="bg-slate-800/30 border border-slate-700/50 rounded-lg overflow-hidden"
+      className="bg-surface border border-border-default rounded-md overflow-hidden"
       style={{ height: HEIGHT }}
     >
       <svg ref={svgRef} style={{ display: 'block' }} />

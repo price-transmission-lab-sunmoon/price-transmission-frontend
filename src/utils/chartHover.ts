@@ -3,6 +3,8 @@
 // 차트별로 데이터 포인트와 값 추출만 다르므로 그 부분은 콜백으로 받음.
 import * as d3 from 'd3';
 import { parse } from 'date-fns';
+import { CHART_THEME } from './chartTheme';
+import { Z_INDEX } from './zIndex';
 
 export interface HoverPoint<T> {
   datum: T;
@@ -40,28 +42,27 @@ export function attachHoverOverlay<T>(opts: HoverOverlayOptions<T>) {
     .attr('class', 'hover-line')
     .attr('y1', 0)
     .attr('y2', height)
-    .attr('stroke', '#64748b')
+    .attr('stroke', CHART_THEME.axisText)
     .attr('stroke-width', 1)
     .attr('stroke-dasharray', '3,3')
-    .attr('opacity', 0.7);
+    .attr('opacity', 0.5);
   const dot = guide
     .append('circle')
     .attr('class', 'hover-dot')
     .attr('r', 4)
-    .attr('fill', '#f1f5f9')
-    .attr('stroke', '#0f172a')
+    .attr('fill', 'var(--bg-surface)')
+    .attr('stroke', 'var(--text-primary)')
     .attr('stroke-width', 1.5);
 
   // bisector
   const bisect = d3.bisector<T, Date>((d) => getDate(d)).left;
 
-  // tooltip element
+  // tooltip element — light theme (warm white card + warm border)
   let tip = document.getElementById(tooltipId);
   if (!tip) {
     tip = document.createElement('div');
     tip.id = tooltipId;
-    tip.style.cssText =
-      'position:fixed;pointer-events:none;background:#1e293b;border:1px solid #475569;border-radius:6px;padding:6px 10px;font-size:11px;color:#f1f5f9;z-index:9999;white-space:nowrap;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.4);';
+    tip.style.cssText = `position:fixed;pointer-events:none;background:#ffffff;border:1px solid #e7e2d8;border-radius:8px;padding:8px 12px;font-size:11px;color:#1a1814;z-index:${Z_INDEX.CHART_TOOLTIP};white-space:nowrap;display:none;box-shadow:0 4px 12px rgba(28,24,18,0.06),0 1px 3px rgba(28,24,18,0.04);`;
     document.body.appendChild(tip);
   }
 
@@ -102,7 +103,11 @@ export function attachHoverOverlay<T>(opts: HoverOverlayOptions<T>) {
       const firstVal = hp.values.find((v) => v.value !== null && Number.isFinite(v.value));
       if (firstVal && firstVal.value != null) {
         const py = y(firstVal.value);
-        dot.attr('cx', px).attr('cy', py).attr('fill', firstVal.color ?? '#f1f5f9').style('display', null);
+        dot
+          .attr('cx', px)
+          .attr('cy', py)
+          .attr('fill', firstVal.color ?? 'var(--bg-surface)')
+          .style('display', null);
       } else {
         dot.style('display', 'none');
       }
