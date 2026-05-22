@@ -11,6 +11,22 @@ export function formatPct(value: number | null | undefined, digits = 1): string 
   return `${value.toFixed(digits)}%`;
 }
 
+// BE-1: transmission_rate 표시 — dimensionless ratio (docs/transmission_rate_policy.md §3-1).
+// downstream_pct / upstream_pct. 0.5 = 절반 전이, -0.5 = 역방향, >1 = 과잉.
+// * 100 + '%' 변환 절대 금지.
+export function formatRatio(value: number | null | undefined, digits = 2): string {
+  if (value === null || value === undefined || !isFinite(value)) return '—';
+  return value.toFixed(digits);
+}
+
+// 전이율 해석 라벨 (음수=역전, >1=과잉, [0,1]=정상)
+export function ratioRegimeLabel(value: number | null | undefined): string {
+  if (value === null || value === undefined || !isFinite(value)) return '';
+  if (value < 0) return '역전';
+  if (value > 1) return '과잉';
+  return '정상';
+}
+
 // 숫자 필드 NaN 필터링 — PARSE-NUM-002
 export function safeNum(value: unknown): number | null {
   if (value === null || value === undefined) return null;

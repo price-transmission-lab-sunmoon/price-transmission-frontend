@@ -10,7 +10,7 @@
   "series": [
     {
       "source": "intl_price_krw",
-      "label_kr": "êµ­ì œê°€ (ì›í™” í™˜ì‚°)",
+      "label_kr": "êµ? œê°€ (?í™” ?˜ì‚°)",
       "color_hint": "purple",
       "data": [
         { "period": "2010-01", "value": 210.0, "index_2020": 100.0, "has_anomaly": false, "anomaly_ids": [] },
@@ -32,8 +32,8 @@
       ]
     },
     {
-      "source": "import_price",
-      "label_kr": "ìˆ˜ì…ë‹¨ê°€",
+      "source": "import_price_usd",
+      "label_kr": "?˜ì…?¨ê?",
       "color_hint": "blue",
       "data": [
         { "period": "2010-01", "value": 415.0, "index_2020": 100.0, "has_anomaly": false, "anomaly_ids": [] },

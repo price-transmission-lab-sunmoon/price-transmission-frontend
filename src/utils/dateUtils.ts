@@ -45,6 +45,18 @@ export function presetToFrom(
   }
 }
 
+// P1-1: freshness.data_up_to와 commodity.analysis_end 중 더 최신값 반환.
+// 백엔드 freshness가 stale한 경우 (예: data_up_to=2024-12인데 실데이터는 2026-02까지) 안전망.
+export function resolveEffectiveDataEnd(
+  freshnessUpTo: string | null | undefined,
+  analysisEnd: string | null | undefined,
+): string | null {
+  const f = freshnessUpTo ?? null;
+  const a = analysisEnd ?? null;
+  if (f && a) return f > a ? f : a;
+  return f ?? a ?? null;
+}
+
 // YYYY-MM → 한국어 표시 (예: "2026년 3월")
 export function formatYearMonthKr(ym: string): string {
   const d = parseYearMonth(ym);

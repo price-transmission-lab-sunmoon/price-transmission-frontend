@@ -19,9 +19,10 @@ export function MainPage() {
   }
 
   if (activeTab === 'scatter') {
+    // FX-4: 산점도는 X·Y 변화율(%) 동일 단위. Y축이 픽셀상 충분히 길도록 정사각형 컨테이너.
     return (
-      <div className="flex flex-col h-full gap-2">
-        <div className="flex-1 min-h-0">
+      <div className="flex flex-col h-full items-center justify-center gap-2 overflow-hidden">
+        <div className="w-full h-full max-w-[min(100%,calc(100vh-260px))] aspect-square">
           <ScatterChart />
         </div>
       </div>

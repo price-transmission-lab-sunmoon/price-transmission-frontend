@@ -143,7 +143,9 @@ export const useAppStore = create<AppStore>((set) => ({
   granularity: 'monthly',
   // IS-4: periodPreset 초기값 null (커스텀 범위)
   periodPreset: null,
-  confidenceFilter: ['high', 'medium'],
+  // reference 등급도 첫 화면 표시 — high가 0건일 때 "이상 거의 없음" 오인 방지.
+  // 사용자가 noise 줄이고 싶으면 FilterBar에서 reference 끔.
+  confidenceFilter: ['high', 'medium', 'reference'],
   patternFilter: [], // 빈 배열 = 전체
   eventFilter: [], // 전체 해제 (web_plan_vN §3.4 초기값)
   activeSegments: [], // 품목 선택 시 segments로 채움
@@ -212,7 +214,8 @@ export const useAppStore = create<AppStore>((set) => ({
 
   // ---------- PanelState ----------
   panelWidth: 360, // FE-PANEL §3.3 ① 기본값
-  expandedSections: new Set<PanelSectionId>(['stat', 'ml', 'path', 'irf']), // 4개 모두 기본 펼침
+  // P3-2: 진입 시 stat 섹션만 펼침. 나머지 3개는 사용자 토글 시 fetch (요청 부담 감소).
+  expandedSections: new Set<PanelSectionId>(['stat']),
   expandedInlineCharts: new Set<InlineChartId>(),
   expandedMLMaps: new Set<MlModel>(),
   setPanelWidth: (w) => set({ panelWidth: Math.min(520, Math.max(280, w)) }),

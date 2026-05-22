@@ -38,7 +38,7 @@ export const REFERENCE_LINE_COLOR = '#3b82f6';
 // 원시 시계열 소스별 색상 — feature_spec_fe-raw-timeseries_vN §3.3② SoT
 export const RAW_PRICE_COLORS: Record<RawPriceSource, string> = {
   intl_price_krw: '#a855f7',
-  import_price: '#3b82f6',
+  import_price_usd: '#3b82f6',
   ppi: '#22c55e',
   wholesale_price: '#f97316',
   cpi: '#e24b4a',

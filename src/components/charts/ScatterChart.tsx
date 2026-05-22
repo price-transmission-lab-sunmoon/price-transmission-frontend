@@ -184,20 +184,16 @@ export function ScatterChart() {
       : validPoints;
 
     // ── 스케일 ────────────────────────────────────────────────────
+    // UX-1: 도메인을 강제 ±2까지 확장하지 않음. 실제 데이터 분포 + 5% padding으로 좁게 설정.
+    // (downstream 분포가 좁으면 Y축이 압축되어 보이는 문제 해소)
     const allX = validPoints.map((p) => p.upstream_pct);
     const allY = validPoints.map((p) => p.downstream_pct);
     const rawXExt = d3.extent(allX) as [number, number];
     const rawYExt = d3.extent(allY) as [number, number];
-    const xPad = Math.max((rawXExt[1] - rawXExt[0]) * 0.12, 2);
-    const yPad = Math.max((rawYExt[1] - rawYExt[0]) * 0.12, 2);
-    const xDomain: [number, number] = [
-      Math.min(rawXExt[0] - xPad, -2),
-      Math.max(rawXExt[1] + xPad, 2),
-    ];
-    const yDomain: [number, number] = [
-      Math.min(rawYExt[0] - yPad, -2),
-      Math.max(rawYExt[1] + yPad, 2),
-    ];
+    const xPad = (rawXExt[1] - rawXExt[0]) * 0.05 || 0.5;
+    const yPad = (rawYExt[1] - rawYExt[0]) * 0.05 || 0.5;
+    const xDomain: [number, number] = [rawXExt[0] - xPad, rawXExt[1] + xPad];
+    const yDomain: [number, number] = [rawYExt[0] - yPad, rawYExt[1] + yPad];
 
     const xScale = d3.scaleLinear().domain(xDomain).range([0, W]);
     const yScale = d3.scaleLinear().domain(yDomain).range([H, 0]);
@@ -514,8 +510,9 @@ export function ScatterChart() {
   }
 
   if (error) {
-    const apiError = error as { code?: string; message?: string };
-    const code = apiError?.code ?? '';
+    // BE-3: publicCode 우선, 없으면 code (백엔드 내부 code도 매칭 가능하도록 fallback).
+    const apiError = error as { code?: string; publicCode?: string; message?: string };
+    const code = apiError?.publicCode ?? apiError?.code ?? '';
     if (code === 'COMMODITY_NOT_FOUND') {
       return (
         <div className="flex items-center justify-center h-full text-slate-500 text-sm">

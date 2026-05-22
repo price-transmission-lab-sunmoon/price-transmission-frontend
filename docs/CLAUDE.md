@@ -378,4 +378,83 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 
 ---
 
+## ⚠️ StreamChart 설계 계약 (회귀 방지) — 2026-05-21 확정 (rev.6)
+
+> **다음 항목은 사용자가 명시적으로 요구한 UX 결정사항이다. 리팩토링 시 반드시 보존한다.**
+> **회기 진입 시 이 섹션 먼저 read → 모든 변경은 이 계약을 충족해야 함.**
+
+### 줌 동작
+- **휠 즉각 반응**: `on('zoom')` 핸들러는 transform을 **직접 동기 적용**. RAF throttle 금지.
+- **줌 멈춤 = 차트 멈춤**: 줌 종료 후 어떠한 후속 애니메이션·transition도 금지.
+- **scaleExtent = `[1, 30]`**. 줌아웃 `k<1` 절대 금지 — 차트 폭이 viewport보다 좁아지는 버그 원인.
+- **X축은 사용자가 정한 viewport 그대로 유지**. 자동 보정·snap·후속 이동 금지.
+- filter push (스토어 동기)만 zoom end 후 200ms debounce.
+
+### Y축 — viewport 동적 sync (정확성 우선) — 2026-05-21 rev.6 갱신
+- **줌·팬 시 Y 도메인 재계산**. viewport 변화마다 화면 안 데이터에 정확히 맞춤.
+  - 이전 rev.5의 "Y축 고정" 정책 폐기 — 줌해도 그래프가 viewport에 차지 않아 빈 공간 많고 부정확.
+- 도메인 계산: **viewport 안 anomaly + series 통합 min/max + 10% 패딩** (최소 0.2).
+- **anomaly ±3 패딩 정책 금지** (변동성 시각적 과장 원인).
+- fallback `[-0.5, 1.5]` (역전~과잉 범위 기본 가독).
+- 구현: `applyTransform` 안에서 `computeYDomain(chartData, secondaryChartData, viewFrom, viewTo)` 호출 → newY scale 생성 → `yScaleRef.current` 교체 + `drawYAxis/drawGrid/refLine y/노드 cy/path d` 모두 newY 기준 갱신.
+
+### 노드 표현
+- **+N 클러스터 배지 금지**.
+- **X-spread 금지**: bucket-offset으로 X 변위시키지 말 것. 노드는 자기 `period`의 정확한 X 위치에 렌더 (대량 노드일 때 ±수백px 변위 → 2015 노드가 2025로 점프하는 버그 원인).
+- 겹치면 **z-order로 stack**. 정렬: `reference → medium → high` 순으로 그려서 높은 등급이 위로.
+- 시간 기반 cluster (서비스 레이어 `clusterAnomalies`) 금지. 단일 진실 공급원: 노드 = anomaly_nodes 1:1 매핑.
+- 모든 노드는 클릭 가능. 숨김 금지.
+
+### 곡선
+- **`curveMonotoneX` 사용**. step·linear·catmull-rom 금지.
+  - catmull-rom: overshoot (값이 없는 곳까지 곡선 부풀어 misleading)
+  - step/linear: 사용자가 "각진 그래프 별로"라 명시
+  - monotoneX: 단조성 보장, overshoot 없음, sparse monthly에 안정
+
+### Area fill — 금지
+- y=0~rate area fill **사용 금지**.
+- 이유: 전이율의 시간 적분은 물리적 의미 없음. 시각적 무게가 큰 산처럼 보여 변동성 과장.
+- multi-segment overlay 시 area 누적으로 더 심함.
+- 라인만으로 추세 표현. 신뢰도 도메인에 적합.
+
+### 라인 연속성 — 단일 라인 정책
+- **segment당 path 1개**. 이중 path (warmup-line + main) 금지 — monotoneX 이웃 의존성으로 boundary 어긋남 발생.
+- `lineGen.defined = (p) => p.transmission_rate !== null` 만 체크 (warmup 제외 금지).
+- **null 점은 사전 필터** (`data.filter(p => p.transmission_rate !== null)`)로 데이터에서 빼고 라인에 전달 → 라인이 완전 연속.
+- 사용자 명시 요구 (2026-05-21): "끊김 없이 연속된 선을 확보". 정직성보다 연속성 우선.
+
+### warmup 구간 표시 — 배경 band
+- `in_warmup_period === true` 구간은 **회색 vertical band** (`#475569` opacity 0.18) 로 표시.
+- 라인은 끊지 않음. 라인 일부에 dasharray 적용하지 말 것.
+- 구현: `computeWarmupBands(series)` 헬퍼로 모든 segment의 warmup 합집합 → 연속 run 단위 band 묶음.
+- 첫 band 상단에 "warmup" 라벨.
+- events 오버레이보다 먼저 그려서 events가 위에 오도록.
+
+### 방어 패턴
+- setup useEffect 진입에 `containerSize.w === 0 || .h === 0` 가드 — ResizeObserver 첫 fire 전 0크기 진입으로 2회 setup 발생 방지.
+- setup 진입 시 `svg.interrupt(); svg.selectAll('*').interrupt()` 호출 — 진행 중 transition 잔존 방지.
+
+### 이벤트 오버레이
+- `data-event-key` attr selector 사용. `selectAll('rect')` 인덱스 매칭 금지.
+
+### 코드 구조
+- D3 헬퍼는 `src/components/charts/streamChartHelpers.ts`에 분리.
+- StreamChart.tsx의 setup useEffect는 헬퍼 함수로 단계 분리 (drawXAxis/drawYAxis/renderNodes/applyTransform).
+- SVG `<animate>` 금지. CSS `@keyframes` 사용 (`.anomaly-pulse-high` in index.css).
+
+### 페이지 첫 진입 초기화 정책 (2026-05-21 확정)
+- **자동 viewport = 최근 3년** (`analysis_end - 3y ~ analysis_end`). 전체 데이터 (10~17년) 첫 화면 압축 금지.
+  - 전체 압축 표시는 라인 지그재그 + 변동성 시각적 과장 유발.
+  - `periodPreset='3y'`로 명시 → FilterBar UI 라벨과 실 상태 일치.
+- **이벤트 자동 활성 금지**. `eventFilter=[]` 유지. 사용자가 명시적 토글해야 음영 표시.
+  - 자동 음영은 anomaly가 "이벤트 때문"이라는 인지 편향 유발.
+- **자동 anomaly 선택 + 패널 자동 열림 금지**. 첫 진입 = 패널 닫힘.
+  - 매번 같은 노드 강제 강조 + 차트 가림.
+  - 사용자가 노드 클릭해야 패널 오픈.
+- **confidenceFilter 기본값 = `['high','medium','reference']`** (전체).
+  - high가 0건일 때 "이상 거의 없음" 오인 방지.
+  - noise 줄임은 사용자 명시적 토글로.
+
+---
+
 *이 파일은 `docs/team_ai_collab_vN.md §3.1` 운용 원칙에 따라 관리된다. 디렉토리 구조·API 설계·예외 코드가 변경되면 CLAUDE.md를 즉시 갱신하고 단독 커밋한다.*

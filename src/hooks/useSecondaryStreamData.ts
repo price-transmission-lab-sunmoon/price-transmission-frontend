@@ -6,24 +6,19 @@ import type { StreamResponse } from '@/types/timeseries';
 
 export function useSecondaryStreamData() {
   const secondaryCommodityId = useAppStore((s) => s.secondaryCommodityId);
-  const filterFrom = useAppStore((s) => s.filterFrom);
-  const filterTo = useAppStore((s) => s.filterTo);
   const granularity = useAppStore((s) => s.granularity);
   const activeSegments = useAppStore((s) => s.activeSegments);
 
+  // primary와 동일 정책: filterFrom/To 전송 금지. 백엔드 전체 응답 + 클라이언트 zoom 잘라봄.
   return useQuery<StreamResponse>({
     queryKey: [
       'stream-secondary',
       secondaryCommodityId,
-      filterFrom,
-      filterTo,
       granularity,
       activeSegments,
     ],
     queryFn: async () => {
       const params: Record<string, string> = { granularity, grade: 'high,medium' };
-      if (filterFrom) params.from = filterFrom;
-      if (filterTo) params.to = filterTo;
       if (activeSegments.length > 0) params.segments = activeSegments.join(',');
 
       const res = await client.get<StreamResponse>(
