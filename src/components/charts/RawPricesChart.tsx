@@ -5,11 +5,14 @@ import { useAppStore } from '@/stores/useAppStore';
 import { ApiError } from '@/api/error';
 import { RAW_PRICE_COLORS, ANOMALY_COLORS, ANOMALY_RADII } from '@/utils/colorUtils';
 import { CHART_THEME } from '@/utils/chartTheme';
+import { Z_INDEX } from '@/utils/zIndex';
 import { Badge } from '@/components/ui/Badge';
 import { Icon } from '@/components/ui/Icon';
 import { StateView } from '@/components/ui/StateView';
 import type { RawPriceAnomalyNode, RawPriceDataPoint } from '@/types/timeseries';
 import type { RawPriceSource, SegmentId } from '@/types/literals';
+
+const Z_INDEX_TOAST_INLINE = Z_INDEX.TOAST;
 
 // 이상 노드 Y 매핑 — segment_id 별 하류 소스 (spec §3.3 ⑤ "segment_id의 하류 소스 곡선 위에 표시").
 // 매핑이 없거나 응답에 해당 소스가 없으면 BASELINE_Y(=100)로 폴백.
@@ -587,7 +590,7 @@ export function RawPricesChart() {
       {toast && (
         <div
           className="fixed top-6 left-1/2 -translate-x-1/2 bg-surface border border-warning-border text-secondary text-[13px] px-5 py-3 rounded-lg shadow-e4 pointer-events-none"
-          style={{ zIndex: 9000 }}
+          style={{ zIndex: Z_INDEX_TOAST_INLINE }}
         >
           {toast}
         </div>

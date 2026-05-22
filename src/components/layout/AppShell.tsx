@@ -17,13 +17,21 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex flex-col h-screen bg-canvas text-primary">
+      {/* a11y: skip-to-content (08-states.md §A12) */}
+      <a href="#main-content" className="skip-link">
+        메인으로 건너뛰기
+      </a>
       {/* 이달의 이상 요약 배너 — 최상단 고정 (web_plan_vN §3.2) */}
       <Banner />
       <Header />
       {/* 방법론 탭에서는 필터 바 미표시 (feature_spec_fe-methodology-tab_vN §1.4) */}
       {!isMethodology && <FilterBar />}
       <div className="flex flex-1 overflow-hidden">
-        <main data-testid="main-area" className="flex-1 overflow-auto p-6">
+        <main
+          id="main-content"
+          data-testid="main-area"
+          className="flex-1 overflow-auto px-8 py-6"
+        >
           {children}
         </main>
         {/* 방법론 탭에서는 패널 미표시 (isPanelOpen=false 보장 + 레이아웃 풀 너비) */}
