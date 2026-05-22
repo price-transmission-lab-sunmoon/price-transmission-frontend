@@ -1,10 +1,16 @@
-// z-index 우선순위 SoT — feature_spec_fe-api-connect_vN §5.5
-// 컴포넌트 내 직접 숫자 사용 금지 (feature_spec §13)
+// z-index priority SoT — docs/re-design_specs/01-design-tokens.md §16.
+// Never use inline numeric zIndex in components.
 export const Z_INDEX = {
-  TOAST: 9000,
-  MODAL: 8000,
-  OVERLAY: 7000,
-  DROPDOWN: 200,
-  PANEL: 100,
   HEADER: 50,
+  PANEL: 100,
+  DROPDOWN: 200,
+  CHART_TOOLTIP: 1000,
+  OVERLAY: 7000, // FAB / floating buttons
+  MODAL_OVERLAY: 8000,
+  MODAL_CONTENT: 8001,
+  MODAL: 8000, // legacy alias — retained for existing imports during migration
+  ONBOARDING_OVERLAY: 8500,
+  ONBOARDING_SPOTLIGHT: 8501,
+  ONBOARDING_TOOLTIP: 8502,
+  TOAST: 9000,
 } as const;
