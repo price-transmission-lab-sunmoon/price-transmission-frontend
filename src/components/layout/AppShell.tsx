@@ -16,7 +16,7 @@ export function AppShell({ children }: AppShellProps) {
   const isMethodology = activeTab === 'methodology';
 
   return (
-    <div className="flex flex-col h-screen bg-slate-900 text-white">
+    <div className="flex flex-col h-screen bg-canvas text-primary">
       {/* 이달의 이상 요약 배너 — 최상단 고정 (web_plan_vN §3.2) */}
       <Banner />
       <Header />

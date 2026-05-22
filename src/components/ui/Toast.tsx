@@ -4,10 +4,15 @@
 
 import { useEffect, useReducer, useRef, useCallback } from 'react';
 import { Z_INDEX } from '@/utils/zIndex';
+import { Icon } from '@/components/ui/Icon';
+import { IconButton } from '@/components/ui/IconButton';
+import { Button } from '@/components/ui/Button';
+import type { IconName } from '@/utils/icons';
 
 export interface ToastPayload {
   code: string;
-  variant: 'error' | 'warning' | 'info';
+  variant: 'error' | 'warning' | 'info' | 'success';
+  title?: string;
   message: string;
   onRetry?: () => void;
 }
@@ -32,7 +37,6 @@ type Action = { type: 'ADD'; payload: ToastPayload } | { type: 'DISMISS'; id: nu
 function reducer(state: ToastItem[], action: Action): ToastItem[] {
   if (action.type === 'ADD') {
     const item: ToastItem = { ...action.payload, id: ++_counter };
-    // max 4 FIFO drop: 4개 초과 시 가장 오래된 항목 제거
     if (state.length >= MAX_QUEUE) {
       return [...state.slice(1), item];
     }
@@ -44,22 +48,46 @@ function reducer(state: ToastItem[], action: Action): ToastItem[] {
   return state;
 }
 
+const VARIANT_ICON: Record<ToastPayload['variant'], IconName> = {
+  info: 'info',
+  success: 'check',
+  warning: 'alert',
+  error: 'alert',
+};
+
+const VARIANT_BORDER: Record<ToastPayload['variant'], string> = {
+  info: 'border-border-default',
+  success: 'border-success-border',
+  warning: 'border-warning-border',
+  error: 'border-error-border',
+};
+
+const VARIANT_ACCENT: Record<ToastPayload['variant'], string> = {
+  info: 'var(--text-primary)',
+  success: 'var(--success)',
+  warning: 'var(--warning)',
+  error: 'var(--error)',
+};
+
+const VARIANT_ROLE: Record<ToastPayload['variant'], 'alert' | 'status'> = {
+  info: 'status',
+  success: 'status',
+  warning: 'alert',
+  error: 'alert',
+};
+
 export function Toast() {
   const [toasts, dispatch] = useReducer(reducer, []);
-  // code → 마지막 발화 시각 (onRetry 없는 toast에만 적용)
   const lastCodeTime = useRef<Map<string, number>>(new Map());
 
   const handleEvent = useCallback((evt: Event) => {
     const payload = (evt as CustomEvent<ToastPayload>).detail;
-
-    // onRetry 없는 toast: 동일 code 5초 이내 중복 억제
     if (!payload.onRetry) {
       const now = Date.now();
       const last = lastCodeTime.current.get(payload.code) ?? 0;
       if (now - last < THROTTLE_MS) return;
       lastCodeTime.current.set(payload.code, now);
     }
-
     dispatch({ type: 'ADD', payload });
   }, []);
 
@@ -68,7 +96,6 @@ export function Toast() {
     return () => window.removeEventListener(TOAST_EVENT, handleEvent);
   }, [handleEvent]);
 
-  // 자동 소멸: 가장 오래된 항목 기준 타이머
   useEffect(() => {
     if (toasts.length === 0) return;
     const oldest = toasts[0];
@@ -80,38 +107,54 @@ export function Toast() {
 
   return (
     <div
-      className="fixed bottom-4 right-4 flex flex-col gap-2 pointer-events-none"
+      role="region"
+      aria-label="알림"
+      aria-live="polite"
+      className="fixed bottom-6 right-6 flex flex-col gap-3 pointer-events-none"
       style={{ zIndex: Z_INDEX.TOAST }}
     >
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          role="alert"
-          className={`flex items-start gap-3 px-4 py-3 rounded-lg shadow-lg max-w-sm w-full pointer-events-auto ${
-            toast.variant === 'error'
-              ? 'bg-red-700 text-white'
-              : toast.variant === 'warning'
-                ? 'bg-yellow-600 text-white'
-                : 'bg-slate-700 text-white'
-          }`}
+          role={VARIANT_ROLE[toast.variant]}
+          className={[
+            'toast-slide-in pointer-events-auto',
+            'flex items-start gap-3 px-4 py-3.5 rounded-lg shadow-e4 max-w-[400px] w-full',
+            'bg-surface border',
+            VARIANT_BORDER[toast.variant],
+          ].join(' ')}
         >
-          <p className="flex-1 text-sm leading-snug">{toast.message}</p>
+          <Icon
+            name={VARIANT_ICON[toast.variant]}
+            size={20}
+            className="shrink-0 mt-0.5"
+            style={{ color: VARIANT_ACCENT[toast.variant] }}
+          />
+          <div className="flex-1 min-w-0">
+            {toast.title && (
+              <p
+                className="text-[13px] font-semibold leading-snug m-0"
+                style={{ color: VARIANT_ACCENT[toast.variant] }}
+              >
+                {toast.title}
+              </p>
+            )}
+            <p className="text-[13px] text-secondary leading-[1.5] m-0 mt-0.5">
+              {toast.message}
+            </p>
+          </div>
           {toast.onRetry && (
-            <button
-              onClick={toast.onRetry}
-              className="shrink-0 text-sm font-semibold underline whitespace-nowrap"
-              aria-label="재시도"
-            >
+            <Button variant="ghost" size="sm" onClick={toast.onRetry}>
               재시도
-            </button>
+            </Button>
           )}
-          <button
-            onClick={() => dispatch({ type: 'DISMISS', id: toast.id })}
-            className="shrink-0 text-sm opacity-70 hover:opacity-100"
+          <IconButton
             aria-label="닫기"
-          >
-            ✕
-          </button>
+            variant="ghost"
+            size="sm"
+            onClick={() => dispatch({ type: 'DISMISS', id: toast.id })}
+            icon={<Icon name="x" size={14} />}
+          />
         </div>
       ))}
     </div>
