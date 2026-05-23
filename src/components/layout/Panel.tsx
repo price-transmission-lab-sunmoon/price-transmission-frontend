@@ -333,6 +333,7 @@ function MlBarRow({
           {data && data.total_points > 0 && (
             <MLMapChart
               points={data.points}
+              model={model}
               xLabel={data.x_label}
               yLabel={data.y_label}
             />

@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-import { PANEL_CHART_COLORS, ANOMALY_COLORS } from '@/utils/colorUtils';
+import { PANEL_CHART_COLORS, ML_MODEL_COLORS } from '@/utils/colorUtils';
 import { CHART_THEME } from '@/utils/chartTheme';
 import type { MlMapPoint } from '@/types/anomaly';
+import type { MlModel } from '@/types/literals';
 
 interface Props {
   points: MlMapPoint[];
+  model: MlModel;
   xLabel?: string;
   yLabel?: string;
   height?: number;
@@ -13,7 +15,7 @@ interface Props {
 
 const MARGIN = { top: 12, right: 12, bottom: 36, left: 44 };
 
-export function MLMapChart({ points, xLabel, yLabel, height = 240 }: Props) {
+export function MLMapChart({ points, model, xLabel, yLabel, height = 240 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -51,14 +53,20 @@ export function MLMapChart({ points, xLabel, yLabel, height = 240 }: Props) {
     const x = d3.scaleLinear().domain([xExt[0] - xPad, xExt[1] + xPad]).range([0, w]);
     const y = d3.scaleLinear().domain([yExt[0] - yPad, yExt[1] + yPad]).range([h, 0]);
 
-    // anomaly score color gradient — low to high
-    const scoreExt = d3.extent(valid, (p) => p.anomaly_score) as [number, number];
+    // 모델 색 그라데이션 — anomaly 점만 normalFill → modelColor로 진해짐.
+    // 모델별로 도메인을 분리해서 anomaly 점들 사이 score 분포가 색 진하기로 보이게 함.
+    const modelColor = ML_MODEL_COLORS[model];
+    const anomalyScores = valid.filter((p) => p.is_anomaly).map((p) => p.anomaly_score);
+    const scoreExt = anomalyScores.length > 0
+      ? (d3.extent(anomalyScores) as [number, number])
+      : [0, 1];
+    // IF/LOF/SVM 모두 낮을수록 이상 → 도메인 반전해서 "더 음수 = 더 진한 모델 색"
     const colorScale = d3
       .scaleSequential()
-      .domain(scoreExt)
-      .interpolator(d3.interpolateRgb('#4a5568', ANOMALY_COLORS.high));
+      .domain([scoreExt[1], scoreExt[0]])
+      .interpolator(d3.interpolateRgb(PANEL_CHART_COLORS.mlMapNormalFill, modelColor));
 
-    // normal points
+    // normal points (is_anomaly=false 또는 is_highlight=true가 아닌 점)
     g.selectAll('.normal-dot')
       .data(valid.filter((p) => !p.is_highlight))
       .join('circle')
@@ -69,7 +77,7 @@ export function MLMapChart({ points, xLabel, yLabel, height = 240 }: Props) {
       .attr('fill', (p) => p.is_anomaly ? colorScale(p.anomaly_score) : PANEL_CHART_COLORS.mlMapNormalFill)
       .attr('opacity', 0.7);
 
-    // highlight point (current anomaly)
+    // highlight point (current anomaly) — 모델 색 + stroke로 강조
     const highlighted = valid.filter((p) => p.is_highlight);
     g.selectAll('.highlight-dot')
       .data(highlighted)
@@ -78,8 +86,8 @@ export function MLMapChart({ points, xLabel, yLabel, height = 240 }: Props) {
       .attr('cx', (p) => x(p.x_value))
       .attr('cy', (p) => y(p.y_value))
       .attr('r', 6)
-      .attr('fill', ANOMALY_COLORS.high)
-      .attr('stroke', PANEL_CHART_COLORS.mlMapHighlight)
+      .attr('fill', modelColor)
+      .attr('stroke', CHART_THEME.axisText)
       .attr('stroke-width', 2);
 
     // axes
@@ -102,7 +110,7 @@ export function MLMapChart({ points, xLabel, yLabel, height = 240 }: Props) {
         .attr('font-size', '10px').attr('fill', CHART_THEME.axisText)
         .text(yLabel);
     }
-  }, [points, xLabel, yLabel, height]);
+  }, [points, model, xLabel, yLabel, height]);
 
   if (points.length === 0) {
     return (
