@@ -433,6 +433,12 @@ CLAUDE.md의 내용과 달라진 부분이 있으면 함께 알려줘."
 ### 방어 패턴
 - setup useEffect 진입에 `containerSize.w === 0 || .h === 0` 가드 — ResizeObserver 첫 fire 전 0크기 진입으로 2회 setup 발생 방지.
 - setup 진입 시 `svg.interrupt(); svg.selectAll('*').interrupt()` 호출 — 진행 중 transition 잔존 방지.
+- **차트 컨테이너 div는 항상 outermost로 마운트** (2026-05-23 rev.7 확정). early return으로 `<div ref={containerRef}>` 자체를 조건부 마운트 금지.
+  - 사유: `useEffect(() => {...}, [])` 빈 deps resize hook이 첫 발화 시 `containerRef.current = null` 이면 `if (!el) return` 으로 bail. empty deps라 다시 발화 안 됨 → `setContainerSize` 영영 호출 안 됨 → setup useEffect의 size 가드에 막혀 차트 영영 안 그려짐.
+  - 증상: "처음 페이지 진입 시 차트 미출력, 다른 view 탭 갔다 돌아오면 출력" (탭 전환 = 컴포넌트 unmount/remount → 재mount 시 state 이미 set이라 첫 render부터 container 마운트 → 정상).
+  - 동일 회귀 대상: StreamChart · Minimap · ScatterChart · RawPricesChart.
+  - 패턴: loading/empty/error는 컨테이너 안 `absolute inset-0` overlay로 처리. svg는 chartData 있을 때만 d3 draw (setup effect 안에서 null guard).
+- rAF retry sync 유지 — 컨테이너 mount 직후 `getBoundingClientRect()` 가 0 가능. 첫 non-zero 값 확보 후 ResizeObserver 부착.
 
 ### 이벤트 오버레이
 - `data-event-key` attr selector 사용. `selectAll('rect')` 인덱스 매칭 금지.
