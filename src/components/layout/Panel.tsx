@@ -678,7 +678,10 @@ export function Panel() {
       {/* Sections */}
       <div className="flex-1 overflow-y-auto px-3.5 py-3 space-y-2.5">
         {/* ── 분석 수치 ── */}
-        <div className="bg-surface border border-border-default rounded-lg shadow-e1 overflow-hidden">
+        <div
+          data-testid="stat-section"
+          className="bg-surface border border-border-default rounded-lg shadow-e1 overflow-hidden"
+        >
           <SectionHeader title="분석 수치" sectionKey="stat" />
           {expandedSections.has('stat') && (
             <div className="px-3.5 py-3 space-y-2.5">
@@ -768,7 +771,10 @@ export function Panel() {
         </div>
 
         {/* ── ML 모델 점수 ── */}
-        <div className="bg-surface border border-border-default rounded-lg shadow-e1 overflow-hidden">
+        <div
+          data-testid="ml-section"
+          className="bg-surface border border-border-default rounded-lg shadow-e1 overflow-hidden"
+        >
           <SectionHeader
             title="ML 모델 점수"
             sectionKey="ml"

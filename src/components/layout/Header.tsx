@@ -319,6 +319,7 @@ export function Header() {
             return (
               <button
                 key={tab.id}
+                data-testid={`tab-${tab.id}`}
                 aria-label={tab.label}
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => handleTabClick(tab.id)}
