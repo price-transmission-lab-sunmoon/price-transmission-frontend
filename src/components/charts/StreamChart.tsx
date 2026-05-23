@@ -707,27 +707,10 @@ export function StreamChart() {
     };
   }, []);
 
-  if (!primaryCommodityId) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <StateView variant="empty" size="inline" icon="list" title="품목을 선택하세요" />
-      </div>
-    );
-  }
-  if (primaryLoading) {
-    return <StateView variant="loading" size="large" title="데이터를 불러오는 중…" />;
-  }
-  if (primaryError) {
-    return (
-      <StateView
-        variant="error"
-        size="large"
-        title="데이터를 불러오지 못했습니다"
-        description="잠시 후 다시 시도해주세요."
-      />
-    );
-  }
-
+  // CLAUDE.md §StreamChart 방어 패턴: 컨테이너 div는 **항상 outermost로 마운트**.
+  // early return으로 컨테이너 자체를 조건부 마운트 금지 — empty-deps useEffect
+  // (위 resize hook)가 첫 발화 시 ref null이면 영영 재발화 안 되어 차트 영영 안 그려짐.
+  // loading/empty/error는 컨테이너 안 absolute 오버레이로 처리.
   const noAnomalies = chartData != null && chartData.anomalies.length === 0;
 
   return (
@@ -737,7 +720,29 @@ export function StreamChart() {
       className="w-full h-full min-h-[360px] relative bg-surface border border-border-default rounded-xl shadow-e2 overflow-hidden"
     >
       <svg ref={svgRef} className="w-full h-full overflow-visible" />
-      {noAnomalies && (
+
+      {/* state overlays (절대 위치, 컨테이너 mount는 영향 X) */}
+      {!primaryCommodityId && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <StateView variant="empty" size="inline" icon="list" title="품목을 선택하세요" />
+        </div>
+      )}
+      {primaryCommodityId && primaryLoading && (
+        <div className="absolute inset-0">
+          <StateView variant="loading" size="large" title="데이터를 불러오는 중…" />
+        </div>
+      )}
+      {primaryCommodityId && primaryError && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <StateView
+            variant="error"
+            size="large"
+            title="데이터를 불러오지 못했습니다"
+            description="잠시 후 다시 시도해주세요."
+          />
+        </div>
+      )}
+      {chartData && noAnomalies && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <StateView
             variant="empty"

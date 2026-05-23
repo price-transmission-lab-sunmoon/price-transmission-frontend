@@ -333,33 +333,28 @@ export function Minimap({ variant }: MinimapProps) {
   const hasData =
     data && data.series.length > 0 && data.series.some((s) => s.data.length > 0);
 
-  if (isLoading) {
-    return (
-      <div
-        className="skeleton-bar rounded-md"
-        style={{ height: HEIGHT, animation: 'shimmer 1.6s linear infinite' }}
-      />
-    );
-  }
-
-  if (isError || (data && !hasData)) {
-    return (
-      <div
-        className="flex items-center justify-center bg-surface border border-border-default rounded-md"
-        style={{ height: TOTAL_HEIGHT }}
-      >
-        <span className="text-tertiary text-[12px]">전체 기간 데이터 없음</span>
-      </div>
-    );
-  }
-
+  // CLAUDE.md §StreamChart 방어 패턴 (Minimap도 동일 회귀 대상):
+  // 컨테이너 항상 mount. loading/empty/error는 overlay로.
+  // empty-deps resize useEffect가 첫 발화 시 ref 확보되도록 보장.
   return (
     <div
       ref={containerRef}
-      className="bg-surface border border-border-default rounded-md overflow-hidden"
+      className="relative bg-surface border border-border-default rounded-md overflow-hidden"
       style={{ height: HEIGHT }}
     >
       <svg ref={svgRef} style={{ display: 'block' }} />
+
+      {isLoading && (
+        <div
+          className="absolute inset-0 skeleton-bar rounded-md"
+          style={{ animation: 'shimmer 1.6s linear infinite' }}
+        />
+      )}
+      {!isLoading && (isError || (data && !hasData)) && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-tertiary text-[12px]">전체 기간 데이터 없음</span>
+        </div>
+      )}
     </div>
   );
 }

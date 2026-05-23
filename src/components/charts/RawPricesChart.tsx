@@ -482,21 +482,14 @@ export function RawPricesChart() {
     };
   }, [render]);
 
-  // ── Render ─────────────────────────────────────────────────
-  if (isLoading && !data) {
-    return <StateView variant="loading" size="large" title="데이터를 불러오는 중…" />;
-  }
-
-  if (error && !(error instanceof ApiError && ['WHOLESALE_NOT_AVAILABLE', 'INVALID_LAYOUT'].includes((error as ApiError).publicCode))) {
-    return (
-      <StateView
-        variant="error"
-        size="large"
-        title="데이터를 불러오지 못했습니다"
-        description="잠시 후 다시 시도해주세요."
-      />
+  // CLAUDE.md §StreamChart 방어 패턴: 컨테이너 항상 mount. loading/error는 overlay로.
+  const showLoadingOverlay = isLoading && !data;
+  const showErrorOverlay =
+    error &&
+    !(
+      error instanceof ApiError &&
+      ['WHOLESALE_NOT_AVAILABLE', 'INVALID_LAYOUT'].includes((error as ApiError).publicCode)
     );
-  }
 
   return (
     <div className="flex flex-col h-full gap-3">
@@ -545,8 +538,29 @@ export function RawPricesChart() {
         ref={containerRef}
         className="flex-1 relative min-h-0 bg-surface border border-border-default rounded-xl shadow-e2 overflow-hidden"
       >
+        <svg ref={svgRef} className="w-full h-full" />
+
+        {/* loading overlay */}
+        {showLoadingOverlay && (
+          <div className="absolute inset-0">
+            <StateView variant="loading" size="large" title="데이터를 불러오는 중…" />
+          </div>
+        )}
+
+        {/* error overlay */}
+        {showErrorOverlay && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <StateView
+              variant="error"
+              size="large"
+              title="데이터를 불러오지 못했습니다"
+              description="잠시 후 다시 시도해주세요."
+            />
+          </div>
+        )}
+
         {/* 백엔드 데이터 미적재 안내 — warning 카드 (spec §4.5) */}
-        {data && (data.total_points === 0 || data.series.every((s) => s.data.length === 0)) && (
+        {!showLoadingOverlay && !showErrorOverlay && data && (data.total_points === 0 || data.series.every((s) => s.data.length === 0)) && (
           <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none p-6">
             <div className="flex flex-col items-center gap-3 px-8 py-7 max-w-[420px] text-center bg-surface border border-warning-border rounded-lg shadow-e3 pointer-events-auto">
               <div className="w-16 h-16 rounded-full bg-warning-subtle flex items-center justify-center text-warning">
@@ -570,7 +584,7 @@ export function RawPricesChart() {
             </div>
           </div>
         )}
-        {data && data.series.length === 0 && data.total_points !== 0 && (
+        {!showLoadingOverlay && !showErrorOverlay && data && data.series.length === 0 && data.total_points !== 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <StateView
               variant="empty"
@@ -580,7 +594,6 @@ export function RawPricesChart() {
             />
           </div>
         )}
-        <svg ref={svgRef} className="w-full h-full" />
 
         {/* Anomaly hover tooltip */}
         {tooltip && (

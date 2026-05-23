@@ -415,43 +415,13 @@ export function ScatterChart() {
   };
 
   const hasAnomalyPoints = data?.points.some((p) => p.is_anomaly) ?? false;
+  const emptyPoints = data?.points.length === 0;
 
-  if (!primaryCommodityId) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <StateView variant="empty" size="inline" icon="list" title="품목을 선택하세요" />
-      </div>
-    );
-  }
-  if (isLoading) {
-    return <StateView variant="loading" size="large" title="데이터를 불러오는 중…" />;
-  }
-  if (error) {
-    const apiError = error as { code?: string; publicCode?: string; message?: string };
-    const code = apiError?.publicCode ?? apiError?.code ?? '';
-    if (code === 'COMMODITY_NOT_FOUND') {
-      return (
-        <StateView
-          variant="empty"
-          size="large"
-          icon="search"
-          title="선택한 품목 데이터가 아직 없습니다"
-        />
-      );
-    }
-    return (
-      <StateView
-        variant="error"
-        size="large"
-        title="데이터를 불러오지 못했습니다"
-        description={apiError?.message}
-        errorCode={code || undefined}
-      />
-    );
-  }
-
-  if (!data) return null;
-  const emptyPoints = data.points.length === 0;
+  // CLAUDE.md §StreamChart 방어 패턴: 컨테이너 항상 mount. early return으로
+  // 컨테이너 자체를 조건부 마운트 금지. loading/error/empty은 overlay로.
+  const apiError = error as { code?: string; publicCode?: string; message?: string } | null;
+  const errorCode = apiError?.publicCode ?? apiError?.code ?? '';
+  const isCommodityNotFound = errorCode === 'COMMODITY_NOT_FOUND';
 
   return (
     <div className="flex flex-col h-full gap-3 min-h-0">
@@ -513,7 +483,40 @@ teal 점선(기준선)에 가까울수록 상류 변화가 그대로 전달된 �
         className="relative flex-1 min-h-0 bg-surface border border-border-default rounded-xl shadow-e2 overflow-hidden"
         ref={containerRef}
       >
-        {emptyPoints && (
+        <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="block" />
+
+        {!primaryCommodityId && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <StateView variant="empty" size="inline" icon="list" title="품목을 선택하세요" />
+          </div>
+        )}
+        {primaryCommodityId && isLoading && (
+          <div className="absolute inset-0">
+            <StateView variant="loading" size="large" title="데이터를 불러오는 중…" />
+          </div>
+        )}
+        {primaryCommodityId && error && isCommodityNotFound && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <StateView
+              variant="empty"
+              size="large"
+              icon="search"
+              title="선택한 품목 데이터가 아직 없습니다"
+            />
+          </div>
+        )}
+        {primaryCommodityId && error && !isCommodityNotFound && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <StateView
+              variant="error"
+              size="large"
+              title="데이터를 불러오지 못했습니다"
+              description={apiError?.message}
+              errorCode={errorCode || undefined}
+            />
+          </div>
+        )}
+        {data && emptyPoints && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <StateView
               variant="empty"
@@ -523,8 +526,7 @@ teal 점선(기준선)에 가까울수록 상류 변화가 그대로 전달된 �
             />
           </div>
         )}
-
-        {!emptyPoints && !hasAnomalyPoints && (
+        {data && !emptyPoints && !hasAnomalyPoints && (
           <div className="absolute bottom-14 left-1/2 -translate-x-1/2 pointer-events-none">
             <StateView
               variant="empty"
@@ -534,8 +536,6 @@ teal 점선(기준선)에 가까울수록 상류 변화가 그대로 전달된 �
             />
           </div>
         )}
-
-        <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="block" />
 
         {tooltip && tooltip.point.is_anomaly && tooltip.point.confidence_grade && (
           <div
