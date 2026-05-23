@@ -459,13 +459,27 @@ export function RawPricesChart() {
     return cleanup;
   }, [render]);
 
-  // ResizeObserver — FE-D3-003
+  // ResizeObserver + rAF retry — mount 직후 size 0이면 render() bail, ResizeObserver
+  // 첫 fire도 0 가능. 양쪽 0이면 영영 안 그려짐 (다른 탭 갔다 돌아와야 풀리는 회귀).
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let raf = 0;
+    const trySync = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) {
+        render();
+      } else {
+        raf = requestAnimationFrame(trySync);
+      }
+    };
+    trySync();
     const ro = new ResizeObserver(() => render());
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, [render]);
 
   // ── Render ─────────────────────────────────────────────────

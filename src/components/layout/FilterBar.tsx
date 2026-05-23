@@ -85,11 +85,29 @@ export function FilterBar() {
   const setLayoutNumber = useAppStore((s) => s.setLayoutNumber);
 
   const [eventOpen, setEventOpen] = useState(false);
+  const [eventAnchor, setEventAnchor] = useState<{ left: number; top: number } | null>(null);
   const eventRef = useRef<HTMLDivElement>(null);
+  const eventDropdownRef = useRef<HTMLDivElement>(null);
+
+  // 사건 드롭다운: FilterBar overflow-x-auto에 의해 clipping되는 문제 회피용 position:fixed.
+  // trigger button의 bottom-left를 기준으로 dropdown 위치 계산.
+  const openEventDropdown = () => {
+    if (eventRef.current) {
+      const rect = eventRef.current.getBoundingClientRect();
+      setEventAnchor({ left: rect.left, top: rect.bottom + 6 });
+    }
+    setEventOpen((v) => !v);
+  };
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (eventRef.current && !eventRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        eventRef.current &&
+        !eventRef.current.contains(target) &&
+        eventDropdownRef.current &&
+        !eventDropdownRef.current.contains(target)
+      ) {
         setEventOpen(false);
       }
     }
@@ -104,6 +122,23 @@ export function FilterBar() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // 스크롤·resize 시 드롭다운 위치 재계산
+  useEffect(() => {
+    if (!eventOpen) return;
+    const reposition = () => {
+      if (eventRef.current) {
+        const rect = eventRef.current.getBoundingClientRect();
+        setEventAnchor({ left: rect.left, top: rect.bottom + 6 });
+      }
+    };
+    window.addEventListener('resize', reposition);
+    window.addEventListener('scroll', reposition, true);
+    return () => {
+      window.removeEventListener('resize', reposition);
+      window.removeEventListener('scroll', reposition, true);
+    };
+  }, [eventOpen]);
 
   const primaryCommodity = commodities.find((c) => c.commodity_id === primaryCommodityId);
   const availableSegments: SegmentId[] = primaryCommodity
@@ -176,13 +211,13 @@ export function FilterBar() {
 
       <div className={DIVIDER} aria-hidden />
 
-      {/* 사건 필터 드롭다운 */}
-      <div ref={eventRef} className="relative shrink-0">
+      {/* 사건 필터 드롭다운 — position:fixed (FilterBar overflow clipping 회피) */}
+      <div ref={eventRef} className="shrink-0">
         <button
           aria-label="사건 필터"
           aria-haspopup="listbox"
           aria-expanded={eventOpen}
-          onClick={() => setEventOpen((v) => !v)}
+          onClick={openEventDropdown}
           className={[
             'inline-flex items-center gap-2 h-7 px-3 rounded-md text-[12px] font-medium',
             'transition-[background-color,border-color,color] duration-fast ease-out border',
@@ -207,13 +242,19 @@ export function FilterBar() {
           />
         </button>
 
-        {eventOpen && (
+        {eventOpen && eventAnchor && (
           <div
+            ref={eventDropdownRef}
             role="listbox"
             aria-label="사건 목록"
             aria-multiselectable="true"
-            style={{ zIndex: Z_INDEX.DROPDOWN }}
-            className="absolute top-full left-0 mt-1.5 w-[240px] bg-surface border border-border-default rounded-lg shadow-e4 py-1.5 animate-scale-in"
+            style={{
+              position: 'fixed',
+              top: eventAnchor.top,
+              left: eventAnchor.left,
+              zIndex: Z_INDEX.DROPDOWN,
+            }}
+            className="w-[240px] bg-surface border border-border-default rounded-lg shadow-e4 py-1.5 animate-scale-in"
           >
             {selectedEventCount > 0 && (
               <div className="px-3 pb-1.5 mb-1 border-b border-border-subtle">

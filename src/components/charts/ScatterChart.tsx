@@ -113,14 +113,29 @@ export function ScatterChart() {
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let raf = 0;
+    const sync = (w: number, h: number) => {
+      if (w > 0 && h > 0) setDimensions({ width: w, height: h });
+    };
+    const trySync = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        sync(rect.width, rect.height);
+      } else {
+        raf = requestAnimationFrame(trySync);
+      }
+    };
+    trySync();
     const obs = new ResizeObserver((entries) => {
       const e = entries[0];
       if (!e) return;
-      setDimensions({ width: e.contentRect.width, height: e.contentRect.height });
+      sync(e.contentRect.width, e.contentRect.height);
     });
     obs.observe(el);
-    setDimensions({ width: el.clientWidth, height: el.clientHeight });
-    return () => obs.disconnect();
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      obs.disconnect();
+    };
   }, [data]);
 
   const handleMouseEnter = useCallback(

@@ -672,18 +672,28 @@ export function StreamChart() {
   }
 
   // ─── resize ────────────────────────────────────
-  // 첫 fire가 0×0 가능 (mount 직후 layout 미완). 0 무시 + 즉시 sync.
+  // 첫 fire가 0×0 가능 (mount 직후 layout 미완). getBoundingClientRect도 0 가능.
+  // 양쪽 모두 0이면 ResizeObserver가 size 변화 못 감지 → 차트 영영 안 그려짐.
+  // → rAF 폴링으로 첫 non-zero 값 확보 후 observer 부착. 회귀 방지 박제 (rev.6+).
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let raf = 0;
     const sync = (w: number, h: number) => {
       if (w <= 0 || h <= 0) return;
       const rw = Math.round(w);
       const rh = Math.round(h);
       setContainerSize((prev) => (prev.w === rw && prev.h === rh ? prev : { w: rw, h: rh }));
     };
-    const rect = el.getBoundingClientRect();
-    sync(rect.width, rect.height);
+    const trySync = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        sync(rect.width, rect.height);
+      } else {
+        raf = requestAnimationFrame(trySync);
+      }
+    };
+    trySync();
 
     const observer = new ResizeObserver((entries) => {
       const e = entries[0];
@@ -691,7 +701,10 @@ export function StreamChart() {
       sync(e.contentRect.width, e.contentRect.height);
     });
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
   }, []);
 
   if (!primaryCommodityId) {

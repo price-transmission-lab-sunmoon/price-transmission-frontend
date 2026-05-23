@@ -77,20 +77,33 @@ export function Minimap({ variant }: MinimapProps) {
   );
 
   // FE-D3-003: ResizeObserver로 컨테이너 크기 복구 감지 → 재렌더링.
-  // mount 직후 첫 fire가 0이면 setContainerWidth skip → 차트 렌더 안 됨. 다른 탭 갔다 와야 풀림.
-  // → mount 시 getBoundingClientRect 즉시 sync로 첫 fire 의존 제거.
+  // mount 직후 getBoundingClientRect와 ResizeObserver 첫 fire가 모두 0 가능.
+  // 양쪽 무시 시 영영 0 → 차트 렌더 안 됨, 다른 탭 갔다 와야 풀림.
+  // → rAF 폴링으로 첫 non-zero width 확보 후 observer 부착.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let raf = 0;
     const sync = (w: number) => {
       if (w > 0) setContainerWidth(w);
     };
-    sync(el.getBoundingClientRect().width);
+    const trySync = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) {
+        sync(w);
+      } else {
+        raf = requestAnimationFrame(trySync);
+      }
+    };
+    trySync();
     const observer = new ResizeObserver((entries) => {
       sync(entries[0]?.contentRect.width ?? 0);
     });
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
   }, []);
 
   // ── 메인 D3 렌더링 ──────────────────────────────────────────
