@@ -4,6 +4,8 @@ import { useAnalysisParams } from '@/hooks/useAnalysisParams';
 import { PipelineFlowDiagram } from './PipelineFlowDiagram';
 import { ANOMALY_COLORS } from '@/utils/colorUtils';
 import { showToast } from '@/components/ui/Toast';
+import { Badge } from '@/components/ui/Badge';
+import { Icon } from '@/components/ui/Icon';
 import type { AnalysisParams, PatternDescription } from '@/types/meta';
 import { SEGMENT_IDS, type SegmentId } from '@/types/literals';
 
@@ -15,18 +17,27 @@ const KNOWN_SEGMENT_IDS = new Set<string>(SEGMENT_IDS);
 
 function SectionHeader({ num, title }: { num: number; title: string }) {
   return (
-    <div className="flex items-center gap-3 mb-4">
-      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-slate-700 text-slate-300 text-xs font-bold shrink-0">
+    <div className="flex items-center gap-3.5 mb-5">
+      <span
+        className="flex items-center justify-center w-9 h-9 rounded-lg shrink-0 text-on-brand text-[14px] font-bold font-mono"
+        style={{
+          background:
+            'linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%)',
+          boxShadow: '0 4px 12px rgba(13, 148, 136, 0.24)',
+        }}
+      >
         {num}
       </span>
-      <h2 className="text-slate-100 text-base font-semibold">{title}</h2>
+      <h2 className="text-primary text-[18px] font-bold tracking-tight m-0">
+        {title}
+      </h2>
     </div>
   );
 }
 
 function SectionCard({ children }: { children: React.ReactNode }) {
   return (
-    <section className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5">
+    <section className="bg-surface border border-border-default rounded-xl p-6 shadow-e1">
       {children}
     </section>
   );
@@ -34,9 +45,13 @@ function SectionCard({ children }: { children: React.ReactNode }) {
 
 function LoadingSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-2 animate-pulse">
+    <div className="flex flex-col gap-3" role="status" aria-busy="true">
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="h-4 bg-slate-700/60 rounded" style={{ width: `${70 + (i % 3) * 10}%` }} />
+        <div
+          key={i}
+          className="skeleton-bar"
+          style={{ width: `${60 + (i % 3) * 12}%` }}
+        />
       ))}
     </div>
   );
@@ -44,9 +59,12 @@ function LoadingSkeleton({ rows = 3 }: { rows?: number }) {
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-red-900/20 border border-red-800/40 rounded-lg text-red-400 text-xs">
-      <span>⚠</span>
-      <span>{message}</span>
+    <div
+      role="alert"
+      className="flex items-start gap-3 px-4 py-3 bg-error-subtle border border-error-border rounded-md"
+    >
+      <Icon name="alert" size={18} className="text-error mt-0.5 shrink-0" />
+      <span className="text-[14px] text-error leading-[1.5]">{message}</span>
     </div>
   );
 }
@@ -59,10 +77,10 @@ const SEGMENT_LABEL: Record<SegmentId, string> = {
   D_prime: "구간 D'",
 };
 
-const PATTERN_CHIP_COLORS: Record<string, string> = {
-  pattern1: 'bg-blue-900/40 text-blue-300 border-blue-700/50',
-  pattern2: 'bg-purple-900/40 text-purple-300 border-purple-700/50',
-  pattern3: 'bg-teal-900/40 text-teal-300 border-teal-700/50',
+const PATTERN_TONE: Record<string, 'info' | 'violet' | 'teal-light'> = {
+  pattern1: 'info',
+  pattern2: 'violet',
+  pattern3: 'teal-light',
 };
 
 const KNOWN_PATTERN_IDS = new Set(['pattern1', 'pattern2', 'pattern3']);
@@ -77,19 +95,29 @@ function Section1Pipeline({
 }: {
   isLoading: boolean;
   isError: boolean;
-  data?: { version: string; nodes: import('@/types/meta').PipelineNode[]; edges: import('@/types/meta').PipelineEdge[] };
+  data?: {
+    version: string;
+    nodes: import('@/types/meta').PipelineNode[];
+    edges: import('@/types/meta').PipelineEdge[];
+  };
 }) {
   return (
     <SectionCard>
       <SectionHeader num={1} title="분석 파이프라인 개요" />
-      <p className="text-slate-400 text-xs mb-4 leading-relaxed">
-        가격 전달 체계(국제가 → 수입단가 → PPI → 도매가 → CPI)와 Phase 0~8 파이프라인 흐름.
-        노드를 클릭하면 각 단계의 상세 설명을 확인할 수 있습니다.
+      <p className="text-tertiary text-[13px] mb-4 leading-[1.5] m-0">
+        가격 전달 체계(국제가 → 수입단가 → PPI → 도매가 → CPI)와 Phase 0~8
+        파이프라인 흐름. 노드를 클릭하면 각 단계의 상세 설명을 확인할 수 있습니다.
       </p>
       {isLoading && <LoadingSkeleton rows={5} />}
-      {isError && <ErrorBanner message="/meta/pipeline 데이터를 불러오지 못했습니다. 새로고침하거나 잠시 후 다시 시도하세요." />}
+      {isError && (
+        <ErrorBanner message="/meta/pipeline 데이터를 불러오지 못했습니다. 새로고침하거나 잠시 후 다시 시도하세요." />
+      )}
       {data && (
-        <PipelineFlowDiagram nodes={data.nodes} edges={data.edges} version={data.version} />
+        <PipelineFlowDiagram
+          nodes={data.nodes}
+          edges={data.edges}
+          version={data.version}
+        />
       )}
     </SectionCard>
   );
@@ -98,8 +126,13 @@ function Section1Pipeline({
 // ============================================================
 // 섹션 2 — 이상 탐지 패턴 3종
 // ============================================================
-function PatternCard({ pattern, params }: { pattern: PatternDescription; params?: AnalysisParams }) {
-  // 패턴 3: stability_threshold, pattern3_n_values 동적 치환
+function PatternCard({
+  pattern,
+  params,
+}: {
+  pattern: PatternDescription;
+  params?: AnalysisParams;
+}) {
   let description = pattern.description;
   if (pattern.pattern_id === 'pattern3' && params) {
     const pct = (params.stability_threshold * 100).toFixed(0);
@@ -110,26 +143,34 @@ function PatternCard({ pattern, params }: { pattern: PatternDescription; params?
   }
 
   return (
-    <div className="bg-slate-900/50 border border-slate-700/40 rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-            PATTERN_CHIP_COLORS[pattern.pattern_id] ?? 'bg-slate-700 text-slate-300'
-          }`}
-        >
-          {pattern.pattern_id === 'pattern1' ? '패턴 1' : pattern.pattern_id === 'pattern2' ? '패턴 2' : '패턴 3'}
+    <div
+      className={[
+        'bg-surface border border-border-default rounded-lg p-5',
+        'transition-[border-color,box-shadow,transform] duration-default ease-out',
+        'hover:border-border-strong hover:shadow-e2 hover:-translate-y-px',
+      ].join(' ')}
+    >
+      <Badge tone={PATTERN_TONE[pattern.pattern_id] ?? 'neutral'} size="sm" uppercase>
+        {pattern.pattern_id === 'pattern1'
+          ? '패턴 1'
+          : pattern.pattern_id === 'pattern2'
+            ? '패턴 2'
+            : '패턴 3'}
+      </Badge>
+      <h3 className="text-primary text-[16px] font-semibold mt-3 mb-2 m-0">
+        {pattern.label_kr}
+      </h3>
+      <p className="text-secondary text-[14px] leading-[1.625] m-0">
+        {description}
+      </p>
+      <div className="mt-4 pt-3 border-t border-border-subtle flex items-center gap-1.5 flex-wrap">
+        <span className="text-tertiary text-[10px] font-semibold uppercase tracking-widest mr-1">
+          적용 구간
         </span>
-      </div>
-      <h3 className="text-slate-200 text-sm font-medium mb-2">{pattern.label_kr}</h3>
-      <p className="text-slate-400 text-xs leading-relaxed mb-3">{description}</p>
-      <div className="flex flex-wrap gap-1">
         {pattern.applicable_segments.map((seg) => (
-          <span
-            key={seg}
-            className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-700/60 text-slate-400 border border-slate-600/50"
-          >
+          <Badge key={seg} tone="neutral" size="sm">
             {SEGMENT_LABEL[seg as SegmentId] ?? seg}
-          </span>
+          </Badge>
         ))}
       </div>
     </div>
@@ -152,43 +193,50 @@ function Section2Patterns({
       <SectionHeader num={2} title="이상 탐지 패턴 3종" />
       {isLoading && <LoadingSkeleton rows={4} />}
       {isError && <ErrorBanner message="/meta/analysis-params 데이터를 불러오지 못했습니다." />}
-      {patterns && (() => {
-        const validPatterns = patterns.filter((p) => {
-          if (!KNOWN_PATTERN_IDS.has(p.pattern_id)) {
-            console.warn(`[MethodologyView] PARSE-ENUM-002: unknown pattern_id="${p.pattern_id}" — skipping card`);
-            showToast({
-              code: 'PARSE-ENUM-002',
-              variant: 'warning',
-              message: `알 수 없는 pattern_id "${p.pattern_id}" — 해당 카드를 건너뜁니다.`,
-            });
-            return false;
-          }
-          const badSegment = p.applicable_segments.find((s) => !KNOWN_SEGMENT_IDS.has(s));
-          if (badSegment !== undefined) {
-            console.warn(`[MethodologyView] PARSE-ENUM-002: unknown segment="${badSegment}" in pattern="${p.pattern_id}" — skipping card`);
-            showToast({
-              code: 'PARSE-ENUM-002',
-              variant: 'warning',
-              message: `알 수 없는 segment "${badSegment}" (pattern ${p.pattern_id}) — 해당 카드를 건너뜁니다.`,
-            });
-            return false;
-          }
-          return true;
-        });
-        return (
-          <div className="grid gap-3 sm:grid-cols-1 lg:grid-cols-3">
-            {validPatterns.map((p) => (
-              <PatternCard key={p.pattern_id} pattern={p} params={params} />
-            ))}
-          </div>
-        );
-      })()}
+      {patterns &&
+        (() => {
+          const validPatterns = patterns.filter((p) => {
+            if (!KNOWN_PATTERN_IDS.has(p.pattern_id)) {
+              console.warn(
+                `[MethodologyView] PARSE-ENUM-002: unknown pattern_id="${p.pattern_id}" — skipping card`,
+              );
+              showToast({
+                code: 'PARSE-ENUM-002',
+                variant: 'warning',
+                message: `알 수 없는 pattern_id "${p.pattern_id}" — 해당 카드를 건너뜁니다.`,
+              });
+              return false;
+            }
+            const badSegment = p.applicable_segments.find(
+              (s) => !KNOWN_SEGMENT_IDS.has(s),
+            );
+            if (badSegment !== undefined) {
+              console.warn(
+                `[MethodologyView] PARSE-ENUM-002: unknown segment="${badSegment}" in pattern="${p.pattern_id}" — skipping card`,
+              );
+              showToast({
+                code: 'PARSE-ENUM-002',
+                variant: 'warning',
+                message: `알 수 없는 segment "${badSegment}" (pattern ${p.pattern_id}) — 해당 카드를 건너뜁니다.`,
+              });
+              return false;
+            }
+            return true;
+          });
+          return (
+            <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-3">
+              {validPatterns.map((p) => (
+                <PatternCard key={p.pattern_id} pattern={p} params={params} />
+              ))}
+            </div>
+          );
+        })()}
     </SectionCard>
   );
 }
 
 // ============================================================
-// 섹션 3 — 계량경제학 기법 설명 (accordion)
+// 섹션 3 — 계량경제학 기법 (accordion)
 // ============================================================
 interface Method {
   id: string;
@@ -268,26 +316,34 @@ function AccordionItem({
   onToggle: () => void;
 }) {
   return (
-    <div className="border border-slate-700/40 rounded-lg overflow-hidden">
+    <div className="border border-border-default rounded-md bg-surface overflow-hidden">
       <button
         aria-expanded={isOpen}
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 bg-slate-900/40 hover:bg-slate-800/60 transition-colors text-left"
+        className={[
+          'w-full flex items-center justify-between px-5 py-4 text-left',
+          'transition-colors duration-fast ease-out hover:bg-subtle',
+        ].join(' ')}
       >
-        <div>
-          <span className="text-slate-200 text-sm font-medium">{method.title}</span>
-          <span className="ml-3 text-slate-500 text-xs hidden sm:inline">{method.summary}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-primary text-[14px] font-semibold">
+            {method.title}
+          </span>
+          <span className="text-tertiary text-[13px] hidden sm:inline">
+            {method.summary}
+          </span>
         </div>
-        <span
-          className={`text-slate-400 text-xs transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}
-          aria-hidden="true"
-        >
-          ▾
-        </span>
+        <Icon
+          name="chevron-down"
+          size={18}
+          className={`text-tertiary shrink-0 transition-transform duration-default ease-out ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
       {isOpen && (
-        <div className="px-4 py-3 bg-slate-900/20 border-t border-slate-700/30">
-          <p className="text-slate-400 text-xs leading-relaxed">{method.detail(params)}</p>
+        <div className="px-5 py-4 bg-subtle border-t border-border-subtle">
+          <p className="text-secondary text-[14px] leading-[1.625] m-0">
+            {method.detail(params)}
+          </p>
         </div>
       )}
     </div>
@@ -309,7 +365,7 @@ function Section3Econometrics({ params }: { params?: AnalysisParams }) {
   return (
     <SectionCard>
       <SectionHeader num={3} title="계량경제학 기법" />
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         {METHODS.map((m) => (
           <AccordionItem
             key={m.id}
@@ -325,22 +381,25 @@ function Section3Econometrics({ params }: { params?: AnalysisParams }) {
 }
 
 // ============================================================
-// 섹션 4 — ML 모델 설명
+// 섹션 4 — ML 모델
 // ============================================================
 const ML_MODELS = [
   {
     name: 'Isolation Forest',
-    principle: '피처 공간에서 관측치를 무작위로 분리할 때 적은 분기 횟수로 고립되는 점을 이상으로 판정',
+    principle:
+      '피처 공간에서 관측치를 무작위로 분리할 때 적은 분기 횟수로 고립되는 점을 이상으로 판정',
     role: '전이율·변화율 피처 공간에서 극단적으로 이탈한 월 탐지',
   },
   {
     name: 'LOF (Local Outlier Factor)',
-    principle: '주변 이웃의 밀도와 자신의 밀도를 비교해 밀도가 낮은 점을 이상으로 판정',
+    principle:
+      '주변 이웃의 밀도와 자신의 밀도를 비교해 밀도가 낮은 점을 이상으로 판정',
     role: '구조 변화 이후 하위 기간 내 국소 이상 탐지',
   },
   {
     name: 'One-Class SVM',
-    principle: '정상 관측치가 모인 영역의 경계를 학습하고, 경계 밖 점을 이상으로 판정',
+    principle:
+      '정상 관측치가 모인 영역의 경계를 학습하고, 경계 밖 점을 이상으로 판정',
     role: '안정기 피처 분포를 정상으로 학습 후 경계 이탈 시점 탐지',
   },
 ];
@@ -358,40 +417,54 @@ function Section4MLModels() {
   return (
     <SectionCard>
       <SectionHeader num={4} title="ML 모델" />
-      <p className="text-slate-400 text-xs mb-4 leading-relaxed">
-        3개 비지도 학습 모델이 통계 이상 탐지와 독립적으로 동일한 원시 데이터(Phase 0~4 산출값)를
-        기반으로 교차검증 역할을 수행한다.
+      <p className="text-tertiary text-[13px] mb-4 leading-[1.5] m-0">
+        3개 비지도 학습 모델이 통계 이상 탐지와 독립적으로 동일한 원시
+        데이터(Phase 0~4 산출값)를 기반으로 교차검증 역할을 수행한다.
       </p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+      <div className="overflow-x-auto -mx-2">
+        <table className="w-full border-collapse text-[14px]">
           <thead>
-            <tr className="text-slate-500 border-b border-slate-700/50">
-              <th className="text-left py-2 pr-4 font-medium w-40">모델</th>
-              <th className="text-left py-2 pr-4 font-medium">작동 원리</th>
-              <th className="text-left py-2 font-medium">이 서비스에서의 역할</th>
+            <tr className="border-b border-border-default">
+              <th className="text-left px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-tertiary w-44">
+                모델
+              </th>
+              <th className="text-left px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-tertiary">
+                작동 원리
+              </th>
+              <th className="text-left px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-tertiary">
+                서비스 역할
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700/30">
+          <tbody>
             {ML_MODELS.map((m) => (
-              <tr key={m.name} className="align-top">
-                <td className="py-2.5 pr-4 text-slate-300 font-medium whitespace-nowrap">{m.name}</td>
-                <td className="py-2.5 pr-4 text-slate-400 leading-relaxed">{m.principle}</td>
-                <td className="py-2.5 text-slate-400 leading-relaxed">{m.role}</td>
+              <tr
+                key={m.name}
+                className="border-b border-border-subtle align-top last:border-0 transition-colors duration-fast hover:bg-subtle"
+              >
+                <td className="px-4 py-3.5 text-primary font-semibold whitespace-nowrap">
+                  {m.name}
+                </td>
+                <td className="px-4 py-3.5 text-secondary leading-[1.5]">
+                  {m.principle}
+                </td>
+                <td className="px-4 py-3.5 text-secondary leading-[1.5]">
+                  {m.role}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div className="mt-4 pt-3 border-t border-slate-700/30">
-        <p className="text-slate-500 text-xs font-medium mb-2">ML 입력 피처 (6종, 전 품목 공통)</p>
-        <div className="flex flex-wrap gap-1.5">
+      <div className="mt-6 pt-4 border-t border-border-default">
+        <p className="text-tertiary text-[11px] font-semibold uppercase tracking-widest mb-2 m-0">
+          ML 입력 피처 (6종, 전 품목 공통)
+        </p>
+        <div className="flex flex-wrap gap-2 mt-2">
           {ML_FEATURES.map((f) => (
-            <span
-              key={f}
-              className="px-2 py-0.5 rounded text-[10px] bg-slate-700/50 text-slate-400 border border-slate-600/40"
-            >
+            <Badge key={f} tone="neutral" size="sm">
               {f}
-            </span>
+            </Badge>
           ))}
         </div>
       </div>
@@ -430,26 +503,33 @@ function Section5ConfidenceGrade() {
   return (
     <SectionCard>
       <SectionHeader num={5} title="신뢰도 등급 체계" />
-      <p className="text-slate-400 text-xs mb-4 leading-relaxed">
-        통계 기반 이상 탐지(Phase 7)와 ML 교차검증(Phase 7-ML)의 결합 결과에 따라 이상 노드에
-        3단계 신뢰도 등급을 부여한다.
+      <p className="text-tertiary text-[13px] mb-4 leading-[1.5] m-0">
+        통계 기반 이상 탐지(Phase 7)와 ML 교차검증(Phase 7-ML)의 결합 결과에
+        따라 이상 노드에 3단계 신뢰도 등급을 부여한다.
       </p>
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         {GRADE_ROWS.map((r) => (
           <div
             key={r.label}
-            className="flex items-center gap-4 px-4 py-3 bg-slate-900/40 border border-slate-700/30 rounded-lg"
+            className={[
+              'flex items-center gap-4 px-5 py-4 bg-surface border border-border-default rounded-lg',
+              'transition-[border-color] duration-fast ease-out hover:border-border-strong',
+            ].join(' ')}
           >
             <span
               className="w-3 h-3 rounded-full shrink-0"
               style={{ backgroundColor: r.color }}
               aria-label={r.grade}
             />
-            <div className="flex-1 min-w-0">
-              <span className="text-slate-200 text-sm font-medium">{r.grade}</span>
-              <span className="ml-3 text-slate-500 text-xs">{r.condition}</span>
+            <div className="flex-1 min-w-0 flex items-baseline gap-3 flex-wrap">
+              <span className="text-primary text-[16px] font-semibold">
+                {r.grade}
+              </span>
+              <span className="text-secondary text-[14px]">{r.condition}</span>
             </div>
-            <span className="text-slate-500 text-xs shrink-0 hidden sm:block">{r.paper}</span>
+            <Badge tone="neutral" size="sm" className="hidden sm:inline-flex">
+              {r.paper}
+            </Badge>
           </div>
         ))}
       </div>
@@ -474,23 +554,34 @@ function Section6DataSources() {
   return (
     <SectionCard>
       <SectionHeader num={6} title="데이터 소스" />
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+      <div className="overflow-x-auto -mx-2">
+        <table className="w-full border-collapse text-[14px]">
           <thead>
-            <tr className="text-slate-500 border-b border-slate-700/50">
-              <th className="text-left py-2 pr-3 font-medium w-6">#</th>
-              <th className="text-left py-2 pr-4 font-medium">소스</th>
-              <th className="text-left py-2 pr-4 font-medium">제공 기관</th>
-              <th className="text-left py-2 font-medium">활용 단계</th>
+            <tr className="border-b border-border-default">
+              <th className="text-left px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-tertiary w-12 font-mono">
+                #
+              </th>
+              <th className="text-left px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-tertiary">
+                소스
+              </th>
+              <th className="text-left px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-tertiary">
+                제공 기관
+              </th>
+              <th className="text-left px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-tertiary">
+                활용 단계
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-700/30">
+          <tbody>
             {DATA_SOURCES.map((row) => (
-              <tr key={row.num}>
-                <td className="py-2 pr-3 text-slate-600">{row.num}</td>
-                <td className="py-2 pr-4 text-slate-300 font-medium">{row.source}</td>
-                <td className="py-2 pr-4 text-slate-400">{row.org}</td>
-                <td className="py-2 text-slate-400">{row.usage}</td>
+              <tr
+                key={row.num}
+                className="border-b border-border-subtle last:border-0 transition-colors duration-fast hover:bg-subtle"
+              >
+                <td className="px-4 py-3 text-tertiary font-mono">{row.num}</td>
+                <td className="px-4 py-3 text-primary font-semibold">{row.source}</td>
+                <td className="px-4 py-3 text-secondary">{row.org}</td>
+                <td className="px-4 py-3 text-secondary">{row.usage}</td>
               </tr>
             ))}
           </tbody>
@@ -503,6 +594,7 @@ function Section6DataSources() {
 // ============================================================
 // MethodologyView — 최상위 컨테이너
 // ============================================================
+// @guide:CHART-14
 export function MethodologyView() {
   const {
     data: pipelineData,
@@ -516,11 +608,17 @@ export function MethodologyView() {
     isError: paramsError,
   } = useAnalysisParams();
 
-  // 부분 실패: /meta/pipeline 실패 + /meta/analysis-params 성공 → 섹션 1 에러, 섹션 2 정상
-  // 부분 실패: /meta/pipeline 성공 + /meta/analysis-params 실패 → 섹션 2 에러, 섹션 3 수치 '—'
-
   return (
-    <div className="max-w-4xl mx-auto py-6 space-y-6">
+    <div className="max-w-[1024px] mx-auto py-8 px-6 space-y-6">
+      <header className="mb-2">
+        <h1 className="text-primary text-[28px] font-bold tracking-tight leading-[36px] m-0">
+          분석 방법론
+        </h1>
+        <p className="text-tertiary text-[14px] leading-[1.625] mt-1 m-0">
+          가격 전달 이상 탐지 모델의 분석 흐름과 통계 · 머신러닝 기법
+        </p>
+      </header>
+
       <Section1Pipeline
         isLoading={pipelineLoading}
         isError={pipelineError}

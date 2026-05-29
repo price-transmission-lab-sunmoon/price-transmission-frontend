@@ -1,6 +1,7 @@
 import { parse, format, subMonths, subYears } from 'date-fns';
 
 // YYYY-MM 문자열을 Date 객체로 파싱 (frame_spec_frontend_vN §6.5)
+// @guide:UTIL-01
 export function parseYearMonth(ym: string): Date {
   return parse(ym, 'yyyy-MM', new Date());
 }

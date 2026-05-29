@@ -5,6 +5,7 @@ import { App } from './App';
 // IS-11: globalErrorHandler(err) → registerGlobalErrorHandler() (src/api/globalErrorHandler.ts)
 import { registerGlobalErrorHandler } from '@/api/globalErrorHandler';
 
+// @guide:LAYOUT-12
 const title = import.meta.env.VITE_APP_TITLE ?? '가격 전달 이상 탐지';
 document.title = title;
 

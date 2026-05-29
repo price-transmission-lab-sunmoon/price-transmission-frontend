@@ -42,6 +42,7 @@ function parseYYYYMM(period: string): Date {
   return new Date(year, month - 1, 1);
 }
 
+// @guide:SVC-01
 export function buildStreamChartData(
   response: StreamResponse,
   activeSegments: SegmentId[],

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { PANEL_CHART_COLORS } from '@/utils/colorUtils';
+import { CHART_THEME } from '@/utils/chartTheme';
+import { createChartTooltip } from '@/utils/chartTooltip';
 import type { IrfCurve } from '@/types/anomaly';
 
 interface Props {
@@ -10,6 +12,7 @@ interface Props {
 
 const MARGIN = { top: 12, right: 12, bottom: 28, left: 44 };
 
+// @guide:CHART-06
 export function IRFChart({ irfs, height = 240 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,8 +105,17 @@ export function IRFChart({ irfs, height = 240 }: Props) {
       }
     }
 
-    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(maxHorizon)).attr('color', '#64748b');
-    g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', '#64748b');
+    const xAxis = g
+      .append('g')
+      .attr('transform', `translate(0,${h})`)
+      .call(d3.axisBottom(x).ticks(maxHorizon).tickSize(0).tickPadding(8));
+    xAxis.selectAll('text').attr('fill', CHART_THEME.axisText).attr('font-family', CHART_THEME.fontFamilyMono);
+    xAxis.select('.domain').attr('stroke', CHART_THEME.axisLine);
+    const yAxis = g
+      .append('g')
+      .call(d3.axisLeft(y).ticks(4).tickSize(0).tickPadding(8));
+    yAxis.selectAll('text').attr('fill', CHART_THEME.axisText).attr('font-family', CHART_THEME.fontFamilyMono);
+    yAxis.select('.domain').remove();
 
     // FX-5: hover overlay (horizon 기반)
     if (fullCurve) {
@@ -111,19 +123,12 @@ export function IRFChart({ irfs, height = 240 }: Props) {
       guide
         .append('line')
         .attr('y1', 0).attr('y2', h)
-        .attr('stroke', '#64748b').attr('stroke-width', 1)
-        .attr('stroke-dasharray', '3,3').attr('opacity', 0.7);
+        .attr('stroke', CHART_THEME.axisText).attr('stroke-width', 1)
+        .attr('stroke-dasharray', '3,3').attr('opacity', 0.5);
       const dot = guide.append('circle').attr('r', 4)
-        .attr('fill', '#f1f5f9').attr('stroke', '#0f172a').attr('stroke-width', 1.5);
+        .attr('fill', 'var(--bg-surface)').attr('stroke', 'var(--text-primary)').attr('stroke-width', 1.5);
 
-      let tip = document.getElementById('irf-chart-tip');
-      if (!tip) {
-        tip = document.createElement('div');
-        tip.id = 'irf-chart-tip';
-        tip.style.cssText =
-          'position:fixed;pointer-events:none;background:#1e293b;border:1px solid #475569;border-radius:6px;padding:6px 10px;font-size:11px;color:#f1f5f9;z-index:9999;white-space:nowrap;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.4);';
-        document.body.appendChild(tip);
-      }
+      const tip = createChartTooltip('irf-chart-tip');
 
       g.append('rect')
         .attr('width', w).attr('height', h)
@@ -139,15 +144,13 @@ export function IRFChart({ irfs, height = 240 }: Props) {
           const py = y(pt.irf_downstream);
           guide.select('line').attr('x1', px).attr('x2', px);
           dot.attr('cx', px).attr('cy', py);
-          if (tip) {
-            tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">h = ${hz}개월</div>
-              <div style="display:flex;justify-content:space-between;gap:10px"><span>IRF</span><span style="font-family:monospace">${pt.irf_downstream.toFixed(4)}</span></div>
-              <div style="display:flex;justify-content:space-between;gap:10px;color:#94a3b8"><span>95% CI</span><span style="font-family:monospace">[${pt.irf_lower_ci.toFixed(3)}, ${pt.irf_upper_ci.toFixed(3)}]</span></div>`;
-            const rect = containerRef.current?.getBoundingClientRect();
-            if (rect) {
-              tip.style.left = `${rect.left + MARGIN.left + px + 14}px`;
-              tip.style.top = `${rect.top + MARGIN.top + my - 8}px`;
-            }
+          tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px;color:var(--text-primary)">h = ${hz}개월</div>
+            <div style="display:flex;justify-content:space-between;gap:10px"><span style="color:var(--text-tertiary)">IRF</span><span style="font-family:'JetBrains Mono',monospace;color:var(--text-primary)">${pt.irf_downstream.toFixed(4)}</span></div>
+            <div style="display:flex;justify-content:space-between;gap:10px;color:var(--text-tertiary)"><span>95% CI</span><span style="font-family:'JetBrains Mono',monospace">[${pt.irf_lower_ci.toFixed(3)}, ${pt.irf_upper_ci.toFixed(3)}]</span></div>`;
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (rect) {
+            tip.style.left = `${rect.left + MARGIN.left + px + 14}px`;
+            tip.style.top = `${rect.top + MARGIN.top + my - 8}px`;
           }
         });
     }
@@ -157,7 +160,10 @@ export function IRFChart({ irfs, height = 240 }: Props) {
 
   if (irfs.length === 0) {
     return (
-      <div className="flex items-center justify-center text-slate-500 text-xs" style={{ height }}>
+      <div
+        className="flex items-center justify-center text-tertiary text-[12px]"
+        style={{ height }}
+      >
         IRF 데이터가 없습니다.
       </div>
     );

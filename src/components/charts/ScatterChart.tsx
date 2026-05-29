@@ -1,18 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useAppStore } from '@/stores/useAppStore';
 import { useScatterData } from '@/hooks/useScatterData';
+import { confidenceLabel } from '@/services/anomaly';
 import type { ScatterPoint } from '@/types/timeseries';
 import type { SegmentId } from '@/types/literals';
 import { CONFIDENCE_GRADES, PRIMARY_PATTERNS } from '@/types/literals';
 import { ANOMALY_COLORS, ANOMALY_RADII } from '@/utils/colorUtils';
+import { CHART_THEME } from '@/utils/chartTheme';
+import { Icon } from '@/components/ui/Icon';
+import { IconButton } from '@/components/ui/IconButton';
+import { StateView } from '@/components/ui/StateView';
 
-// ── 상수 ────────────────────────────────────────────────────────
-const BASELINE_COLOR = '#3b82f6';
+// ── Constants (light theme tokens) ────────────────────────────
+const BASELINE_COLOR = 'var(--brand)';
 const SLIDER_INTERVAL_MS = 200;
-const ZONE_LABEL_COLOR = '#94a3b8';
-const ZONE_DESC_COLOR = '#64748b';
-const TRAJECTORY_COLOR = '#475569';
+const ZONE_LABEL_COLOR = CHART_THEME.axisLabel;
+const ZONE_DESC_COLOR = CHART_THEME.axisText;
+const TRAJECTORY_COLOR = CHART_THEME.axisText;
 const TRAJECTORY_OPACITY = 0.4;
 const MARGIN = { top: 24, right: 32, bottom: 56, left: 56 };
 
@@ -22,24 +27,18 @@ const PATTERN_LABELS: Record<string, string> = {
   pattern3: '깃털 패턴',
 };
 
-const GRADE_LABELS: Record<string, string> = {
-  high: '고신뢰',
-  medium: '중신뢰',
-  reference: '참고',
-};
-
+// 신뢰도 라벨은 services/anomaly.ts confidenceLabel() 단일 출처 사용 (중복 제거).
 const SEGMENT_DISPLAY: Record<SegmentId, string> = {
   A: 'A',
   B: 'B',
   C: 'C',
   D: 'D',
-  D_prime: "D′",
+  D_prime: 'D′',
 };
 
 const TABS_3SEG: SegmentId[] = ['A', 'B', 'D_prime'];
 const TABS_4SEG: SegmentId[] = ['A', 'B', 'C', 'D', 'D_prime'];
 
-// ── YYYY-MM 월 범위 배열 생성 ────────────────────────────────────
 function buildMonthRange(from: string, to: string): string[] {
   const months: string[] = [];
   const [fy, fm] = from.split('-').map(Number);
@@ -57,14 +56,13 @@ function buildMonthRange(from: string, to: string): string[] {
   return months;
 }
 
-// ── 툴팁 데이터 타입 ─────────────────────────────────────────────
 interface TooltipInfo {
   point: ScatterPoint;
   x: number;
   y: number;
 }
 
-// ════════════════════════════════════════════════════════════════
+// @guide:CHART-03
 export function ScatterChart() {
   const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
   const commodities = useAppStore((s) => s.commodities);
@@ -74,15 +72,12 @@ export function ScatterChart() {
 
   const { data, isLoading, error } = useScatterData();
 
-  // 품목 정보 → 탭 구성
   const commodity = commodities.find((c) => c.commodity_id === primaryCommodityId) ?? null;
   const tabs = commodity?.has_wholesale ? TABS_4SEG : TABS_3SEG;
 
-  // ── 로컬 상태 ──────────────────────────────────────────────────
   const [isPanelExpanded, setIsPanelExpanded] = useState(true);
   const [sliderPosition, setSliderPosition] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState(false);
-  const [showBaselineTooltip, setShowBaselineTooltip] = useState(false);
   const [tooltip, setTooltip] = useState<TooltipInfo | null>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
@@ -90,17 +85,12 @@ export function ScatterChart() {
   const containerRef = useRef<HTMLDivElement>(null);
   const playTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── 데이터 로드 시 슬라이더 초기화 + 기준선 말풍선 ──────────────
   useEffect(() => {
     if (!data) return;
     setSliderPosition(data.actual_to);
     setIsPlaying(false);
-    setShowBaselineTooltip(true);
-    const t = setTimeout(() => setShowBaselineTooltip(false), 2000);
-    return () => clearTimeout(t);
   }, [data]);
 
-  // ── 재생 애니메이션 ────────────────────────────────────────────
   useEffect(() => {
     if (!isPlaying || !data) return;
     const months = buildMonthRange(data.actual_from, data.actual_to);
@@ -117,24 +107,34 @@ export function ScatterChart() {
     };
   }, [isPlaying, sliderPosition, data]);
 
-  // ── ResizeObserver ─────────────────────────────────────────────
-  // data 의존성 필요: data 로드 전엔 containerRef.current가 null(로딩 화면 렌더)이므로
-  // data가 도착해 전체 JSX가 마운트된 뒤 다시 실행해야 observe가 정상 동작함
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let raf = 0;
+    const sync = (w: number, h: number) => {
+      if (w > 0 && h > 0) setDimensions({ width: w, height: h });
+    };
+    const trySync = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        sync(rect.width, rect.height);
+      } else {
+        raf = requestAnimationFrame(trySync);
+      }
+    };
+    trySync();
     const obs = new ResizeObserver((entries) => {
       const e = entries[0];
       if (!e) return;
-      setDimensions({ width: e.contentRect.width, height: e.contentRect.height });
+      sync(e.contentRect.width, e.contentRect.height);
     });
     obs.observe(el);
-    // 최초 1회 강제 초기화 (ResizeObserver 첫 콜백 전에 초기 크기 반영)
-    setDimensions({ width: el.clientWidth, height: el.clientHeight });
-    return () => obs.disconnect();
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      obs.disconnect();
+    };
   }, [data]);
 
-  // ── D3 렌더링 ──────────────────────────────────────────────────
   const handleMouseEnter = useCallback(
     (event: MouseEvent, p: ScatterPoint) => {
       const rect = containerRef.current?.getBoundingClientRect();
@@ -171,21 +171,16 @@ export function ScatterChart() {
           console.warn(`[PARSE-ENUM-002] Invalid primary_pattern: ${p.primary_pattern}`);
         }
       }
-      // PARSE-SCHEMA-001: is_anomaly=true 이지만 anomaly_id=null
       if (p.is_anomaly && p.anomaly_id === null) {
         console.warn('[PARSE-SCHEMA-001] is_anomaly=true but anomaly_id=null — point not clickable');
       }
       return true;
     });
 
-    // 슬라이더 위치 이하 포인트만 렌더링
     const filteredPoints = sliderPosition
       ? validPoints.filter((p) => p.period <= sliderPosition)
       : validPoints;
 
-    // ── 스케일 ────────────────────────────────────────────────────
-    // UX-1: 도메인을 강제 ±2까지 확장하지 않음. 실제 데이터 분포 + 5% padding으로 좁게 설정.
-    // (downstream 분포가 좁으면 Y축이 압축되어 보이는 문제 해소)
     const allX = validPoints.map((p) => p.upstream_pct);
     const allY = validPoints.map((p) => p.downstream_pct);
     const rawXExt = d3.extent(allX) as [number, number];
@@ -198,10 +193,7 @@ export function ScatterChart() {
     const xScale = d3.scaleLinear().domain(xDomain).range([0, W]);
     const yScale = d3.scaleLinear().domain(yDomain).range([H, 0]);
 
-    // ── SVG 구성 ──────────────────────────────────────────────────
     const defs = svg.append('defs');
-
-    // 클립 패스
     defs
       .append('clipPath')
       .attr('id', 'scatter-clip')
@@ -209,72 +201,39 @@ export function ScatterChart() {
       .attr('width', W)
       .attr('height', H);
 
-    // Glow 필터 — high
-    const fHigh = defs
-      .append('filter')
-      .attr('id', 'glow-high')
-      .attr('x', '-80%').attr('y', '-80%')
-      .attr('width', '260%').attr('height', '260%');
-    fHigh.append('feGaussianBlur').attr('in', 'SourceGraphic').attr('stdDeviation', '3').attr('result', 'blur');
-    const mHigh = fHigh.append('feMerge');
-    mHigh.append('feMergeNode').attr('in', 'blur');
-    mHigh.append('feMergeNode').attr('in', 'SourceGraphic');
-
-    // Glow 필터 — medium
-    const fMed = defs
-      .append('filter')
-      .attr('id', 'glow-medium')
-      .attr('x', '-60%').attr('y', '-60%')
-      .attr('width', '220%').attr('height', '220%');
-    fMed.append('feGaussianBlur').attr('in', 'SourceGraphic').attr('stdDeviation', '2').attr('result', 'blur');
-    const mMed = fMed.append('feMerge');
-    mMed.append('feMergeNode').attr('in', 'blur');
-    mMed.append('feMergeNode').attr('in', 'SourceGraphic');
-
     const g = svg.append('g').attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
-    // ── 그리드 ────────────────────────────────────────────────────
-    g.append('g')
-      .attr('class', 'x-grid')
-      .attr('transform', `translate(0,${H})`)
-      .call(d3.axisBottom(xScale).ticks(6).tickSize(-H).tickFormat(() => ''))
-      .call((ax) => ax.select('.domain').remove())
-      .selectAll('line')
-      .style('stroke', '#94a3b8')
-      .style('stroke-opacity', 0.3)
-      .style('stroke-dasharray', '3,3');
-
+    // Grid (horizontal, solid Observable style)
     g.append('g')
       .attr('class', 'y-grid')
       .call(d3.axisLeft(yScale).ticks(6).tickSize(-W).tickFormat(() => ''))
       .call((ax) => ax.select('.domain').remove())
       .selectAll('line')
-      .style('stroke', '#94a3b8')
-      .style('stroke-opacity', 0.3)
-      .style('stroke-dasharray', '3,3');
+      .style('stroke', CHART_THEME.gridLine);
 
-    // ── 축 ────────────────────────────────────────────────────────
-    g.append('g')
+    // Axes
+    const xAxisG = g
+      .append('g')
       .attr('transform', `translate(0,${H})`)
-      .call(d3.axisBottom(xScale).ticks(6))
-      .call((ax) => ax.select('.domain').style('stroke', '#475569'))
-      .selectAll('text')
-      .style('fill', '#94a3b8')
-      .style('font-size', '11px');
+      .call(d3.axisBottom(xScale).ticks(6).tickSize(0).tickPadding(10));
+    xAxisG.select('.domain').style('stroke', CHART_THEME.axisLine);
+    xAxisG.selectAll('text')
+      .style('fill', CHART_THEME.axisText)
+      .style('font-size', '11px')
+      .style('font-family', CHART_THEME.fontFamilyMono);
 
-    g.append('g')
-      .call(d3.axisLeft(yScale).ticks(6))
-      .call((ax) => ax.select('.domain').style('stroke', '#475569'))
-      .selectAll('text')
-      .style('fill', '#94a3b8')
-      .style('font-size', '11px');
+    const yAxisG = g.append('g').call(d3.axisLeft(yScale).ticks(6).tickSize(0).tickPadding(10));
+    yAxisG.select('.domain').remove();
+    yAxisG.selectAll('text')
+      .style('fill', CHART_THEME.axisText)
+      .style('font-size', '11px')
+      .style('font-family', CHART_THEME.fontFamilyMono);
 
-    // 축 타이틀
     g.append('text')
       .attr('x', W / 2)
       .attr('y', H + 46)
       .attr('text-anchor', 'middle')
-      .style('fill', '#94a3b8')
+      .style('fill', CHART_THEME.axisLabel)
       .style('font-size', '12px')
       .text(data.upstream_label);
 
@@ -283,22 +242,22 @@ export function ScatterChart() {
       .attr('x', -(H / 2))
       .attr('y', -44)
       .attr('text-anchor', 'middle')
-      .style('fill', '#94a3b8')
+      .style('fill', CHART_THEME.axisLabel)
       .style('font-size', '12px')
       .text(data.downstream_label);
 
-    // ── 원점 강조선 (opacity: 0.5) ────────────────────────────────
+    // 원점 강조선
     g.append('line')
       .attr('x1', 0).attr('x2', W)
       .attr('y1', yScale(0)).attr('y2', yScale(0))
-      .style('stroke', '#94a3b8').style('stroke-opacity', 0.5).style('stroke-width', 1);
+      .style('stroke', CHART_THEME.axisText).style('stroke-opacity', 0.4).style('stroke-width', 1);
 
     g.append('line')
       .attr('x1', xScale(0)).attr('x2', xScale(0))
       .attr('y1', 0).attr('y2', H)
-      .style('stroke', '#94a3b8').style('stroke-opacity', 0.5).style('stroke-width', 1);
+      .style('stroke', CHART_THEME.axisText).style('stroke-opacity', 0.4).style('stroke-width', 1);
 
-    // ── 대각선 기준선 y=x ─────────────────────────────────────────
+    // 대각선 기준선 y=x (brand teal)
     const diagMin = Math.max(xDomain[0], yDomain[0]);
     const diagMax = Math.min(xDomain[1], yDomain[1]);
     if (diagMin < diagMax) {
@@ -306,60 +265,17 @@ export function ScatterChart() {
         .attr('x1', xScale(diagMin)).attr('y1', yScale(diagMin))
         .attr('x2', xScale(diagMax)).attr('y2', yScale(diagMax))
         .style('stroke', BASELINE_COLOR)
-        .style('stroke-opacity', 0.8)
+        .style('stroke-opacity', 0.5)
         .style('stroke-width', 1.5)
-        .style('stroke-dasharray', '6,4');
-
-      // 기준선 말풍선 (2초 표시 후 fade-out)
-      if (showBaselineTooltip) {
-        const midX = xScale((diagMin + diagMax) / 2);
-        const midY = yScale((diagMin + diagMax) / 2);
-        const bub = g.append('g').attr('transform', `translate(${midX},${midY - 16})`);
-        bub
-          .append('rect')
-          .attr('x', -88).attr('y', -18)
-          .attr('width', 176).attr('height', 24)
-          .attr('rx', 4)
-          .style('fill', '#1e3a5f')
-          .style('stroke', BASELINE_COLOR)
-          .style('stroke-width', 0.8)
-          .style('opacity', 0.92);
-        bub
-          .append('text')
-          .attr('text-anchor', 'middle')
-          .attr('dy', '-2')
-          .style('fill', '#93c5fd')
-          .style('font-size', '11px')
-          .text('이 선에 가까울수록 정상 전달');
-      }
+        .style('stroke-dasharray', '4,4');
     }
 
-    // ── 구역 레이블 (4사분면) ─────────────────────────────────────
+    // 구역 레이블 (4사분면)
     const zones = [
-      {
-        x: (xDomain[0] + 0) / 2,
-        y: (0 + yDomain[1]) / 2,
-        label: '깃털 패턴',
-        desc: '상류 하락에도 하류 무반응 또는 상승',
-      },
-      {
-        x: (0 + xDomain[1]) / 2,
-        y: (0 + yDomain[1]) / 2,
-        label: '과대 전달',
-        desc: '상류 상승이 하류에 더 크게 전달됨',
-      },
-      {
-        x: (xDomain[0] + 0) / 2,
-        y: (yDomain[0] + 0) / 2,
-        label: '과소 전달',
-        desc: '상류 하락에 하류가 덜 반응',
-      },
-      {
-        x: (0 + xDomain[1]) / 2,
-        y: (yDomain[0] + 0) / 2,
-        label: '역전',
-        desc: '상류 상승, 하류 하락',
-      },
+      { x: (xDomain[0] + 0) / 2, y: (0 + yDomain[1]) / 2, label: '깃털 패턴', desc: '상류 하락에도 하류 무반응 또는 상승' },
+      { x: (0 + xDomain[1]) / 2, y: (0 + yDomain[1]) / 2, label: '과대 전달', desc: '상류 상승이 하류에 더 크게 전달됨' },
+      { x: (xDomain[0] + 0) / 2, y: (yDomain[0] + 0) / 2, label: '과소 전달', desc: '상류 하락에 하류가 덜 반응' },
+      { x: (0 + xDomain[1]) / 2, y: (yDomain[0] + 0) / 2, label: '역전', desc: '상류 상승, 하류 하락' },
     ];
 
     zones.forEach((z) => {
@@ -384,7 +300,7 @@ export function ScatterChart() {
         .text(z.desc);
     });
 
-    // ── 궤적선 ────────────────────────────────────────────────────
+    // 궤적선
     if (filteredPoints.length > 1) {
       const sorted = [...filteredPoints].sort((a, b) => a.period.localeCompare(b.period));
       const lineGen = d3
@@ -402,7 +318,7 @@ export function ScatterChart() {
         .style('stroke-width', 1);
     }
 
-    // ── 일반 관측치 ───────────────────────────────────────────────
+    // 일반 관측치 (warm gray small dot)
     g.selectAll<SVGCircleElement, ScatterPoint>('.normal-pt')
       .data(filteredPoints.filter((p) => !p.is_anomaly))
       .join('circle')
@@ -410,64 +326,70 @@ export function ScatterChart() {
       .attr('clip-path', 'url(#scatter-clip)')
       .attr('cx', (p) => xScale(p.upstream_pct))
       .attr('cy', (p) => yScale(p.downstream_pct))
-      .attr('r', ANOMALY_RADII.reference) // 일반 = 4px (reference 반지름과 동일)
-      // spec §3.3 ④ "일반 관측치: 효과 없음" — opacity 미적용
-      .style('fill', '#94a3b8');
+      .attr('r', ANOMALY_RADII.reference)
+      .style('fill', 'var(--text-muted)')
+      .style('opacity', 0.7);
 
-    // ── 이상 관측치 ───────────────────────────────────────────────
+    // 이상 관측치 — 3 layer pulse halo + white ring + dot (or reference outline)
     const anomalyPts = filteredPoints.filter(
       (p) => p.is_anomaly && p.confidence_grade !== null && CONFIDENCE_GRADES.includes(p.confidence_grade),
     );
 
-    const anomalyCircles = g
-      .selectAll<SVGCircleElement, ScatterPoint>('.anomaly-pt')
-      .data(anomalyPts)
-      .join('circle')
-      .attr('class', 'anomaly-pt')
-      .attr('clip-path', 'url(#scatter-clip)')
-      .attr('cx', (p) => xScale(p.upstream_pct))
-      .attr('cy', (p) => yScale(p.downstream_pct))
-      .attr('r', (p) => ANOMALY_RADII[p.confidence_grade!])
-      .style('fill', (p) => ANOMALY_COLORS[p.confidence_grade!])
-      .style('cursor', (p) => (p.anomaly_id !== null ? 'pointer' : 'default'));
+    const nodeG = g.append('g').attr('class', 'scatter-anomaly-nodes');
 
-    // 글로우 필터 적용
-    anomalyCircles
-      .filter((p) => p.confidence_grade === 'high')
-      .attr('filter', 'url(#glow-high)');
-    anomalyCircles
-      .filter((p) => p.confidence_grade === 'medium')
-      .attr('filter', 'url(#glow-medium)');
+    anomalyPts.forEach((p) => {
+      const cx = xScale(p.upstream_pct);
+      const cy = yScale(p.downstream_pct);
+      const grade = p.confidence_grade!;
+      const r = ANOMALY_RADII[grade];
+      const color = ANOMALY_COLORS[grade];
+      const isReference = grade === 'reference';
 
-    // 펄스 애니메이션 — high 등급 (SVG animate)
-    anomalyCircles
-      .filter((p) => p.confidence_grade === 'high')
-      .each(function () {
-        const r = ANOMALY_RADII.high;
-        d3.select(this)
-          .append('animate')
-          .attr('attributeName', 'r')
-          .attr('from', String(r))
-          .attr('to', String(r * 1.45))
-          .attr('dur', '1.5s')
-          .attr('repeatCount', 'indefinite');
-      });
+      // Pulse halo — high only, CSS keyframes
+      if (grade === 'high') {
+        nodeG.append('circle')
+          .attr('class', 'anomaly-pulse-high')
+          .attr('clip-path', 'url(#scatter-clip)')
+          .attr('cx', cx).attr('cy', cy)
+          .attr('r', r + 3)
+          .attr('fill', color)
+          .style('pointer-events', 'none');
+      }
 
-    // 이벤트 핸들러
-    anomalyCircles
-      .on('mouseenter', function (event: MouseEvent, p: ScatterPoint) {
-        handleMouseEnter(event, p);
-      })
-      .on('mouseleave', handleMouseLeave)
-      .on('click', (_event: MouseEvent, p: ScatterPoint) => {
-        if (p.anomaly_id !== null) selectAnomaly(p.anomaly_id);
-      });
-  }, [data, dimensions, sliderPosition, showBaselineTooltip, handleMouseEnter, handleMouseLeave, selectAnomaly]);
+      // White ring separator (non-reference only)
+      if (!isReference) {
+        nodeG.append('circle')
+          .attr('clip-path', 'url(#scatter-clip)')
+          .attr('cx', cx).attr('cy', cy)
+          .attr('r', r + 2.5)
+          .attr('fill', 'var(--bg-surface)')
+          .style('pointer-events', 'none');
+      }
 
-  // ── 슬라이더 관련 ─────────────────────────────────────────────
-  const months = data ? buildMonthRange(data.actual_from, data.actual_to) : [];
+      // Main dot
+      nodeG.append('circle')
+        .attr('clip-path', 'url(#scatter-clip)')
+        .attr('cx', cx).attr('cy', cy)
+        .attr('r', r)
+        .attr('fill', isReference ? 'var(--bg-surface)' : color)
+        .attr('stroke', isReference ? color : 'transparent')
+        .attr('stroke-width', isReference ? 2 : 0)
+        .style('cursor', p.anomaly_id !== null ? 'pointer' : 'default')
+        .on('mouseenter', (event: MouseEvent) => handleMouseEnter(event, p))
+        .on('mouseleave', handleMouseLeave)
+        .on('click', () => {
+          if (p.anomaly_id !== null) selectAnomaly(p.anomaly_id);
+        });
+    });
+  }, [data, dimensions, sliderPosition, handleMouseEnter, handleMouseLeave, selectAnomaly]);
+
+  const months = useMemo(
+    () => (data ? buildMonthRange(data.actual_from, data.actual_to) : []),
+    [data],
+  );
   const sliderIdx = months.indexOf(sliderPosition);
   const effectiveIdx = sliderIdx < 0 ? months.length - 1 : sliderIdx;
+  const progressPct = months.length > 1 ? (effectiveIdx / (months.length - 1)) * 100 : 0;
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIsPlaying(false);
@@ -489,88 +411,62 @@ export function ScatterChart() {
     setTimeout(() => setIsPlaying(true), 50);
   };
 
-  // ── 포인트 중 이상 없음 확인 ─────────────────────────────────────
   const hasAnomalyPoints = data?.points.some((p) => p.is_anomaly) ?? false;
+  const emptyPoints = data?.points.length === 0;
 
-  // ── Loading / Error ────────────────────────────────────────────
-  if (!primaryCommodityId) {
-    return (
-      <div className="flex items-center justify-center h-full text-slate-500 text-sm">
-        품목을 선택하세요
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full text-slate-400 text-sm">
-        데이터 불러오는 중…
-      </div>
-    );
-  }
-
-  if (error) {
-    // BE-3: publicCode 우선, 없으면 code (백엔드 내부 code도 매칭 가능하도록 fallback).
-    const apiError = error as { code?: string; publicCode?: string; message?: string };
-    const code = apiError?.publicCode ?? apiError?.code ?? '';
-    if (code === 'COMMODITY_NOT_FOUND') {
-      return (
-        <div className="flex items-center justify-center h-full text-slate-500 text-sm">
-          해당 품목 데이터가 없습니다.
-        </div>
-      );
-    }
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400 text-sm">
-        <span>데이터를 불러오지 못했습니다.</span>
-        <span className="text-xs text-slate-600">{apiError?.message}</span>
-      </div>
-    );
-  }
-
-  if (!data) return null;
-
-  // FE-D3-001: 포인트 빈 배열
-  const emptyPoints = data.points.length === 0;
+  // CLAUDE.md §StreamChart 방어 패턴: 컨테이너 항상 mount. early return으로
+  // 컨테이너 자체를 조건부 마운트 금지. loading/error/empty은 overlay로.
+  const apiError = error as { code?: string; publicCode?: string; message?: string } | null;
+  const errorCode = apiError?.publicCode ?? apiError?.code ?? '';
+  const isCommodityNotFound = errorCode === 'COMMODITY_NOT_FOUND';
 
   return (
-    <div className="flex flex-col h-full gap-2 min-h-0">
-      {/* ── 구간 탭 ─────────────────────────────────��─────────── */}
-      <div className="flex gap-1 px-1 shrink-0">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setScatterSegment(tab)}
-            className={[
-              'px-3 py-1 rounded text-xs font-medium transition-colors',
-              scatterSegment === tab
-                ? 'bg-blue-600/80 text-white'
-                : 'bg-slate-700/60 text-slate-400 hover:bg-slate-600/60 hover:text-slate-200',
-            ].join(' ')}
-          >
-            구간 {SEGMENT_DISPLAY[tab]}
-          </button>
-        ))}
+    <div className="flex flex-col h-full gap-3 min-h-0">
+      {/* 구간 탭 — brand teal active */}
+      <div className="flex gap-1 shrink-0">
+        {tabs.map((tab) => {
+          const isActive = scatterSegment === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setScatterSegment(tab)}
+              className={[
+                'h-[30px] px-3.5 rounded-md text-[13px] font-medium',
+                'transition-[background-color,border-color,color] duration-fast ease-out border',
+                isActive
+                  ? 'bg-brand border-brand text-on-brand'
+                  : 'bg-subtle border-border-default text-tertiary hover:bg-muted hover:border-border-strong hover:text-secondary',
+              ].join(' ')}
+            >
+              구간 {SEGMENT_DISPLAY[tab]}
+            </button>
+          );
+        })}
       </div>
 
-      {/* ── 접이식 설명 패널 ───────────────────────────────────── */}
-      <div className="border border-slate-700/50 rounded-lg bg-slate-800/30 shrink-0">
+      {/* 접이식 설명 패널 */}
+      <div className="border border-border-default rounded-md bg-surface shrink-0">
         <button
           onClick={() => setIsPanelExpanded((v) => !v)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs text-slate-400 hover:text-slate-200"
+          aria-expanded={isPanelExpanded}
+          className="w-full flex items-center justify-between px-4 py-3 text-[13px] font-medium text-secondary hover:bg-subtle transition-colors duration-fast rounded-md"
         >
-          <span className="font-medium">[전달 구조 뷰란?]</span>
-          <span>{isPanelExpanded ? '▲' : '▼'}</span>
+          <span>전달 구조 뷰란?</span>
+          <Icon
+            name="chevron-down"
+            size={14}
+            className={`text-tertiary transition-transform duration-default ease-out ${isPanelExpanded ? 'rotate-180' : ''}`}
+          />
         </button>
         {isPanelExpanded && (
-          <div className="px-3 pb-3 text-xs text-slate-400 leading-relaxed border-t border-slate-700/40 pt-2 whitespace-pre-line">
+          <div className="px-4 pb-4 text-[13px] text-secondary leading-[1.625] border-t border-border-subtle pt-3 whitespace-pre-line">
             {`이 그래프는 특정 구간에서 가격이 '얼마나, 어느 방향으로' 전달됐는지를 보여줍니다.
 
 X축: 상류(앞 단계) 가격의 월별 변화율
 Y축: 하류(다음 단계) 가격의 월별 변화율
 각 점: 1개월 관측치
 
-파란 점선(기준선)에 가까울수록 상류 변화가 그대로 전달된 정상적인 달입니다.
+teal 점선(기준선)에 가까울수록 상류 변화가 그대로 전달된 정상적인 달입니다.
 빨간·주황 점은 이상 탐지 시점이며, 클릭하면 분석 수치를 확인할 수 있습니다.
 
 흐름 보기가 '언제 이상이 있었는가'라면,
@@ -579,59 +475,97 @@ Y축: 하류(다음 단계) 가격의 월별 변화율
         )}
       </div>
 
-      {/* ── 차트 + 오버레이 ───────────────────────────────────── */}
-      <div className="relative flex-1 min-h-0" ref={containerRef}>
-        {/* FE-D3-001: 빈 배열 */}
-        {emptyPoints && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-            <span className="bg-slate-800/80 text-slate-400 text-xs px-3 py-1.5 rounded">
-              이 기간에는 관측 데이터가 없습니다.
-            </span>
-          </div>
-        )}
-
-        {/* 이상 관측치 없음 오버레이 (포인트는 있지만 모두 is_anomaly: false) */}
-        {!emptyPoints && !hasAnomalyPoints && (
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 pointer-events-none z-10">
-            <span className="bg-slate-800/80 text-slate-400 text-xs px-3 py-1.5 rounded border border-slate-700/40">
-              이 기간에는 이상 탐지 관측치가 없습니다
-            </span>
-          </div>
-        )}
-
+      {/* 차트 + 오버레이 */}
+      <div
+        className="relative flex-1 min-h-0 bg-surface border border-border-default rounded-xl shadow-e2 overflow-hidden"
+        ref={containerRef}
+      >
         <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="block" />
 
-        {/* 호버 툴팁 */}
+        {!primaryCommodityId && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <StateView variant="empty" size="inline" icon="list" title="품목을 선택하세요" />
+          </div>
+        )}
+        {primaryCommodityId && isLoading && (
+          <div className="absolute inset-0">
+            <StateView variant="loading" size="large" title="데이터를 불러오는 중…" />
+          </div>
+        )}
+        {primaryCommodityId && error && isCommodityNotFound && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <StateView
+              variant="empty"
+              size="large"
+              icon="search"
+              title="선택한 품목 데이터가 아직 없습니다"
+            />
+          </div>
+        )}
+        {primaryCommodityId && error && !isCommodityNotFound && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <StateView
+              variant="error"
+              size="large"
+              title="데이터를 불러오지 못했습니다"
+              description={apiError?.message}
+              errorCode={errorCode || undefined}
+            />
+          </div>
+        )}
+        {data && emptyPoints && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <StateView
+              variant="empty"
+              size="large"
+              icon="chart-bar-square"
+              title="이 기간에는 관측 데이터가 없습니다"
+            />
+          </div>
+        )}
+        {data && !emptyPoints && !hasAnomalyPoints && (
+          <div className="absolute bottom-14 left-1/2 -translate-x-1/2 pointer-events-none">
+            <StateView
+              variant="empty"
+              size="chip"
+              icon="info"
+              title="이 기간에는 이상 탐지 관측치가 없습니다"
+            />
+          </div>
+        )}
+
         {tooltip && tooltip.point.is_anomaly && tooltip.point.confidence_grade && (
           <div
-            className="absolute pointer-events-none z-20 bg-slate-800 border border-slate-600/60 rounded-lg px-3 py-2 text-xs text-slate-200 shadow-xl"
+            className="absolute pointer-events-none bg-surface border border-border-default rounded-md px-3 py-2.5 text-[12px] text-primary shadow-e3"
             style={{
               left: tooltip.x + 12,
               top: tooltip.y - 8,
               minWidth: 160,
               transform:
-                tooltip.x > dimensions.width - 180 ? 'translateX(-100%) translateX(-24px)' : undefined,
+                tooltip.x > dimensions.width - 180
+                  ? 'translateX(-100%) translateX(-24px)'
+                  : undefined,
             }}
           >
-            <div className="font-medium mb-1 text-slate-100">
+            <div className="font-semibold mb-1 text-primary">
               {(() => {
                 const [y, m] = tooltip.point.period.split('-');
                 return `${y}년 ${parseInt(m, 10)}월`;
               })()}
             </div>
-            <div className="text-slate-300">
-              X축: {tooltip.point.upstream_pct >= 0 ? '+' : ''}
+            <div className="text-tertiary font-mono">
+              X: {tooltip.point.upstream_pct >= 0 ? '+' : ''}
               {tooltip.point.upstream_pct.toFixed(1)}%
             </div>
-            <div className="text-slate-300">
-              Y축: {tooltip.point.downstream_pct >= 0 ? '+' : ''}
+            <div className="text-tertiary font-mono">
+              Y: {tooltip.point.downstream_pct >= 0 ? '+' : ''}
               {tooltip.point.downstream_pct.toFixed(1)}%
             </div>
-            <div className="mt-1" style={{ color: ANOMALY_COLORS[tooltip.point.confidence_grade] }}>
-              {GRADE_LABELS[tooltip.point.confidence_grade]}
+            <div className="mt-1.5 font-semibold" style={{ color: ANOMALY_COLORS[tooltip.point.confidence_grade] }}>
+              {confidenceLabel(tooltip.point.confidence_grade)}
             </div>
             {tooltip.point.primary_pattern && (
-              <div className="text-slate-400">
+              <div className="text-tertiary">
                 패턴: {PATTERN_LABELS[tooltip.point.primary_pattern] ?? tooltip.point.primary_pattern}
               </div>
             )}
@@ -639,33 +573,45 @@ Y축: 하류(다음 단계) 가격의 월별 변화율
         )}
       </div>
 
-      {/* ── 시점 슬라이더 ─────────────────────────────────────── */}
+      {/* 시점 슬라이더 — brand teal */}
       {months.length > 0 && (
-        <div className="shrink-0 flex flex-col gap-1 px-1 pb-1">
-          <div className="flex items-center gap-2">
-            {/* 재시작 */}
-            <button
+        <div className="shrink-0 flex flex-col gap-1.5">
+          <div className="flex items-center gap-2.5">
+            <IconButton
+              aria-label="처음부터 재생"
               onClick={handleReset}
-              title="처음부터 재생"
-              className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-200 text-xs"
-            >
-              ↺
-            </button>
-            {/* 재생 / 일시정지 */}
+              variant="ghost"
+              size="sm"
+              icon={<Icon name="rewind" size={14} />}
+            />
             {isPlaying ? (
-              <button
+              <IconButton
+                aria-label="일시정지"
                 onClick={handlePause}
-                className="w-6 h-6 flex items-center justify-center text-blue-400 hover:text-blue-200 text-xs"
-              >
-                ❚❚
-              </button>
+                variant="ghost"
+                size="sm"
+                icon={
+                  <Icon
+                    name="pause"
+                    size={14}
+                    style={{ color: 'var(--brand)' }}
+                  />
+                }
+              />
             ) : (
-              <button
+              <IconButton
+                aria-label="재생"
                 onClick={handlePlay}
-                className="w-6 h-6 flex items-center justify-center text-blue-400 hover:text-blue-200 text-xs"
-              >
-                ▶
-              </button>
+                variant="ghost"
+                size="sm"
+                icon={
+                  <Icon
+                    name="play"
+                    size={14}
+                    style={{ color: 'var(--brand)' }}
+                  />
+                }
+              />
             )}
             <input
               type="range"
@@ -673,13 +619,17 @@ Y축: 하류(다음 단계) 가격의 월별 변화율
               max={months.length - 1}
               value={effectiveIdx}
               onChange={handleSliderChange}
-              className="flex-1 h-1 accent-blue-500 cursor-pointer"
+              className="flex-1 h-1.5 rounded-pill cursor-pointer appearance-none"
+              style={{
+                background: `linear-gradient(to right, var(--brand) 0%, var(--brand) ${progressPct}%, var(--bg-muted) ${progressPct}%, var(--bg-muted) 100%)`,
+              }}
+              aria-label="시점 슬라이더"
             />
-            <span className="text-xs text-slate-400 w-16 text-right tabular-nums">
+            <span className="text-[12px] font-mono text-secondary w-16 text-right tabular-nums">
               {sliderPosition || data.actual_to}
             </span>
           </div>
-          <div className="flex justify-between text-[10px] text-slate-600 px-8">
+          <div className="flex justify-between text-[10px] font-mono text-tertiary px-9">
             <span>{data.actual_from}</span>
             <span>{data.actual_to}</span>
           </div>

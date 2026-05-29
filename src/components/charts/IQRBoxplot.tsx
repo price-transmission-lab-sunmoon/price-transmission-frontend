@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { PANEL_CHART_COLORS } from '@/utils/colorUtils';
+import { CHART_THEME } from '@/utils/chartTheme';
 import type { StatSnapshotIqrResponse } from '@/types/anomaly';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 
 const MARGIN = { top: 20, right: 20, bottom: 20, left: 20 };
 
+// @guide:CHART-11
 export function IQRBoxplot({ data, height = 180 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -88,7 +90,7 @@ export function IQRBoxplot({ data, height = 180 }: Props) {
       .attr('fill', PANEL_CHART_COLORS.iqrCurrentMarker);
 
     // y axis
-    g.append('g').call(d3.axisLeft(y).ticks(5)).attr('color', '#64748b');
+    g.append('g').call(d3.axisLeft(y).ticks(5)).attr('color', CHART_THEME.axisText);
 
     // current value label
     g.append('text')

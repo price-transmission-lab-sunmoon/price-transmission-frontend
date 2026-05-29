@@ -3,9 +3,17 @@ import * as d3 from 'd3';
 import { useRawPricesData } from '@/hooks/useRawPricesData';
 import { useAppStore } from '@/stores/useAppStore';
 import { ApiError } from '@/api/error';
+import { confidenceLabel } from '@/services/anomaly';
 import { RAW_PRICE_COLORS, ANOMALY_COLORS, ANOMALY_RADII } from '@/utils/colorUtils';
+import { CHART_THEME } from '@/utils/chartTheme';
+import { Z_INDEX } from '@/utils/zIndex';
+import { Badge } from '@/components/ui/Badge';
+import { Icon } from '@/components/ui/Icon';
+import { StateView } from '@/components/ui/StateView';
 import type { RawPriceAnomalyNode, RawPriceDataPoint } from '@/types/timeseries';
 import type { RawPriceSource, SegmentId } from '@/types/literals';
+
+const Z_INDEX_TOAST_INLINE = Z_INDEX.TOAST;
 
 // 이상 노드 Y 매핑 — segment_id 별 하류 소스 (spec §3.3 ⑤ "segment_id의 하류 소스 곡선 위에 표시").
 // 매핑이 없거나 응답에 해당 소스가 없으면 BASELINE_Y(=100)로 폴백.
@@ -19,17 +27,12 @@ const SEGMENT_TO_DOWNSTREAM_SOURCE: Record<SegmentId, RawPriceSource> = {
 
 // ── Constants ──────────────────────────────────────────────────
 const MARGIN = { top: 24, right: 32, bottom: 40, left: 64 };
-const OVERLAY_COLOR = '#64748b';
+const OVERLAY_COLOR = CHART_THEME.axisText;
 const OVERLAY_DASH = '4,3';
-const GRID_OPACITY = 0.3;
 const BASELINE_Y = 100;
 const TOAST_LAYOUT4 = '이 품목은 도매가 데이터가 없어 레이아웃 1로 전환합니다.';
 const TOAST_INVALID = '잘못된 레이아웃 번호입니다. 레이아웃 1로 전환합니다.';
-const GRADE_LABEL: Record<string, string> = {
-  high: '고신뢰',
-  medium: '중신뢰',
-  reference: '참고',
-};
+// 신뢰도 라벨은 services/anomaly.ts confidenceLabel() 단일 출처 사용 (중복 제거).
 const PATTERN_LABEL: Record<string, string> = {
   pattern1: '패턴1: 비대칭',
   pattern2: '패턴2: 과대',
@@ -53,6 +56,7 @@ const SOURCE_LABEL: Record<RawPriceSource, string> = {
 const parseYM = d3.timeParse('%Y-%m');
 const fmtYM = d3.timeFormat('%Y-%m');
 
+// @guide:CHART-04
 export function RawPricesChart() {
   const { data, error, isLoading } = useRawPricesData();
   const layoutNumber = useAppStore((s) => s.layoutNumber);
@@ -178,11 +182,11 @@ export function RawPricesChart() {
         .attr('y', 0)
         .attr('width', Math.max(0, Math.min(innerW, x1) - Math.max(0, x0)))
         .attr('height', innerH)
-        .attr('fill', ev.color_hex ?? '#94a3b8')
+        .attr('fill', ev.color_hex ?? CHART_THEME.axisText)
         .attr('fill-opacity', 0.08);
     });
 
-    // ② Grid lines
+    // ② Grid lines — Observable solid horizontal only
     const yGridTicks = yScale.ticks(6);
     clipped.append('g').attr('class', 'grid-y')
       .selectAll('line')
@@ -190,45 +194,66 @@ export function RawPricesChart() {
       .join('line')
       .attr('x1', 0).attr('x2', innerW)
       .attr('y1', (d) => yScale(d)).attr('y2', (d) => yScale(d))
-      .attr('stroke', '#94a3b8').attr('stroke-opacity', GRID_OPACITY)
-      .attr('stroke-dasharray', '2,3');
+      .attr('stroke', CHART_THEME.gridLine);
 
-    const xGridTicks = xScale.ticks(8);
-    clipped.append('g').attr('class', 'grid-x')
-      .selectAll('line')
-      .data(xGridTicks)
-      .join('line')
-      .attr('x1', (d) => xScale(d)).attr('x2', (d) => xScale(d))
-      .attr('y1', 0).attr('y2', innerH)
-      .attr('stroke', '#94a3b8').attr('stroke-opacity', GRID_OPACITY)
-      .attr('stroke-dasharray', '2,3');
-
-    // ③ Baseline y=100
+    // ③ Baseline y=100 with right-aligned label
     const baselineY = yScale(BASELINE_Y);
     if (baselineY >= 0 && baselineY <= innerH) {
       clipped.append('line')
         .attr('x1', 0).attr('x2', innerW)
         .attr('y1', baselineY).attr('y2', baselineY)
-        .attr('stroke', '#94a3b8').attr('stroke-opacity', 0.5).attr('stroke-width', 1.5);
+        .attr('stroke', CHART_THEME.axisText)
+        .attr('stroke-opacity', 0.4)
+        .attr('stroke-width', 1.25)
+        .attr('stroke-dasharray', '4,4');
+      clipped.append('text')
+        .attr('x', innerW - 4)
+        .attr('y', baselineY - 4)
+        .attr('text-anchor', 'end')
+        .attr('font-size', 10)
+        .attr('font-family', CHART_THEME.fontFamilyMono)
+        .attr('fill', CHART_THEME.axisText)
+        .text('기준 (100)');
     }
 
-    // ④ Source curves
+    // ④ Source curves with Observable-style area gradient
     const line = d3
       .line<RawPriceDataPoint>()
       .defined((dp) => dp.index_2020 !== null)
       .x((dp) => xScale(parseYM(dp.period) ?? new Date()))
-      .y((dp) => yScale(dp.index_2020 as number));
+      .y((dp) => yScale(dp.index_2020 as number))
+      .curve(d3.curveMonotoneX);
+
+    const area = d3
+      .area<RawPriceDataPoint>()
+      .defined((dp) => dp.index_2020 !== null)
+      .x((dp) => xScale(parseYM(dp.period) ?? new Date()))
+      .y0(innerH)
+      .y1((dp) => yScale(dp.index_2020 as number))
+      .curve(d3.curveMonotoneX);
 
     const activeSources = layoutNumber === 1
       ? data.series.filter((s) => enabledSources.has(s.source))
       : data.series;
 
+    const defs = svg.select('defs');
     activeSources.forEach((s) => {
+      const color = RAW_PRICE_COLORS[s.source] ?? CHART_THEME.axisText;
+      const gradId = `raw-area-${s.source}`;
+      const grad = defs
+        .append('linearGradient')
+        .attr('id', gradId)
+        .attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+      grad.append('stop').attr('offset', '0%').attr('stop-color', color).attr('stop-opacity', 0.12);
+      grad.append('stop').attr('offset', '100%').attr('stop-color', color).attr('stop-opacity', 0);
+      clipped.append('path').datum(s.data).attr('fill', `url(#${gradId})`).attr('d', area);
       clipped.append('path')
         .datum(s.data)
         .attr('fill', 'none')
-        .attr('stroke', RAW_PRICE_COLORS[s.source] ?? '#94a3b8')
-        .attr('stroke-width', 2)
+        .attr('stroke', color)
+        .attr('stroke-width', 1.75)
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-linejoin', 'round')
         .attr('d', line);
     });
 
@@ -277,54 +302,46 @@ export function RawPricesChart() {
       const r = ANOMALY_RADII[node.confidence_grade];
       const color = ANOMALY_COLORS[node.confidence_grade];
 
-      // 글로우 — high/medium 공통, 펄스 — high 전용 (spec §3.3 ⑤ "고신뢰 글로우+펄스, 중신뢰 글로우")
-      if (node.confidence_grade === 'high' || node.confidence_grade === 'medium') {
-        const filterId = `glow-${node.anomaly_id}`;
-        const defs = svg.select('defs');
-        const filter = defs.append('filter').attr('id', filterId).attr('x', '-50%').attr('y', '-50%').attr('width', '200%').attr('height', '200%');
-        filter.append('feGaussianBlur').attr('stdDeviation', node.confidence_grade === 'high' ? 3 : 2).attr('result', 'blur');
-        filter.append('feComposite').attr('in', 'SourceGraphic').attr('in2', 'blur').attr('operator', 'over');
+      const isReference = node.confidence_grade === 'reference';
 
-        const glow = nodeG.append('circle')
+      // Pulse halo — high only, CSS @keyframes (no SVG <animate>)
+      if (node.confidence_grade === 'high') {
+        nodeG.append('circle')
+          .attr('class', 'anomaly-pulse-high')
           .attr('cx', px).attr('cy', py)
           .attr('r', r + 3)
           .attr('fill', color)
-          .attr('opacity', 0.25)
-          .attr('filter', `url(#${filterId})`);
-
-        // 고신뢰 펄스 — SVG <animate> 로 r/opacity 반복
-        if (node.confidence_grade === 'high') {
-          glow.append('animate')
-            .attr('attributeName', 'r')
-            .attr('values', `${r + 2};${r + 6};${r + 2}`)
-            .attr('dur', '1.6s')
-            .attr('repeatCount', 'indefinite');
-          glow.append('animate')
-            .attr('attributeName', 'opacity')
-            .attr('values', '0.35;0.1;0.35')
-            .attr('dur', '1.6s')
-            .attr('repeatCount', 'indefinite');
-        }
+          .style('pointer-events', 'none');
       }
 
+      // White ring separator (filled grades only)
+      if (!isReference) {
+        nodeG.append('circle')
+          .attr('cx', px).attr('cy', py)
+          .attr('r', r + 2.5)
+          .attr('fill', 'var(--bg-surface)')
+          .style('pointer-events', 'none');
+      }
+
+      // Main dot — reference = outline-only
       const circle = nodeG.append('circle')
         .attr('cx', px).attr('cy', py)
         .attr('r', r)
-        .attr('fill', color)
-        .attr('stroke', '#0f172a')
-        .attr('stroke-width', 1)
+        .attr('fill', isReference ? 'var(--bg-surface)' : color)
+        .attr('stroke', isReference ? color : 'transparent')
+        .attr('stroke-width', isReference ? 2 : 0)
         .attr('cursor', 'pointer');
 
-      // NEW badge
+      // NEW dot top-right
       if (node.is_new) {
-        nodeG.append('text')
-          .attr('x', px)
-          .attr('y', py - r - 4)
-          .attr('text-anchor', 'middle')
-          .attr('fill', color)
-          .attr('font-size', '8px')
-          .attr('font-weight', 'bold')
-          .text('NEW');
+        nodeG.append('circle')
+          .attr('cx', px + r + 1)
+          .attr('cy', py - r - 1)
+          .attr('r', 2.5)
+          .attr('fill', 'var(--warning)')
+          .attr('stroke', 'var(--bg-surface)')
+          .attr('stroke-width', 1)
+          .style('pointer-events', 'none');
       }
 
       // Click handler
@@ -346,16 +363,26 @@ export function RawPricesChart() {
     // ⑦ Axes
     const xAxis = d3.axisBottom(xScale)
       .ticks(8)
+      .tickSize(0)
+      .tickPadding(10)
       .tickFormat(d3.timeFormat('%Y-%m') as (d: Date | d3.NumberValue) => string);
-    g.append('g')
+    const xAxisG = g
+      .append('g')
       .attr('transform', `translate(0,${innerH})`)
-      .call(xAxis)
-      .call((ax) => ax.selectAll('text').attr('fill', '#94a3b8').attr('font-size', '10px'));
+      .call(xAxis);
+    xAxisG.selectAll('text')
+      .attr('fill', CHART_THEME.axisText)
+      .attr('font-size', CHART_THEME.fontSize)
+      .attr('font-family', CHART_THEME.fontFamilyMono);
+    xAxisG.select('.domain').attr('stroke', CHART_THEME.axisLine);
 
-    const yAxis = d3.axisLeft(yScale).ticks(6).tickFormat((d) => String(d));
-    g.append('g')
-      .call(yAxis)
-      .call((ax) => ax.selectAll('text').attr('fill', '#94a3b8').attr('font-size', '10px'));
+    const yAxis = d3.axisLeft(yScale).ticks(6).tickSize(0).tickPadding(10).tickFormat((d) => String(d));
+    const yAxisG = g.append('g').call(yAxis);
+    yAxisG.selectAll('text')
+      .attr('fill', CHART_THEME.axisText)
+      .attr('font-size', CHART_THEME.fontSize)
+      .attr('font-family', CHART_THEME.fontFamilyMono);
+    yAxisG.select('.domain').remove();
 
     // Y axis label
     g.append('text')
@@ -363,8 +390,11 @@ export function RawPricesChart() {
       .attr('x', -innerH / 2)
       .attr('y', -MARGIN.left + 16)
       .attr('text-anchor', 'middle')
-      .attr('fill', '#64748b')
-      .attr('font-size', '10px')
+      .attr('fill', CHART_THEME.axisText)
+      .attr('font-size', 11)
+      .attr('font-weight', 600)
+      .attr('letter-spacing', '0.08em')
+      .attr('font-family', CHART_THEME.fontFamilyMono)
       .text('지수 (2020=100)');
 
     // ⑧ Wheel zoom
@@ -427,42 +457,46 @@ export function RawPricesChart() {
     return cleanup;
   }, [render]);
 
-  // ResizeObserver — FE-D3-003
+  // ResizeObserver + rAF retry — mount 직후 size 0이면 render() bail, ResizeObserver
+  // 첫 fire도 0 가능. 양쪽 0이면 영영 안 그려짐 (다른 탭 갔다 돌아와야 풀리는 회귀).
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let raf = 0;
+    const trySync = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) {
+        render();
+      } else {
+        raf = requestAnimationFrame(trySync);
+      }
+    };
+    trySync();
     const ro = new ResizeObserver(() => render());
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, [render]);
 
-  // ── Render ─────────────────────────────────────────────────
-  if (isLoading && !data) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
-        데이터 로딩 중...
-      </div>
+  // CLAUDE.md §StreamChart 방어 패턴: 컨테이너 항상 mount. loading/error는 overlay로.
+  const showLoadingOverlay = isLoading && !data;
+  const showErrorOverlay =
+    error &&
+    !(
+      error instanceof ApiError &&
+      ['WHOLESALE_NOT_AVAILABLE', 'INVALID_LAYOUT'].includes((error as ApiError).publicCode)
     );
-  }
-
-  // Error state (non-layout errors)
-  if (error && !(error instanceof ApiError && ['WHOLESALE_NOT_AVAILABLE', 'INVALID_LAYOUT'].includes((error as ApiError).publicCode))) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">
-        데이터를 불러올 수 없습니다.
-      </div>
-    );
-  }
 
   return (
-    <div className="flex flex-col h-full gap-2">
-      {/* Layout 1 source toggles */}
+    <div className="flex flex-col h-full gap-3">
+      {/* Layout 1 source toggles — 5 sources with color identity */}
       {layoutNumber === 1 && data && (
-        <div className="flex items-center gap-2 flex-wrap px-1">
+        <div className="flex items-center gap-2 flex-wrap">
           {SOURCES_ALL.map((src) => {
             const color = RAW_PRICE_COLORS[src];
             const active = enabledSources.has(src);
-            // spec §3.3 ③ 레이아웃 1: has_wholesale=false 품목은 wholesale 토글 비활성 (회색, 클릭 불가)
             const disabled = src === 'wholesale_price' && !hasWholesale;
             return (
               <button
@@ -470,16 +504,25 @@ export function RawPricesChart() {
                 onClick={() => !disabled && toggleSource(src)}
                 disabled={disabled}
                 aria-disabled={disabled}
-                className="flex items-center gap-1 px-2 py-0.5 rounded text-xs border transition-opacity disabled:cursor-not-allowed"
+                title={
+                  disabled
+                    ? '이 품목은 도매가 데이터가 없습니다'
+                    : undefined
+                }
+                className={[
+                  'inline-flex items-center gap-2 h-7 px-3 rounded-md text-[12px] font-medium',
+                  'border transition-[background-color,border-color,color] duration-fast ease-out',
+                  'disabled:opacity-40 disabled:cursor-not-allowed',
+                ].join(' ')}
                 style={{
-                  borderColor: disabled ? '#475569' : color,
-                  color: disabled ? '#64748b' : active ? color : '#64748b',
-                  opacity: disabled ? 0.4 : active ? 1 : 0.4,
+                  borderColor: active && !disabled ? color : 'var(--border-default)',
+                  background: active && !disabled ? `${color}1f` : 'transparent',
+                  color: active && !disabled ? color : 'var(--text-tertiary)',
                 }}
               >
                 <span
-                  className="inline-block w-3 h-0.5 rounded"
-                  style={{ backgroundColor: disabled ? '#64748b' : active ? color : '#64748b' }}
+                  className="inline-block w-2 h-2 rounded-full shrink-0"
+                  style={{ background: color }}
                 />
                 {SOURCE_LABEL[src]}
               </button>
@@ -489,58 +532,91 @@ export function RawPricesChart() {
       )}
 
       {/* Main chart area */}
-      <div ref={containerRef} className="flex-1 relative min-h-0">
-        {/* UX-2: 백엔드 데이터 미적재 안내 — 더 강한 카드 형태 */}
-        {data && (data.total_points === 0 || data.series.every((s) => s.data.length === 0)) && (
-          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-            <div className="flex flex-col items-center gap-3 px-6 py-5 max-w-md text-center bg-slate-800/90 border border-amber-500/40 rounded-lg shadow-xl">
-              <span
-                className="px-2 py-0.5 rounded text-[10px] font-semibold border"
-                style={{ color: '#fbbf24', borderColor: '#fbbf2480', backgroundColor: '#fbbf2415' }}
-              >
-                백엔드 적재 대기 중
-              </span>
-              <div className="text-amber-200/90 text-sm font-medium leading-snug">
-                원시 시계열 데이터가 아직 DB에 적재되지 않았습니다.
+      <div
+        ref={containerRef}
+        className="flex-1 relative min-h-0 bg-surface border border-border-default rounded-xl shadow-e2 overflow-hidden"
+      >
+        <svg ref={svgRef} className="w-full h-full" />
+
+        {/* loading overlay */}
+        {showLoadingOverlay && (
+          <div className="absolute inset-0">
+            <StateView variant="loading" size="large" title="데이터를 불러오는 중…" />
+          </div>
+        )}
+
+        {/* error overlay */}
+        {showErrorOverlay && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <StateView
+              variant="error"
+              size="large"
+              title="데이터를 불러오지 못했습니다"
+              description="잠시 후 다시 시도해주세요."
+            />
+          </div>
+        )}
+
+        {/* 백엔드 데이터 미적재 안내 — warning 카드 (spec §4.5) */}
+        {!showLoadingOverlay && !showErrorOverlay && data && (data.total_points === 0 || data.series.every((s) => s.data.length === 0)) && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none p-6">
+            <div className="flex flex-col items-center gap-3 px-8 py-7 max-w-[420px] text-center bg-surface border border-warning-border rounded-lg shadow-e3 pointer-events-auto">
+              <div className="w-16 h-16 rounded-full bg-warning-subtle flex items-center justify-center text-warning">
+                <Icon name="database" size={32} />
               </div>
-              <div className="text-slate-400 text-xs leading-relaxed">
-                파이프라인 Phase 0 결과물(국제가·수입단가·PPI·CPI)이<br />
+              <Badge tone="warning" size="sm" uppercase>
+                구현 대기
+              </Badge>
+              <p className="text-[14px] font-semibold text-primary m-0">
+                원시 시계열 데이터가 아직 DB에 적재되지 않았습니다
+              </p>
+              <p className="text-[13px] text-secondary leading-[1.625] m-0">
+                파이프라인 Phase 0 결과물(국제가·수입단가·PPI·CPI)이
                 적재된 후 자동으로 표시됩니다.
-              </div>
-              <div className="text-slate-500 text-[10px] leading-snug pt-1 border-t border-slate-700/40 w-full">
-                흐름 보기 / 전달 구조 탭은 정상 작동합니다.
+              </p>
+              <div className="w-full border-t border-border-subtle pt-3 mt-1">
+                <p className="text-[12px] text-tertiary m-0">
+                  흐름 보기 / 전달 구조 탭은 정상 작동합니다.
+                </p>
               </div>
             </div>
           </div>
         )}
-        {data && data.series.length === 0 && data.total_points !== 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-sm">
-            이 기간에는 데이터가 없습니다.
+        {!showLoadingOverlay && !showErrorOverlay && data && data.series.length === 0 && data.total_points !== 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <StateView
+              variant="empty"
+              size="large"
+              title="이 기간에는 데이터가 없습니다"
+              description="필터 기간을 넓혀보세요."
+            />
           </div>
         )}
-        <svg ref={svgRef} className="w-full h-full" />
 
         {/* Anomaly hover tooltip */}
         {tooltip && (
           <div
-            className="absolute pointer-events-none z-50 bg-slate-800 border border-slate-600 rounded-md px-3 py-2 text-xs text-slate-200 shadow-lg"
+            className="absolute pointer-events-none bg-surface border border-border-default rounded-md px-3 py-2.5 text-[12px] text-primary shadow-e3"
             style={{ left: tooltip.x + 12, top: tooltip.y - 8 }}
           >
-            <div className="font-medium mb-1">
+            <div className="font-semibold mb-1">
               {(() => {
                 const d = parseYM(tooltip.node.period);
                 return d ? `${d.getFullYear()}년 ${d.getMonth() + 1}월` : tooltip.node.period;
               })()}
             </div>
-            <div className="text-slate-400">{GRADE_LABEL[tooltip.node.confidence_grade] ?? tooltip.node.confidence_grade}</div>
-            <div className="text-slate-400">{PATTERN_LABEL[tooltip.node.primary_pattern] ?? tooltip.node.primary_pattern}</div>
+            <div className="text-tertiary">{confidenceLabel(tooltip.node.confidence_grade)}</div>
+            <div className="text-tertiary">{PATTERN_LABEL[tooltip.node.primary_pattern] ?? tooltip.node.primary_pattern}</div>
           </div>
         )}
       </div>
 
-      {/* Toast notification */}
+      {/* Toast notification — inline (showToast 마이그레이션은 후속) */}
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-slate-700 border border-slate-500 text-white text-sm px-5 py-2.5 rounded-lg shadow-xl pointer-events-none">
+        <div
+          className="fixed top-6 left-1/2 -translate-x-1/2 bg-surface border border-warning-border text-secondary text-[13px] px-5 py-3 rounded-lg shadow-e4 pointer-events-none"
+          style={{ zIndex: Z_INDEX_TOAST_INLINE }}
+        >
           {toast}
         </div>
       )}
@@ -557,7 +633,7 @@ function renderEmpty(svg: SVGSVGElement, width: number, height: number) {
     .attr('x', width / 2)
     .attr('y', height / 2 + 4)
     .attr('text-anchor', 'middle')
-    .attr('fill', '#64748b')
+    .attr('fill', CHART_THEME.axisText)
     .attr('font-size', '13px')
     .text('이 기간에는 데이터가 없습니다.');
 }

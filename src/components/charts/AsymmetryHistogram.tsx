@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { PANEL_CHART_COLORS } from '@/utils/colorUtils';
+import { CHART_THEME } from '@/utils/chartTheme';
 import type { StatSnapshotAsymmetryResponse } from '@/types/anomaly';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 const MARGIN = { top: 12, right: 12, bottom: 28, left: 36 };
 const BIN_COUNT = 20;
 
+// @guide:CHART-12
 export function AsymmetryHistogram({ data, height = 180 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,8 +80,8 @@ export function AsymmetryHistogram({ data, height = 180 }: Props) {
       .attr('fill', PANEL_CHART_COLORS.asymmetryUpBin)
       .attr('opacity', 0.6);
 
-    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(5)).attr('color', '#64748b');
-    g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', '#64748b');
+    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(5)).attr('color', CHART_THEME.axisText);
+    g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', CHART_THEME.axisText);
   }, [data, height]);
 
   return (

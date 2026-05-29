@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import { useMinimapData, type MinimapVariant } from '@/hooks/useMinimapData';
 import { useAppStore } from '@/stores/useAppStore';
 import { SEGMENT_COLORS_PRIMARY, RAW_PRICE_COLORS, ANOMALY_COLORS } from '@/utils/colorUtils';
+import { CHART_THEME } from '@/utils/chartTheme';
 import type {
   AnomalyDensityItem,
   StreamSeriesItem,
@@ -14,11 +15,11 @@ interface MinimapProps {
   variant: MinimapVariant;
 }
 
-const HEIGHT = 64;
+const HEIGHT = 70;
 const TOTAL_HEIGHT = HEIGHT;
 const MARGIN = { top: 8, bottom: 20, left: 24, right: 24 };
-const BRUSH_FILL = 'rgba(100, 149, 237, 0.20)';
-const BRUSH_STROKE = '#6495ED';
+const BRUSH_FILL = 'rgba(13, 148, 136, 0.08)';
+const BRUSH_STROKE = 'var(--brand)';
 const MIN_BRUSH_MONTHS = 3;
 
 function densityColor(item: AnomalyDensityItem): string | null {
@@ -39,6 +40,7 @@ function getAnomalyBandStyle(item: AnomalyDensityItem): { color: string; opacity
   return { color, opacity: densityOpacity(item) };
 }
 
+// @guide:CHART-02
 export function Minimap({ variant }: MinimapProps) {
   const { data, isLoading, isError } = useMinimapData(variant);
   const filterFrom = useAppStore((s) => s.filterFrom);
@@ -68,28 +70,41 @@ export function Minimap({ variant }: MinimapProps) {
   const getSegmentColor = useCallback(
     (item: StreamSeriesItem | RawPriceSeriesItem): string => {
       if (variant === 'stream') {
-        return SEGMENT_COLORS_PRIMARY[(item as StreamSeriesItem).segment_id as SegmentId] ?? '#94a3b8';
+        return SEGMENT_COLORS_PRIMARY[(item as StreamSeriesItem).segment_id as SegmentId] ?? CHART_THEME.axisText;
       }
-      return RAW_PRICE_COLORS[(item as RawPriceSeriesItem).source as RawPriceSource] ?? '#94a3b8';
+      return RAW_PRICE_COLORS[(item as RawPriceSeriesItem).source as RawPriceSource] ?? CHART_THEME.axisText;
     },
     [variant],
   );
 
   // FE-D3-003: ResizeObserver로 컨테이너 크기 복구 감지 → 재렌더링.
-  // mount 직후 첫 fire가 0이면 setContainerWidth skip → 차트 렌더 안 됨. 다른 탭 갔다 와야 풀림.
-  // → mount 시 getBoundingClientRect 즉시 sync로 첫 fire 의존 제거.
+  // mount 직후 getBoundingClientRect와 ResizeObserver 첫 fire가 모두 0 가능.
+  // 양쪽 무시 시 영영 0 → 차트 렌더 안 됨, 다른 탭 갔다 와야 풀림.
+  // → rAF 폴링으로 첫 non-zero width 확보 후 observer 부착.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let raf = 0;
     const sync = (w: number) => {
       if (w > 0) setContainerWidth(w);
     };
-    sync(el.getBoundingClientRect().width);
+    const trySync = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) {
+        sync(w);
+      } else {
+        raf = requestAnimationFrame(trySync);
+      }
+    };
+    trySync();
     const observer = new ResizeObserver((entries) => {
       sync(entries[0]?.contentRect.width ?? 0);
     });
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
   }, []);
 
   // ── 메인 D3 렌더링 ──────────────────────────────────────────
@@ -224,8 +239,11 @@ export function Minimap({ variant }: MinimapProps) {
       .call(xAxis)
       .call((ax) => {
         ax.select('.domain').remove();
-        ax.selectAll('.tick line').attr('stroke', '#475569').attr('stroke-opacity', 0.5);
-        ax.selectAll('.tick text').attr('fill', '#94a3b8').attr('font-size', '10px');
+        ax.selectAll('.tick line').attr('stroke', CHART_THEME.axisLine);
+        ax.selectAll('.tick text')
+          .attr('fill', CHART_THEME.axisText)
+          .attr('font-size', '10px')
+          .attr('font-family', CHART_THEME.fontFamilyMono);
       });
 
     // ④ d3.brushX() 뷰포트 박스
@@ -316,33 +334,28 @@ export function Minimap({ variant }: MinimapProps) {
   const hasData =
     data && data.series.length > 0 && data.series.some((s) => s.data.length > 0);
 
-  if (isLoading) {
-    return (
-      <div
-        className="bg-slate-800/30 border border-slate-700/50 rounded-lg animate-pulse"
-        style={{ height: HEIGHT }}
-      />
-    );
-  }
-
-  if (isError || (data && !hasData)) {
-    return (
-      <div
-        className="flex items-center justify-center bg-slate-800/30 border border-slate-700/50 rounded-lg"
-        style={{ height: TOTAL_HEIGHT }}
-      >
-        <span className="text-slate-500 text-xs">전체 기간 데이터 없음</span>
-      </div>
-    );
-  }
-
+  // CLAUDE.md §StreamChart 방어 패턴 (Minimap도 동일 회귀 대상):
+  // 컨테이너 항상 mount. loading/empty/error는 overlay로.
+  // empty-deps resize useEffect가 첫 발화 시 ref 확보되도록 보장.
   return (
     <div
       ref={containerRef}
-      className="bg-slate-800/30 border border-slate-700/50 rounded-lg overflow-hidden"
+      className="relative bg-surface border border-border-default rounded-md overflow-hidden"
       style={{ height: HEIGHT }}
     >
       <svg ref={svgRef} style={{ display: 'block' }} />
+
+      {isLoading && (
+        <div
+          className="absolute inset-0 skeleton-bar rounded-md"
+          style={{ animation: 'shimmer 1.6s linear infinite' }}
+        />
+      )}
+      {!isLoading && (isError || (data && !hasData)) && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-tertiary text-[12px]">전체 기간 데이터 없음</span>
+        </div>
+      )}
     </div>
   );
 }

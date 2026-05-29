@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/useAppStore';
+import { Z_INDEX } from '@/utils/zIndex';
+import { Icon } from '@/components/ui/Icon';
+import { IconButton } from '@/components/ui/IconButton';
+import { Button } from '@/components/ui/Button';
 
 interface HelpItem {
   title: string;
@@ -62,6 +66,11 @@ const HELP_ITEMS: HelpItem[] = [
     content:
       '분석에 사용된 원시 데이터는 다음 7개 공공 데이터 소스에서 수집됩니다.\n1. 한국농수산식품유통공사(aT) — 도매가격\n2. 통계청 KOSIS — 소비자물가지수(CPI), 생산자물가지수(PPI)\n3. 관세청 — 수입단가\n4. FAO — 국제 식품 가격 지수\n5. World Bank — 국제 원자재 가격\n6. IMF — 국제 상품 가격 데이터\n7. USDA — 국제 농산물 수급 데이터',
   },
+  {
+    title: '키보드 단축키',
+    content:
+      'Esc — 모달 · 온보딩 닫기\nTab — 다음 요소로 포커스 이동\nEnter / Space — 버튼 활성\n드래그(우측 패널 경계) — 패널 너비 조정',
+  },
 ];
 
 interface HelpModalProps {
@@ -69,40 +78,31 @@ interface HelpModalProps {
   onClose: () => void;
 }
 
+// @guide:LAYOUT-07
 export function HelpModal({ isOpen, onClose }: HelpModalProps) {
   const { setHasSeenOnboardingThisSession } = useAppStore();
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
 
-  // Escape 키로 모달 닫기
+  // Esc + body scroll lock
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // 모달 열릴 때 스크롤 잠금
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = '';
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = prevOverflow;
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   const toggleItem = (index: number) => {
     setExpandedItems((prev) => {
       const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
       return next;
     });
   };
@@ -110,8 +110,6 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
   const handleReplayOnboarding = () => {
     setHasSeenOnboardingThisSession(false);
     onClose();
-    // useEffect in OnboardingGuide will detect hasSeenOnboardingThisSession === false
-    // and trigger setOnboardingVisible(true)
   };
 
   if (!isOpen) return null;
@@ -120,7 +118,14 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
     <>
       {/* 배경 오버레이 */}
       <div
-        style={{ position: 'fixed', inset: 0, zIndex: 8000, background: 'rgba(0,0,0,0.5)' }}
+        className="overlay-fade-in"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: Z_INDEX.MODAL_OVERLAY,
+          background: 'rgba(28, 24, 18, 0.55)',
+          backdropFilter: 'blur(4px)',
+        }}
         onClick={onClose}
       />
 
@@ -129,69 +134,91 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
         style={{
           position: 'fixed',
           inset: 0,
-          zIndex: 8001,
+          zIndex: Z_INDEX.MODAL_CONTENT,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '16px',
+          padding: '24px',
           pointerEvents: 'none',
         }}
       >
         <div
-          style={{ pointerEvents: 'auto', maxHeight: '80vh' }}
-          className="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-full max-w-lg flex flex-col"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="help-modal-title"
+          style={{ pointerEvents: 'auto', maxHeight: '85vh' }}
+          className="overlay-content-in bg-surface border border-border-default rounded-xl shadow-e5 w-full max-w-[640px] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* 헤더 */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700 shrink-0">
-            <h2 className="text-white font-semibold text-sm">도움말</h2>
-            <button
-              onClick={onClose}
+          <div className="flex items-center justify-between px-6 py-5 border-b border-border-default shrink-0">
+            <div>
+              <h2
+                id="help-modal-title"
+                className="text-primary font-bold text-[18px] tracking-tight m-0"
+              >
+                도움말
+              </h2>
+              <p className="text-tertiary text-[12px] mt-0.5 m-0">서비스 사용 안내</p>
+            </div>
+            <IconButton
               aria-label="도움말 닫기"
-              className="text-slate-400 hover:text-white transition-colors text-lg leading-none"
-            >
-              ✕
-            </button>
+              onClick={onClose}
+              variant="ghost"
+              size="md"
+              icon={<Icon name="x" size={16} />}
+            />
           </div>
 
           {/* 아코디언 목록 */}
-          <div className="overflow-y-auto flex-1 px-3 py-2">
-            {HELP_ITEMS.map((item, index) => (
-              <div key={index} className="border-b border-slate-700/50 last:border-0">
-                <button
-                  onClick={() => toggleItem(index)}
-                  className="w-full flex items-center justify-between px-2 py-3 text-left hover:bg-slate-700/30 rounded transition-colors"
+          <div className="overflow-y-auto flex-1 px-4 py-2">
+            {HELP_ITEMS.map((item, index) => {
+              const isExpanded = expandedItems.has(index);
+              return (
+                <div
+                  key={index}
+                  className="border-b border-border-subtle last:border-0"
                 >
-                  <span className="text-slate-200 text-sm font-medium">{item.title}</span>
-                  <span
-                    className="text-slate-400 text-xs ml-2 shrink-0 transition-transform"
-                    style={{
-                      transform: expandedItems.has(index) ? 'rotate(180deg)' : 'rotate(0deg)',
-                    }}
+                  <button
+                    onClick={() => toggleItem(index)}
+                    aria-expanded={isExpanded}
+                    className={[
+                      'w-full flex items-center justify-between px-2 py-4 text-left rounded-md',
+                      'transition-colors duration-fast ease-out hover:bg-subtle',
+                    ].join(' ')}
                   >
-                    ▾
-                  </span>
-                </button>
+                    <span className="text-primary text-[14px] font-medium">
+                      {item.title}
+                    </span>
+                    <Icon
+                      name="chevron-down"
+                      size={18}
+                      className={`text-tertiary ml-2 shrink-0 transition-transform duration-default ease-out ${isExpanded ? 'rotate-180' : ''}`}
+                    />
+                  </button>
 
-                {expandedItems.has(index) && (
-                  <div className="px-2 pb-3">
-                    <p className="text-slate-400 text-xs leading-relaxed whitespace-pre-line">
-                      {item.content}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
+                  {isExpanded && (
+                    <div className="px-2 pb-5">
+                      <p className="text-secondary text-[14px] leading-[1.625] whitespace-pre-line m-0">
+                        {item.content}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* 하단: 온보딩 다시 보기 */}
-          <div className="px-5 py-4 border-t border-slate-700 shrink-0">
-            <button
+          <div className="px-6 py-4 border-t border-border-default shrink-0">
+            <Button
+              variant="secondary"
+              size="md"
+              fullWidth
               onClick={handleReplayOnboarding}
-              className="w-full py-2 text-sm text-cyan-400 hover:text-cyan-300 border border-cyan-800 hover:border-cyan-600 rounded-lg transition-colors"
             >
               온보딩 가이드 다시 보기
-            </button>
+            </Button>
           </div>
         </div>
       </div>

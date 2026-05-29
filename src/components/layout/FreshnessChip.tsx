@@ -1,6 +1,7 @@
 import { useFreshness } from '@/hooks/useFreshness';
 import { formatYearMonthKr, formatDateKr } from '@/utils/dateUtils';
 
+// @guide:LAYOUT-06
 export function FreshnessChip() {
   const { data, isLoading } = useFreshness();
 
@@ -8,10 +9,10 @@ export function FreshnessChip() {
     return (
       <div
         aria-label="데이터 기준 시점 로딩 중"
-        className="flex items-center gap-2 h-7 px-2.5 bg-slate-800/60 border border-dashed border-slate-700 rounded-md text-xs"
+        className="flex items-center gap-2 h-[30px] px-3 bg-surface border border-dashed border-border-default rounded-md text-[12px]"
       >
-        <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-        <span className="text-slate-500 animate-pulse">…</span>
+        <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]" />
+        <span className="text-tertiary animate-pulse">…</span>
       </div>
     );
   }
@@ -22,11 +23,18 @@ export function FreshnessChip() {
   return (
     <div
       aria-label={`데이터 기준 시점: ${baseLabel} 기준, 다음 갱신 ${nextLabel} 예정`}
-      className="flex items-center gap-2 h-7 px-2.5 bg-slate-800/60 border border-slate-700/60 rounded-md text-xs"
+      className="flex items-center gap-2 h-[30px] px-3 bg-surface border border-border-default rounded-md text-[12px] text-secondary"
     >
-      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-      <span className="text-slate-300">
-        {baseLabel} 기준 · 다음 갱신 {nextLabel} 예정
+      <div
+        className="w-[7px] h-[7px] rounded-full bg-success live-indicator"
+        aria-hidden
+      />
+      <span>
+        <span className="font-mono text-secondary">{baseLabel}</span>
+        <span className="text-[var(--text-muted)] mx-1.5">·</span>
+        <span className="text-tertiary">
+          다음 갱신 <span className="font-mono">{nextLabel}</span> 예정
+        </span>
       </span>
     </div>
   );

@@ -7,6 +7,7 @@ import type {
 } from './literals';
 
 // 시계열 공통 envelope — api_spec_vN §시계열 공통 envelope
+// @guide:TYPE-02
 export interface TimeseriesEnvelope {
   commodity_id: string;
   requested_from: string; // YYYY-MM

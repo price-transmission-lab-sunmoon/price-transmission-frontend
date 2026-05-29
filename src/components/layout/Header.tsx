@@ -2,8 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/stores/useAppStore';
 import { useCommodities } from '@/hooks/useCommodities';
+import { Z_INDEX } from '@/utils/zIndex';
+import { ANOMALY_COLORS } from '@/utils/colorUtils';
 import { FreshnessChip } from './FreshnessChip';
+import { Icon } from '@/components/ui/Icon';
+import { IconButton } from '@/components/ui/IconButton';
 import type { ViewTab } from '@/types/literals';
+import type { IconName } from '@/utils/icons';
 
 const CLUSTER_LABELS: Record<string, string> = {
   grain: '곡물류',
@@ -15,25 +20,27 @@ const CLUSTER_LABELS: Record<string, string> = {
 
 const CLUSTER_ORDER = ['grain', 'oil_sugar', 'tropical', 'livestock', 'independent'];
 
-const GRADE_DOT: Record<string, string> = {
-  high: 'bg-red-400',
-  medium: 'bg-orange-400',
-  reference: 'bg-lime-400',
+const GRADE_DOT_COLOR: Record<string, string> = {
+  high: ANOMALY_COLORS.high,
+  medium: ANOMALY_COLORS.medium,
+  reference: ANOMALY_COLORS.reference,
 };
 
 interface ViewTabConfig {
   id: ViewTab;
   label: string;
+  icon: IconName;
 }
 
-// PM 별건 #1 — literals.ts VIEW_TABS SoT(4탭) 정합. methodology 포함.
+// literals.ts VIEW_TABS SoT(4탭) 정합. methodology 포함.
 const VIEW_TABS: ViewTabConfig[] = [
-  { id: 'stream', label: '흐름 보기' },
-  { id: 'scatter', label: '전달 구조' },
-  { id: 'raw-prices', label: '원시 시계열' },
-  { id: 'methodology', label: '방법론' },
+  { id: 'stream', label: '흐름 보기', icon: 'trend-up' },
+  { id: 'scatter', label: '전달 구조', icon: 'compare' },
+  { id: 'raw-prices', label: '원시 시계열', icon: 'list' },
+  { id: 'methodology', label: '방법론', icon: 'info' },
 ];
 
+// @guide:LAYOUT-02
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -114,25 +121,35 @@ export function Header() {
   return (
     <header
       data-testid="header"
-      className="flex items-center justify-between h-14 px-5 bg-slate-900 border-b border-slate-700/60 shrink-0 relative z-10"
+      className="flex items-center justify-between h-[60px] px-6 bg-canvas border-b border-border-default shrink-0 relative"
+      style={{ zIndex: Z_INDEX.HEADER }}
     >
       {/* 좌측: 서비스명 + 주 품목 + 보조 품목 + 뷰 탭 */}
-      <div className="flex items-center gap-4">
-        {/* 서비스명 */}
-        <div className="flex items-center gap-2 shrink-0">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <div className="flex items-center gap-5">
+        {/* 서비스명 — brand teal logo */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 22 22"
+            fill="none"
+            aria-hidden="true"
+          >
             <polyline
-              points="1,14 5,8 9,11 13,5 17,2"
-              stroke="#e24b4a"
-              strokeWidth="2"
+              points="2,17 6,11 11,14 16,7 20,3"
+              stroke="var(--brand)"
+              strokeWidth="2.25"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
+            <circle cx="20" cy="3" r="2.5" fill="var(--brand)" />
           </svg>
-          <span className="text-white font-bold text-sm tracking-tight">가격렌즈</span>
+          <span className="text-primary font-bold text-[15px] tracking-tight">
+            가격렌즈
+          </span>
         </div>
 
-        <div className="w-px h-5 bg-slate-700" />
+        <div className="w-px h-[22px] bg-border-default" aria-hidden />
 
         {/* 주 품목 드롭다운 */}
         <div ref={primaryRef} className="relative">
@@ -142,66 +159,85 @@ export function Header() {
             aria-expanded={primaryOpen}
             disabled={commoditiesLoading}
             onClick={() => setPrimaryOpen((v) => !v)}
-            className="flex items-center gap-2 h-8 px-3 bg-slate-800 border border-slate-600 rounded-md text-xs font-medium transition-colors hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className={[
+              'flex items-center gap-2 h-[34px] pr-2.5 pl-3 min-w-[160px]',
+              'bg-surface border rounded-md shadow-e1 text-[13px] font-medium',
+              'transition-[border-color,box-shadow] duration-fast ease-out',
+              'disabled:cursor-not-allowed disabled:opacity-60',
+              primaryOpen
+                ? 'border-brand shadow-[0_0_0_3px_var(--brand-subtle)]'
+                : 'border-border-default hover:border-border-strong',
+            ].join(' ')}
           >
             {commoditiesLoading ? (
-              <span className="text-slate-400">품목 로딩 중...</span>
+              <span className="text-tertiary">품목 로딩 중…</span>
             ) : primaryCommodity ? (
               <>
                 <span
-                  className={`w-2 h-2 rounded-full shrink-0 ${primaryCommodity.has_anomaly_this_month && primaryCommodity.latest_anomaly_grade ? (GRADE_DOT[primaryCommodity.latest_anomaly_grade] ?? 'bg-slate-500') : 'bg-slate-500'}`}
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{
+                    background:
+                      primaryCommodity.has_anomaly_this_month && primaryCommodity.latest_anomaly_grade
+                        ? GRADE_DOT_COLOR[primaryCommodity.latest_anomaly_grade] ?? 'var(--text-muted)'
+                        : 'var(--text-muted)',
+                  }}
                 />
-                <span className="text-slate-200">{primaryCommodity.name_kr}</span>
+                <span className="text-primary">{primaryCommodity.name_kr}</span>
               </>
             ) : (
               <>
-                <span className="w-2 h-2 rounded-full bg-slate-500 shrink-0" />
-                <span className="text-slate-400">품목 선택</span>
+                <span className="w-2 h-2 rounded-full bg-[var(--text-muted)] shrink-0" />
+                <span className="text-tertiary">품목 선택</span>
               </>
             )}
-            <svg
-              width="11"
-              height="11"
-              viewBox="0 0 12 12"
-              fill="none"
-              className={`text-slate-500 transition-transform ${primaryOpen ? 'rotate-180' : ''}`}
-              aria-hidden="true"
-            >
-              <path
-                d="M3 4.5L6 7.5L9 4.5"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-            </svg>
+            <Icon
+              name="chevron-down"
+              size={14}
+              className={`text-tertiary ml-auto transition-transform duration-default ease-out ${primaryOpen ? 'rotate-180' : ''}`}
+            />
           </button>
 
           {primaryOpen && (
             <div
               role="listbox"
               aria-label="주 품목 목록"
-              style={{ zIndex: 200 /* Z_INDEX.DROPDOWN per fe-api-connect §5.5 — z-50은 fe-panel(z=100) 아래로 깔림 */ }}
-              className="absolute top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto"
+              style={{ zIndex: Z_INDEX.DROPDOWN }}
+              className="absolute top-full left-0 mt-1.5 w-[280px] bg-surface border border-border-default rounded-lg shadow-e4 p-1.5 max-h-[380px] overflow-y-auto animate-scale-in"
             >
               {grouped.map(({ cluster, items }) => (
                 <div key={cluster}>
-                  <div className="px-3 py-1 text-[10px] text-slate-500 font-medium uppercase tracking-wide border-t border-slate-700/50 first:border-t-0">
+                  <div className="px-3 pt-2 pb-1 text-[10px] text-tertiary font-semibold uppercase tracking-widest">
                     {CLUSTER_LABELS[cluster] ?? cluster}
                   </div>
-                  {items.map((c) => (
-                    <button
-                      key={c.commodity_id}
-                      role="option"
-                      aria-selected={c.commodity_id === primaryCommodityId}
-                      onClick={() => handlePrimarySelect(c.commodity_id)}
-                      className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors hover:bg-slate-700 ${c.commodity_id === primaryCommodityId ? 'text-white bg-slate-700/50' : 'text-slate-300'}`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${c.has_anomaly_this_month && c.latest_anomaly_grade ? (GRADE_DOT[c.latest_anomaly_grade] ?? 'bg-slate-600') : 'bg-slate-600'}`}
-                      />
-                      {c.name_kr}
-                    </button>
-                  ))}
+                  {items.map((c) => {
+                    const isActive = c.commodity_id === primaryCommodityId;
+                    return (
+                      <button
+                        key={c.commodity_id}
+                        role="option"
+                        aria-selected={isActive}
+                        onClick={() => handlePrimarySelect(c.commodity_id)}
+                        className={[
+                          'w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] text-left rounded-sm',
+                          'transition-colors duration-fast ease-out',
+                          isActive
+                            ? 'bg-brand-subtle text-brand-active'
+                            : 'text-primary hover:bg-subtle',
+                        ].join(' ')}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{
+                            background:
+                              c.has_anomaly_this_month && c.latest_anomaly_grade
+                                ? GRADE_DOT_COLOR[c.latest_anomaly_grade] ?? 'var(--text-muted)'
+                                : 'var(--text-muted)',
+                          }}
+                        />
+                        {c.name_kr}
+                      </button>
+                    );
+                  })}
                 </div>
               ))}
             </div>
@@ -211,14 +247,14 @@ export function Header() {
         {/* 보조 품목 */}
         <div ref={secondaryRef} className="relative">
           {secondaryCommodity ? (
-            <div className="flex items-center gap-1.5 h-8 px-2.5 bg-slate-800 border border-slate-600 rounded-md text-xs">
-              <span className="text-slate-300">{secondaryCommodity.name_kr}</span>
+            <div className="flex items-center gap-1.5 h-[34px] px-3 bg-surface border border-border-default rounded-md text-[13px] shadow-e1">
+              <span className="text-primary">{secondaryCommodity.name_kr}</span>
               <button
                 aria-label={`보조 품목 ${secondaryCommodity.name_kr} 제거`}
                 onClick={() => setSecondaryCommodity(null)}
-                className="text-slate-500 hover:text-slate-200 ml-0.5"
+                className="text-tertiary hover:text-primary ml-1 transition-colors duration-fast"
               >
-                ×
+                <Icon name="x" size={12} />
               </button>
             </div>
           ) : (
@@ -227,10 +263,10 @@ export function Header() {
               aria-haspopup="listbox"
               aria-expanded={secondaryOpen}
               onClick={() => setSecondaryOpen((v) => !v)}
-              className="flex items-center gap-1 h-8 px-3 bg-transparent border border-dashed border-slate-600 rounded-md text-slate-400 hover:text-slate-200 hover:border-slate-500 text-xs transition-colors"
+              className="flex items-center gap-1.5 h-[34px] px-3 bg-transparent border border-dashed border-border-strong rounded-md text-tertiary hover:text-brand hover:border-brand hover:bg-brand-subtle text-[12px] transition-[color,border-color,background-color] duration-fast ease-out"
             >
+              <Icon name="plus" size={14} />
               <span>비교 추가</span>
-              <span className="text-base leading-none">+</span>
             </button>
           )}
 
@@ -238,66 +274,81 @@ export function Header() {
             <div
               role="listbox"
               aria-label="보조 품목 목록"
-              style={{ zIndex: 200 /* Z_INDEX.DROPDOWN per fe-api-connect §5.5 — z-50은 fe-panel(z=100) 아래로 깔림 */ }}
-              className="absolute top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto"
+              style={{ zIndex: Z_INDEX.DROPDOWN }}
+              className="absolute top-full left-0 mt-1.5 w-[280px] bg-surface border border-border-default rounded-lg shadow-e4 p-1.5 max-h-[380px] overflow-y-auto animate-scale-in"
             >
               {grouped.map(({ cluster, items }) => (
                 <div key={cluster}>
-                  <div className="px-3 py-1 text-[10px] text-slate-500 font-medium uppercase tracking-wide border-t border-slate-700/50 first:border-t-0">
+                  <div className="px-3 pt-2 pb-1 text-[10px] text-tertiary font-semibold uppercase tracking-widest">
                     {CLUSTER_LABELS[cluster] ?? cluster}
                   </div>
                   {items
                     .filter((c) => c.commodity_id !== primaryCommodityId)
-                    .map((c) => (
-                      <button
-                        key={c.commodity_id}
-                        role="option"
-                        aria-selected={c.commodity_id === secondaryCommodityId}
-                        onClick={() => handleSecondarySelect(c.commodity_id)}
-                        className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors hover:bg-slate-700 ${c.commodity_id === secondaryCommodityId ? 'text-white bg-slate-700/50' : 'text-slate-300'}`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-600 shrink-0" />
-                        {c.name_kr}
-                      </button>
-                    ))}
+                    .map((c) => {
+                      const isActive = c.commodity_id === secondaryCommodityId;
+                      return (
+                        <button
+                          key={c.commodity_id}
+                          role="option"
+                          aria-selected={isActive}
+                          onClick={() => handleSecondarySelect(c.commodity_id)}
+                          className={[
+                            'w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] text-left rounded-sm',
+                            'transition-colors duration-fast ease-out',
+                            isActive
+                              ? 'bg-brand-subtle text-brand-active'
+                              : 'text-primary hover:bg-subtle',
+                          ].join(' ')}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)] shrink-0" />
+                          {c.name_kr}
+                        </button>
+                      );
+                    })}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="w-px h-5 bg-slate-700" />
+        <div className="w-px h-[22px] bg-border-default" aria-hidden />
 
         {/* 뷰 전환 탭 (4탭 SoT — 방법론 포함) */}
-        <nav aria-label="뷰 탭" className="flex items-center gap-1">
-          {VIEW_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              aria-label={tab.label}
-              aria-current={activeTab === tab.id ? 'page' : undefined}
-              onClick={() => handleTabClick(tab.id)}
-              className={`h-7 px-3 rounded text-xs font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-slate-700 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <nav aria-label="뷰 탭" className="flex items-center gap-0.5">
+          {VIEW_TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                data-testid={`tab-${tab.id}`}
+                aria-label={tab.label}
+                aria-current={isActive ? 'page' : undefined}
+                onClick={() => handleTabClick(tab.id)}
+                className={[
+                  'h-[34px] px-3 rounded-md text-[13px] inline-flex items-center gap-1.5',
+                  'transition-[background-color,color,border-color] duration-fast ease-out border',
+                  isActive
+                    ? 'bg-brand-subtle text-brand-active border-brand-border font-semibold'
+                    : 'border-transparent text-tertiary hover:bg-subtle hover:text-secondary font-medium',
+                ].join(' ')}
+              >
+                <Icon name={tab.icon} size={14} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </nav>
       </div>
 
       {/* 우측: FreshnessChip + 도움말 */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         <FreshnessChip />
-
-        <button
+        <IconButton
           aria-label="도움말"
-          className="w-7 h-7 flex items-center justify-center rounded-md bg-slate-800 border border-slate-700 text-slate-400 hover:text-white text-xs transition-colors"
-        >
-          ?
-        </button>
+          variant="outline"
+          size="md"
+          icon={<Icon name="help" size={16} />}
+        />
       </div>
     </header>
   );

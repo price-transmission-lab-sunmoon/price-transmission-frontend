@@ -3,6 +3,7 @@ import { client } from '@/api/client';
 import { ENDPOINTS } from '@/api/endpoints';
 import type { AnomalyDetail } from '@/types/anomaly';
 
+// @guide:HOOK-12
 export function usePanelDetail(anomalyId: number | null) {
   return useQuery<AnomalyDetail>({
     queryKey: ['panel', 'detail', anomalyId],

@@ -4,6 +4,7 @@ import { ScatterChart } from '@/components/charts/ScatterChart';
 import { RawPricesChart } from '@/components/charts/RawPricesChart';
 import { Minimap } from '@/components/charts/Minimap';
 
+// @guide:LAYOUT-13
 export function MainPage() {
   const activeTab = useAppStore((s) => s.activeTab);
 
@@ -32,7 +33,7 @@ export function MainPage() {
   // 기본: stream 뷰
   return (
     <div className="flex flex-col h-full gap-3">
-      <div className="flex-1 bg-slate-800/30 border border-slate-700/60 rounded-lg overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <StreamChart />
       </div>
       <Minimap variant="stream" />
