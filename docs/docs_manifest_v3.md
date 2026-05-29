@@ -20,15 +20,15 @@
 | `doc2_pattern_definitions` | **v2** | `doc2_pattern_definitions_v2.md` | 패턴 정의 (루트 권위) |
 | `doc3_research_proposal` | **v11** | `doc3_research_proposal_v11.md` | 연구 제안서 (루트 권위) |
 | `web_plan` | **v6** | `web_plan_v6.md` | 웹 서비스 기획서 (루트 권위) |
-| `pipeline_output_spec` | **v7** | `pipeline_output_spec_v7.md` | 파이프라인 출력 명세 |
-| `db_schema` | **v5** | `db_schema_v5.md` | PostgreSQL DB 스키마 명세 |
-| `api_spec` | **v5** | `api_spec_v5.md` | FastAPI 엔드포인트 명세 |
+| `pipeline_output_spec` | **v9** | `pipeline_output_spec_v9.md` | 파이프라인 출력 명세 |
+| `db_schema` | **v6** | `db_schema_v6.md` | PostgreSQL DB 스키마 명세 |
+| `api_spec` | **v6** | `api_spec_v6.md` | FastAPI 엔드포인트 명세 |
 | `exception_spec` | **v6** | `exception_spec_v6.md` | 예외 코드 인덱스 (반복 조회용) |
 | `exception_design` | **v3** | `exception_design_v3.md` | 예외 체이닝 설계 (심층 분석용) |
-| `feature_dev_list` | **v4** | `feature_dev_list_v4.md` | feat/* 브랜치 기능 개발 목록 |
-| `frame_spec_backend` | **v4** | `frame_spec_backend_v4.md` | 백엔드 Frame 명세 |
+| `feature_dev_list` | **v5** | `feature_dev_list_v4.md` | feat/* 브랜치 기능 개발 목록 |
+| `frame_spec_backend` | **v5** | `frame_spec_backend_v4.md` | 백엔드 Frame 명세 |
 | `frame_spec_frontend` | **v5** | `frame_spec_frontend_v5.md` | 프론트 Frame 명세 |
-| `sprint_plan` | _(버전 미부여)_ | `sprint_plan.md` | 스프린트 계획 — 버전 접미사 없이 `docs/sprint_plan.md`로 존재. IS-15: 파일 확인됨. 정식 버전 태깅은 PM 지정 필요 |
+| `sprint_plan` | _(미입고)_ | _(파일 부재)_ | 스프린트 계획 — 현 repo에 미동기화 |
 | `team_ai_collab` | _(미입고)_ | _(파일 부재)_ | 팀 AI 협업 규칙 — 현 repo에 미동기화 |
 
 ### 1.1 미입고 문서의 취급
@@ -185,6 +185,7 @@ README.md, PR 본문, 외부 발표 자료 등 **클릭 가능한 링크가 필�
 - v1 (2026-05-02): 최초 작성. `reference_audit_report v1` §4 의 `abcd_vN.md` 규칙 채택과 함께 구축. 초기 버전 해석표 14개 엔트리 등록 (그 중 2개는 외부 레포 미입고 상태).
 - v2 정오 (2026-05-11): \rame_spec_frontend\ §3.1 forward references에 \rame_spec_backend_vN\ 추가 (§5·§8.1·§8.3 직접 참조 반영). §3.2 \rame_spec_backend\ reverse references에 \rame_spec_frontend\ 추가 (이번 버전 불일치 발견 경위의 근본 원인 해소).
 - v2 (2026-05-11): `exception_spec` v5→v6 갱신 (`feat/be-api-timeseries` `API-COM-002` 추가). `frame_spec_backend` v3→v4 갱신 (`exception_spec` v6 정합, 환경 변수 4종 추가, `PipelineError` 제거, 파일명·브랜치명 정정). `frame_spec_frontend` v4→v5 갱신 (`FEError` 클래스 §6.4 명시, 환경 변수 노트 4종 추가, 브랜치명 10건 정정).
+- v2 정오 (2026-05-23): `pipeline_output_spec` v7 → v9 갱신 (contamination=0.08 확정, ml_consensus_count 컬럼명, asymmetry_results 보조 컬럼, spread_n2/n3/n6 bool 타입 반영).
 
 ---
 
