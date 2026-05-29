@@ -1,5 +1,6 @@
 // z-index priority SoT — docs/re-design_specs/01-design-tokens.md §16.
 // Never use inline numeric zIndex in components.
+// @guide:UTIL-06
 export const Z_INDEX = {
   HEADER: 50,
   PANEL: 100,

@@ -8,6 +8,7 @@ import { Z_INDEX } from './zIndex';
  * Returned <div> is mounted on document.body and reused on each call
  * (idempotent by id).
  */
+// @guide:UTIL-04
 export function createChartTooltip(id: string): HTMLDivElement {
   let tip = document.getElementById(id) as HTMLDivElement | null;
   if (tip) return tip;

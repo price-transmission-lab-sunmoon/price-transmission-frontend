@@ -78,6 +78,7 @@ interface HelpModalProps {
   onClose: () => void;
 }
 
+// @guide:LAYOUT-07
 export function HelpModal({ isOpen, onClose }: HelpModalProps) {
   const { setHasSeenOnboardingThisSession } = useAppStore();
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());

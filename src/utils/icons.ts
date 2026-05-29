@@ -31,6 +31,7 @@ export type IconName =
   | 'compare'
   | 'bolt';
 
+// @guide:UTIL-07
 export const ICON_PATHS: Record<IconName, string> = {
   sparkles:
     'M12 3l1.8 4.6L18.5 9.5l-4.7 1.9L12 16l-1.8-4.6L5.5 9.5l4.7-1.9L12 3zM19 14l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9.9-2.3z',

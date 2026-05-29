@@ -12,6 +12,7 @@ interface Props {
 const MARGIN = { top: 12, right: 12, bottom: 28, left: 36 };
 const BIN_COUNT = 20;
 
+// @guide:CHART-12
 export function AsymmetryHistogram({ data, height = 180 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

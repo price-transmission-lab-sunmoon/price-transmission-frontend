@@ -36,6 +36,7 @@ const BASE =
   'disabled:bg-muted disabled:text-disabled disabled:border-border-default ' +
   'disabled:cursor-not-allowed disabled:pointer-events-none disabled:shadow-none';
 
+// @guide:UI-01
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(
     {

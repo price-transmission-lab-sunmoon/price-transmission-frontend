@@ -32,6 +32,7 @@ function getSelector(step: number, anomalyId: number | null): string {
   }
 }
 
+// @guide:LAYOUT-09
 export function OnboardingGuide() {
   const {
     isOnboardingVisible,

@@ -15,6 +15,7 @@ interface Props {
 
 const MARGIN = { top: 12, right: 12, bottom: 36, left: 44 };
 
+// @guide:CHART-05
 export function MLMapChart({ points, model, xLabel, yLabel, height = 240 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

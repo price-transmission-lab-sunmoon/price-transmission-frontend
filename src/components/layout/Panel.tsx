@@ -480,6 +480,7 @@ function JudgmentStep({
 
 // ── main Panel ───────────────────────────────────────────────────────────────
 
+// @guide:LAYOUT-04
 export function Panel() {
   const isPanelOpen = useAppStore((s) => s.isPanelOpen);
   const selectedAnomalyId = useAppStore((s) => s.selectedAnomalyId);

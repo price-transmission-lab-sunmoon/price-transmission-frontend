@@ -8,6 +8,7 @@ interface EventsResponse {
   events: ExternalEvent[];
 }
 
+// @guide:HOOK-02
 export function useEvents() {
   const query = useQuery<ExternalEvent[]>({
     queryKey: ['events'],

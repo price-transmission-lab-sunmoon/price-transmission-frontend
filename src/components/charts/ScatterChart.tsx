@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useAppStore } from '@/stores/useAppStore';
 import { useScatterData } from '@/hooks/useScatterData';
+import { confidenceLabel } from '@/services/anomaly';
 import type { ScatterPoint } from '@/types/timeseries';
 import type { SegmentId } from '@/types/literals';
 import { CONFIDENCE_GRADES, PRIMARY_PATTERNS } from '@/types/literals';
@@ -26,12 +27,7 @@ const PATTERN_LABELS: Record<string, string> = {
   pattern3: '깃털 패턴',
 };
 
-const GRADE_LABELS: Record<string, string> = {
-  high: '고신뢰',
-  medium: '중신뢰',
-  reference: '참고',
-};
-
+// 신뢰도 라벨은 services/anomaly.ts confidenceLabel() 단일 출처 사용 (중복 제거).
 const SEGMENT_DISPLAY: Record<SegmentId, string> = {
   A: 'A',
   B: 'B',
@@ -66,6 +62,7 @@ interface TooltipInfo {
   y: number;
 }
 
+// @guide:CHART-03
 export function ScatterChart() {
   const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
   const commodities = useAppStore((s) => s.commodities);
@@ -370,7 +367,7 @@ export function ScatterChart() {
       }
 
       // Main dot
-      const circle = nodeG.append('circle')
+      nodeG.append('circle')
         .attr('clip-path', 'url(#scatter-clip)')
         .attr('cx', cx).attr('cy', cy)
         .attr('r', r)
@@ -383,13 +380,13 @@ export function ScatterChart() {
         .on('click', () => {
           if (p.anomaly_id !== null) selectAnomaly(p.anomaly_id);
         });
-
-      // r 변화 시 circle 미사용 처리 (unused var lint 회피)
-      void circle;
     });
   }, [data, dimensions, sliderPosition, handleMouseEnter, handleMouseLeave, selectAnomaly]);
 
-  const months = data ? buildMonthRange(data.actual_from, data.actual_to) : [];
+  const months = useMemo(
+    () => (data ? buildMonthRange(data.actual_from, data.actual_to) : []),
+    [data],
+  );
   const sliderIdx = months.indexOf(sliderPosition);
   const effectiveIdx = sliderIdx < 0 ? months.length - 1 : sliderIdx;
   const progressPct = months.length > 1 ? (effectiveIdx / (months.length - 1)) * 100 : 0;
@@ -565,7 +562,7 @@ teal 점선(기준선)에 가까울수록 상류 변화가 그대로 전달된 �
               {tooltip.point.downstream_pct.toFixed(1)}%
             </div>
             <div className="mt-1.5 font-semibold" style={{ color: ANOMALY_COLORS[tooltip.point.confidence_grade] }}>
-              {GRADE_LABELS[tooltip.point.confidence_grade]}
+              {confidenceLabel(tooltip.point.confidence_grade)}
             </div>
             {tooltip.point.primary_pattern && (
               <div className="text-tertiary">

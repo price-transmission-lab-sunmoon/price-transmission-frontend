@@ -63,6 +63,7 @@ function buildLayout(nodes: PipelineNode[], containerWidth: number): NodePos[] {
   return positions;
 }
 
+// @guide:CHART-13
 export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);

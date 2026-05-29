@@ -13,6 +13,7 @@ interface IconProps {
 
 const FILLED_DEFAULT: IconName[] = ['sparkles', 'play', 'pause', 'dot', 'bolt'];
 
+// @guide:UI-03
 export function Icon({
   name,
   size = 16,

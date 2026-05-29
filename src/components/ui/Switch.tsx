@@ -27,6 +27,7 @@ const KNOB_TRANSLATE: Record<SwitchSize, string> = {
   md: 'translate-x-4',
 };
 
+// @guide:UI-06
 export function Switch({
   checked,
   onChange,

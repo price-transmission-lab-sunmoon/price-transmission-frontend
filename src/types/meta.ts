@@ -1,6 +1,7 @@
 import type { SegmentId } from './literals';
 
 // /freshness — 데이터 기준 시점 (web_plan_vN §3.3 상단 바 칩)
+// @guide:TYPE-05
 export interface Freshness {
   data_up_to: string; // YYYY-MM
   next_run_date: string; // YYYY-MM-DD

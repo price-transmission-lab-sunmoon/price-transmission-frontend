@@ -62,6 +62,7 @@ const ITEM_IDLE = 'text-tertiary hover:text-secondary';
 
 const DIVIDER = 'w-px h-5 bg-border-default shrink-0';
 
+// @guide:LAYOUT-03
 export function FilterBar() {
   const { data: events, isLoading: eventsLoading } = useEvents();
   const { data: freshness } = useFreshness();

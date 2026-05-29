@@ -28,6 +28,7 @@ const TOAST_EVENT = 'fe:toast';
 
 let _counter = 0;
 
+// @guide:UI-08
 export function showToast(payload: ToastPayload): void {
   window.dispatchEvent(new CustomEvent<ToastPayload>(TOAST_EVENT, { detail: payload }));
 }

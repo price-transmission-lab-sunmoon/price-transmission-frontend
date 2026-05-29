@@ -2,7 +2,6 @@
 // SVG 위에 mouse overlay rect + vertical guide line + dot + tooltip 추가.
 // 차트별로 데이터 포인트와 값 추출만 다르므로 그 부분은 콜백으로 받음.
 import * as d3 from 'd3';
-import { parse } from 'date-fns';
 import { CHART_THEME } from './chartTheme';
 import { Z_INDEX } from './zIndex';
 
@@ -26,10 +25,7 @@ export interface HoverOverlayOptions<T> {
   tooltipId: string;
 }
 
-export function parseMonthYM(s: string): Date {
-  return parse(s, 'yyyy-MM', new Date());
-}
-
+// @guide:UTIL-05
 export function attachHoverOverlay<T>(opts: HoverOverlayOptions<T>) {
   const { g, containerRef, data, x, y, width, height, margin, getDate, buildHover, tooltipId } = opts;
 

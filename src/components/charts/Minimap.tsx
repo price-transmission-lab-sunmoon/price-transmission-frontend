@@ -40,6 +40,7 @@ function getAnomalyBandStyle(item: AnomalyDensityItem): { color: string; opacity
   return { color, opacity: densityOpacity(item) };
 }
 
+// @guide:CHART-02
 export function Minimap({ variant }: MinimapProps) {
   const { data, isLoading, isError } = useMinimapData(variant);
   const filterFrom = useAppStore((s) => s.filterFrom);

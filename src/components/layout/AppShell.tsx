@@ -11,6 +11,7 @@ interface AppShellProps {
   children: ReactNode;
 }
 
+// @guide:LAYOUT-01
 export function AppShell({ children }: AppShellProps) {
   const activeTab = useAppStore((s) => s.activeTab);
   const isMethodology = activeTab === 'methodology';

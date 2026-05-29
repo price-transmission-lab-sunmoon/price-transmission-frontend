@@ -4,6 +4,7 @@ import { ScatterChart } from '@/components/charts/ScatterChart';
 import { RawPricesChart } from '@/components/charts/RawPricesChart';
 import { Minimap } from '@/components/charts/Minimap';
 
+// @guide:LAYOUT-13
 export function MainPage() {
   const activeTab = useAppStore((s) => s.activeTab);
 

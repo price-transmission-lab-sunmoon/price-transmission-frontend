@@ -32,6 +32,7 @@ const ZOOM_END_DEBOUNCE_MS = 200;
 const CLIP_ID = 'stream-chart-clip';
 const TOOLTIP_ID = 'stream-chart-tooltip';
 
+// @guide:CHART-01
 export function StreamChart() {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

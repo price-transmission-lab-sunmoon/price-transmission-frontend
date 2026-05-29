@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-import { parse } from 'date-fns';
 import { PANEL_CHART_COLORS, ANOMALY_COLORS } from '@/utils/colorUtils';
-import { CHART_THEME } from '@/utils/chartTheme';
+import { CHART_THEME, CHART_MARGINS } from '@/utils/chartTheme';
+import { parseYearMonth } from '@/utils/dateUtils';
 import { attachHoverOverlay, removeHoverTooltip } from '@/utils/chartHover';
 import type { TransmissionRateDataPoint } from '@/types/anomaly';
 
@@ -12,12 +12,9 @@ interface Props {
   height?: number;
 }
 
-const MARGIN = { top: 12, right: 12, bottom: 24, left: 44 };
+const MARGIN = CHART_MARGINS.panelStandard;
 
-function parseMonth(s: string): Date {
-  return parse(s, 'yyyy-MM', new Date());
-}
-
+// @guide:CHART-07
 export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -50,7 +47,7 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
 
     const x = d3
       .scaleTime()
-      .domain(d3.extent(valid, (d) => parseMonth(d.period)) as [Date, Date])
+      .domain(d3.extent(valid, (d) => parseYearMonth(d.period)) as [Date, Date])
       .range([0, w]);
 
     const allVals = valid.flatMap((d) => [
@@ -68,7 +65,7 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
     if (bandData.length > 1) {
       const area = d3
         .area<TransmissionRateDataPoint>()
-        .x((d) => x(parseMonth(d.period)))
+        .x((d) => x(parseYearMonth(d.period)))
         .y0((d) => y(d.q1 as number))
         .y1((d) => y(d.q3 as number));
       g.append('path')
@@ -83,7 +80,7 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
     if (meanData.length > 1) {
       const line = d3
         .line<TransmissionRateDataPoint>()
-        .x((d) => x(parseMonth(d.period)))
+        .x((d) => x(parseYearMonth(d.period)))
         .y((d) => y(d.rolling_mean as number));
       g.append('path')
         .datum(meanData)
@@ -98,7 +95,7 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
     const line = d3
       .line<TransmissionRateDataPoint>()
       .defined((d) => d.transmission_rate !== null)
-      .x((d) => x(parseMonth(d.period)))
+      .x((d) => x(parseYearMonth(d.period)))
       .y((d) => y(d.transmission_rate as number));
     g.append('path')
       .datum(valid)
@@ -109,7 +106,7 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
 
     // highlight period vertical line
     if (highlightPeriod) {
-      const hx = x(parseMonth(highlightPeriod));
+      const hx = x(parseYearMonth(highlightPeriod));
       g.append('line')
         .attr('x1', hx)
         .attr('x2', hx)
@@ -134,11 +131,11 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
       width: w,
       height: h,
       margin: MARGIN,
-      getDate: (d) => parseMonth(d.period),
+      getDate: (d) => parseYearMonth(d.period),
       tooltipId: 'tr-chart-tip',
       buildHover: (d) => ({
         datum: d,
-        date: parseMonth(d.period),
+        date: parseYearMonth(d.period),
         values: [
           { label: '전이율', value: d.transmission_rate, color: PANEL_CHART_COLORS.transmissionRateLine },
           { label: 'Rolling Mean', value: d.rolling_mean, color: PANEL_CHART_COLORS.rollingMeanLine },

@@ -36,6 +36,7 @@ if (!import.meta.env.VITE_API_BASE_URL) {
   console.error('[client] VITE_API_BASE_URL is not set — falling back to empty baseURL');
 }
 
+// @guide:API-02
 export const client = axios.create({
   baseURL,
   timeout: 30000,
@@ -64,6 +65,7 @@ const THREE_SEG_COMMODITIES = new Set([
   'wheat', 'maize', 'soybean', 'palm_oil', 'sugar', 'coffee', 'beef',
 ]);
 
+// @guide:API-03
 const MOCK_ROUTES: MockRoute[] = [
   // ── 정적 경로 ─────────────────────────────────────────────────
   { test: (u) => u === '/commodities', handle: () => ({ type: 'success', data: commoditiesFixture }) },
@@ -237,6 +239,7 @@ if (useMock) {
 }
 
 // Error response interceptor — parseApiError 단일 경로
+// @guide:API-04
 client.interceptors.response.use(
   (response) => response,
   (error: unknown) => {

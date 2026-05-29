@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import { useRawPricesData } from '@/hooks/useRawPricesData';
 import { useAppStore } from '@/stores/useAppStore';
 import { ApiError } from '@/api/error';
+import { confidenceLabel } from '@/services/anomaly';
 import { RAW_PRICE_COLORS, ANOMALY_COLORS, ANOMALY_RADII } from '@/utils/colorUtils';
 import { CHART_THEME } from '@/utils/chartTheme';
 import { Z_INDEX } from '@/utils/zIndex';
@@ -31,11 +32,7 @@ const OVERLAY_DASH = '4,3';
 const BASELINE_Y = 100;
 const TOAST_LAYOUT4 = '이 품목은 도매가 데이터가 없어 레이아웃 1로 전환합니다.';
 const TOAST_INVALID = '잘못된 레이아웃 번호입니다. 레이아웃 1로 전환합니다.';
-const GRADE_LABEL: Record<string, string> = {
-  high: '고신뢰',
-  medium: '중신뢰',
-  reference: '참고',
-};
+// 신뢰도 라벨은 services/anomaly.ts confidenceLabel() 단일 출처 사용 (중복 제거).
 const PATTERN_LABEL: Record<string, string> = {
   pattern1: '패턴1: 비대칭',
   pattern2: '패턴2: 과대',
@@ -59,6 +56,7 @@ const SOURCE_LABEL: Record<RawPriceSource, string> = {
 const parseYM = d3.timeParse('%Y-%m');
 const fmtYM = d3.timeFormat('%Y-%m');
 
+// @guide:CHART-04
 export function RawPricesChart() {
   const { data, error, isLoading } = useRawPricesData();
   const layoutNumber = useAppStore((s) => s.layoutNumber);
@@ -607,7 +605,7 @@ export function RawPricesChart() {
                 return d ? `${d.getFullYear()}년 ${d.getMonth() + 1}월` : tooltip.node.period;
               })()}
             </div>
-            <div className="text-tertiary">{GRADE_LABEL[tooltip.node.confidence_grade] ?? tooltip.node.confidence_grade}</div>
+            <div className="text-tertiary">{confidenceLabel(tooltip.node.confidence_grade)}</div>
             <div className="text-tertiary">{PATTERN_LABEL[tooltip.node.primary_pattern] ?? tooltip.node.primary_pattern}</div>
           </div>
         )}

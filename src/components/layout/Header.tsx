@@ -40,6 +40,7 @@ const VIEW_TABS: ViewTabConfig[] = [
   { id: 'methodology', label: '방법론', icon: 'info' },
 ];
 
+// @guide:LAYOUT-02
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();

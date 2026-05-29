@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-import { parse } from 'date-fns';
 import { PANEL_CHART_COLORS } from '@/utils/colorUtils';
-import { CHART_THEME } from '@/utils/chartTheme';
+import { CHART_THEME, CHART_MARGINS } from '@/utils/chartTheme';
+import { parseYearMonth } from '@/utils/dateUtils';
 import { attachHoverOverlay, removeHoverTooltip } from '@/utils/chartHover';
 import type { ZscoreDataPoint } from '@/types/anomaly';
 
@@ -13,12 +13,9 @@ interface Props {
   height?: number;
 }
 
-const MARGIN = { top: 12, right: 12, bottom: 24, left: 44 };
+const MARGIN = CHART_MARGINS.panelStandard;
 
-function parseMonth(s: string): Date {
-  return parse(s, 'yyyy-MM', new Date());
-}
-
+// @guide:CHART-08
 export function ZScoreChart({
   data,
   warningThreshold = 2.0,
@@ -53,7 +50,7 @@ export function ZScoreChart({
 
     const x = d3
       .scaleTime()
-      .domain(d3.extent(valid, (d) => parseMonth(d.period)) as [Date, Date])
+      .domain(d3.extent(valid, (d) => parseYearMonth(d.period)) as [Date, Date])
       .range([0, w]);
 
     const vals = valid.map((d) => d.zscore as number);
@@ -79,7 +76,7 @@ export function ZScoreChart({
     const line = d3
       .line<ZscoreDataPoint>()
       .defined((d) => d.zscore !== null)
-      .x((d) => x(parseMonth(d.period)))
+      .x((d) => x(parseYearMonth(d.period)))
       .y((d) => y(d.zscore as number));
     g.append('path')
       .datum(valid)
@@ -101,11 +98,11 @@ export function ZScoreChart({
       width: w,
       height: h,
       margin: MARGIN,
-      getDate: (d) => parseMonth(d.period),
+      getDate: (d) => parseYearMonth(d.period),
       tooltipId: 'zscore-chart-tip',
       buildHover: (d) => ({
         datum: d,
-        date: parseMonth(d.period),
+        date: parseYearMonth(d.period),
         values: [
           { label: 'Z-Score', value: d.zscore, color: PANEL_CHART_COLORS.zscoreLine },
           { label: '경보 임계', value: alertThreshold, color: PANEL_CHART_COLORS.zscoreAlertLine },

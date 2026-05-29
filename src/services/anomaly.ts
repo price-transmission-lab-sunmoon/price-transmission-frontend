@@ -1,6 +1,7 @@
 // feat/fe-panel — 패널 데이터 변환 유틸
 // PARSE-NUM-002: null/NaN 숫자 필드를 '—' 또는 N/A로 표시
 
+// @guide:SVC-02
 export function formatNum(value: number | null | undefined, digits = 2): string {
   if (value === null || value === undefined || !isFinite(value)) return '—';
   return value.toFixed(digits);
@@ -35,6 +36,7 @@ export function safeNum(value: unknown): number | null {
 }
 
 // 신뢰도 등급 한국어 레이블
+// @guide:SVC-03
 export function confidenceLabel(grade: string): string {
   switch (grade) {
     case 'high': return '고신뢰';

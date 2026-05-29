@@ -13,6 +13,7 @@ import { FEError } from '@/api/error';
  *  1. FEError.context.cause  — frame_spec_frontend_vN §6.4 정합 (IS-8 해소)
  *  2. ES2022 Error.cause     — 표준 fallback
  */
+// @guide:API-10
 export function traceErrorChain(error: unknown): unknown[] {
   const chain: unknown[] = [];
   let current: unknown = error;
@@ -43,6 +44,7 @@ export function traceErrorChain(error: unknown): unknown[] {
  * 체인을 한 줄 요약으로 포매팅 — AI 디버깅 전달용 (exception_design_vN §2.5).
  * @param error 체인의 시작(가장 바깥) 에러
  */
+// @guide:API-11
 export function formatErrorChainSummary(error: unknown): string {
   const chain = traceErrorChain(error);
   const origin = chain[chain.length - 1];
