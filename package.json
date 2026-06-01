@@ -27,6 +27,7 @@
     "@testing-library/jest-dom": "6.4.5",
     "@testing-library/react": "15.0.6",
     "@types/d3": "7.4.3",
+    "@types/node": "20.19.41",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",
     "@typescript-eslint/eslint-plugin": "7.7.0",
@@ -44,7 +45,7 @@
     "vitest": "1.6.0"
   },
   "engines": {
-    "node": "20.11.1",
-    "npm": "10.2.4"
+    "node": "^18.0.0 || >=20.0.0",
+    "npm": ">=9.0.0"
   }
 }

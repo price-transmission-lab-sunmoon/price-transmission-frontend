@@ -574,7 +574,7 @@ teal 점선(기준선)에 가까울수록 상류 변화가 그대로 전달된 �
       </div>
 
       {/* 시점 슬라이더 — brand teal */}
-      {months.length > 0 && (
+      {data && months.length > 0 && (
         <div className="shrink-0 flex flex-col gap-1.5">
           <div className="flex items-center gap-2.5">
             <IconButton
