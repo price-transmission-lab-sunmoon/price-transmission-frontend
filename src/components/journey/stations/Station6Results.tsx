@@ -14,6 +14,8 @@ interface Props extends StationProps {
 
 const W = 15;
 const GRADE_Y: Record<string, number> = { high: 1.7, medium: 1.0, reference: 0.35 };
+// 등급 위계(논문 3-5: H=두 분석 모두·최고신뢰 / M=계량만 / R=ML만)를 발광으로도 차등.
+const GRADE_EMIS: Record<string, number> = { high: 0.5, medium: 0.25, reference: 0.05 };
 
 function ym(period: string): number {
   const [y, m] = period.split('-').map(Number);
@@ -90,7 +92,7 @@ export function Station6Results({ active, stream, events }: Props) {
           return (
             <mesh key={`${nd.anomaly_id}-${j}`} position={[tx(nd.period) + off, y, 0.1]}>
               <sphereGeometry args={[markerRadius(nd.transmission_rate ?? null), 16, 16]} />
-              <meshStandardMaterial color={c} emissive={c} emissiveIntensity={0.4} />
+              <meshStandardMaterial color={c} emissive={c} emissiveIntensity={GRADE_EMIS[nd.confidence_grade] ?? 0.2} />
             </mesh>
           );
         }),

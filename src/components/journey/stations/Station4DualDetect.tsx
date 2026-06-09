@@ -23,7 +23,22 @@ const ECON: [number, number, number] = [-3.8, 0, 0];
 export function Station4DualDetect({ active, detail }: Props) {
   const sm = detail?.stat_metrics;
   const ml = detail?.ml_summary;
-  const econHit = !!(sm?.zscore_alert || sm?.iqr_outlier);
+  // 계량 탐지(Phase 7)는 3유형 전체: 패턴1(방향역전·시차) + 패턴2(Z·IQR) + 패턴3(스프레드).
+  const econHit = !!(
+    sm?.zscore_alert ||
+    sm?.iqr_outlier ||
+    sm?.direction_reversal ||
+    sm?.lag_deviation ||
+    (sm?.spread_n3 != null && sm.spread_n3 > 0)
+  );
+  // ML(Phase 7-ML)은 구간 A·B에만 수행(논문 3-3).
+  const mlApplies = detail?.segment_id === 'A' || detail?.segment_id === 'B';
+  // 계량 탐지 사유(논문 §6-1: 방향역전형 88.6% 최다) — Z·IQR만 표시하면 실제 사유 왜곡.
+  const econReasons = [
+    sm?.direction_reversal && '방향역전',
+    sm?.lag_deviation && '시차이탈',
+    sm?.spread_n3 != null && sm.spread_n3 > 0 && '스프레드확대',
+  ].filter(Boolean);
   const flags: Record<string, boolean | undefined> = {
     if: ml?.if_anomaly,
     lof: ml?.lof_anomaly,
@@ -62,7 +77,7 @@ export function Station4DualDetect({ active, detail }: Props) {
       </RoundedBox>
       {active && (
         <Label3D position={[ECON[0], ECON[1] + 1, 0]} size={11}>
-          {`Z=${sm?.zscore?.toFixed(2) ?? '—'} · IQR ${sm?.iqr_outlier ? '이탈' : '범위 내'}`}
+          {`${econReasons.length ? `${econReasons.join('·')} · ` : ''}Z=${sm?.zscore?.toFixed(2) ?? '—'} · IQR ${sm?.iqr_outlier ? '이탈' : '범위 내'}`}
         </Label3D>
       )}
       {active && (
@@ -135,6 +150,11 @@ export function Station4DualDetect({ active, detail }: Props) {
       {active && ml && (
         <Label3D position={[3.8, -1.7, 0]} chip color="#0891b2">
           {`IF·LOF·SVM 중 ${ml.ml_vote}종 탐지`}
+        </Label3D>
+      )}
+      {active && (
+        <Label3D position={[3.8, 2.5, 0]} size={10} chip color={mlApplies ? '#0891b2' : '#a8a298'}>
+          {mlApplies ? 'ML 적용: 구간 A·B' : 'ML 미적용 (A·B 한정)'}
         </Label3D>
       )}
       {active && sm?.asymmetry_significant && (

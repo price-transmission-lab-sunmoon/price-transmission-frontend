@@ -37,7 +37,8 @@ export const STATION_COPY: StationCopy[] = [
     body: [
       'STL 분해 · ADF/KPSS 정상성 검정',
       'Johansen 공적분 → VAR/VECM 추정(IRF·ECT)',
-      'Granger 인과 · Bai-Perron + Chow 구조변화',
+      'Granger 인과(구간 C 전용) · Bai-Perron+Chow 구조변화',
+      'STL 계절조정 선택에 결과 민감 (견고성 §4-4)',
     ],
   },
   {
@@ -45,9 +46,9 @@ export const STATION_COPY: StationCopy[] = [
     title: '④ 이중 탐지',
     subtitle: '계량경제학 ⊕ 머신러닝',
     body: [
-      '계량(Phase 7): Z-score·IQR·TECM 규칙 기반',
-      'ML(Phase 7-ML): 6종 피처 · IF/LOF/OCSVM 앙상블',
-      '두 분석을 독립적으로 수행해 교차 검증',
+      '계량(Phase 7): 패턴1 방향역전·시차 / 패턴2 Z·IQR / 패턴3 스프레드',
+      'ML(Phase 7-ML): 6종 피처 · IF/LOF/OCSVM 앙상블 (구간 A·B 한정, 20유닛)',
+      '두 분석 독립 수행 → 합의·일관성 확인',
     ],
   },
   {
@@ -67,6 +68,7 @@ export const STATION_COPY: StationCopy[] = [
     body: [
       '탐지된 이상을 5개 외부충격 구간과 대조',
       'FS2008 · RD2010 · EN2015 · CV2020 · UW2022',
+      '충격 유형별 두 분석 탐지 양상 상이',
       '판단은 보는 이의 몫 — 근거만 제시',
     ],
   },
