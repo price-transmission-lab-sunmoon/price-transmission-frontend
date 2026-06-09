@@ -28,7 +28,7 @@ export const SEGMENT_IDS = ['A', 'B', 'C', 'D', 'D_prime'] as const;
 export type SegmentId = (typeof SEGMENT_IDS)[number];
 
 // 뷰 탭 — web_plan_vN §3.3 상단 바 + §8 방법론 탭
-export const VIEW_TABS = ['stream', 'scatter', 'raw-prices', 'methodology'] as const;
+export const VIEW_TABS = ['stream', 'scatter', 'raw-prices', 'methodology', 'journey'] as const;
 export type ViewTab = (typeof VIEW_TABS)[number];
 
 // 기간 프리셋 — feature_dev_list_vN §feat/fe-layout-filter FilterBar 기간 프리셋 6종

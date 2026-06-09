@@ -74,7 +74,7 @@ const SEGMENT_LABEL: Record<SegmentId, string> = {
   B: '구간 B',
   C: '구간 C',
   D: '구간 D',
-  D_prime: "구간 D'",
+  D_prime: '구간 E',
 };
 
 const PATTERN_TONE: Record<string, 'info' | 'violet' | 'teal-light'> = {
@@ -283,17 +283,17 @@ const METHODS: Method[] = [
   },
   {
     id: 'bai_perron',
-    title: 'Bai-Perron 구조 변화 탐지',
+    title: 'Bai-Perron + Chow 구조 변화 탐지',
     summary: '전이율의 구조적 변화 시점 자동 탐지',
     detail: (params) =>
       `데이터에서 전이율의 구조적 변화 시점을 자동으로 탐지하는 기법. 사전 검정 시점: ${params ? params.chow_test_points.join(', ') : '—'}을 초기 후보로 사용한다.`,
   },
   {
     id: 'tecm_asym',
-    title: 'TECM / 비대칭 VAR',
+    title: 'TECM (임계값 오차수정모형)',
     summary: '상승·하락 조정 속도 비대칭성 검정',
     detail: () =>
-      '가격이 오를 때와 내릴 때 전달 속도·크기 차이를 통계적으로 검정한다. 비대칭 VAR의 Wald 검정이 유의하면 로켓-깃털 효과가 존재하는 것으로 판단한다.',
+      '가격이 오를 때와 내릴 때 전달 속도·크기 차이를 임계값 오차수정모형(TECM)으로 검정한다. 상승·하락 방향 간 조정 속도가 통계적으로 다르면 비대칭 전달로 판단한다.',
   },
   {
     id: 'zscore_iqr',
@@ -388,19 +388,19 @@ const ML_MODELS = [
     name: 'Isolation Forest',
     principle:
       '피처 공간에서 관측치를 무작위로 분리할 때 적은 분기 횟수로 고립되는 점을 이상으로 판정',
-    role: '전이율·변화율 피처 공간에서 극단적으로 이탈한 월 탐지',
+    role: '국제가 변동률 (SHAP 18.4%)',
   },
   {
     name: 'LOF (Local Outlier Factor)',
     principle:
       '주변 이웃의 밀도와 자신의 밀도를 비교해 밀도가 낮은 점을 이상으로 판정',
-    role: '구조 변화 이후 하위 기간 내 국소 이상 탐지',
+    role: '전이율 (SHAP 21.8%)',
   },
   {
     name: 'One-Class SVM',
     principle:
       '정상 관측치가 모인 영역의 경계를 학습하고, 경계 밖 점을 이상으로 판정',
-    role: '안정기 피처 분포를 정상으로 학습 후 경계 이탈 시점 탐지',
+    role: '오차수정항 ECT (SHAP 19.6%)',
   },
 ];
 
@@ -418,8 +418,9 @@ function Section4MLModels() {
     <SectionCard>
       <SectionHeader num={4} title="ML 모델" />
       <p className="text-tertiary text-[13px] mb-4 leading-[1.5] m-0">
-        3개 비지도 학습 모델이 통계 이상 탐지와 독립적으로 동일한 원시
-        데이터(Phase 0~4 산출값)를 기반으로 교차검증 역할을 수행한다.
+        3개 비지도 학습 모델이 계량경제학 분석과 독립적으로 6종 피처(F1~F6)를
+        입력받아, 데이터가 가장 길고 두 경로 유형에 공통인 구간 A·B(20개 분석
+        유닛)에 한정하여 교차 검증을 수행한다.
       </p>
       <div className="overflow-x-auto -mx-2">
         <table className="w-full border-collapse text-[14px]">
@@ -432,7 +433,7 @@ function Section4MLModels() {
                 작동 원리
               </th>
               <th className="text-left px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-tertiary">
-                서비스 역할
+                주 의존 피처 (SHAP)
               </th>
             </tr>
           </thead>
@@ -544,7 +545,7 @@ const DATA_SOURCES = [
   { num: 1, source: 'World Bank Pink Sheet', org: '세계은행', usage: '국제 원자재가' },
   { num: 2, source: 'FAO FFPI', org: 'FAO', usage: '국제 원자재가 보조' },
   { num: 3, source: '수입단가', org: '관세청 무역통계포털', usage: '수입단가' },
-  { num: 4, source: '환율', org: '한국수출입은행', usage: '국제가 원화 환산' },
+  { num: 4, source: '환율', org: '한국은행 ECOS', usage: '국제가 원화 환산' },
   { num: 5, source: 'PPI', org: '한국은행 ECOS', usage: '생산자 물가' },
   { num: 6, source: 'CPI', org: '한국은행 ECOS', usage: '소비자 물가' },
   { num: 7, source: 'KAMIS 도매가', org: '농수산물유통공사', usage: '도매가 (4구간 품목만)' },
