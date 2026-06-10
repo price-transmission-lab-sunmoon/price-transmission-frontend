@@ -30,6 +30,18 @@ const SOURCE_LABEL: Record<string, string> = {
   cpi: 'CPI',
 };
 
+// 소스별 선정 이유 — 전달 사슬에서의 위치와 출처(정본 §2 데이터 구성 근거).
+const SOURCE_NOTE: Record<string, string> = {
+  intl_price_krw:
+    '역할: 전달 사슬의 시작점, 상류 충격의 원천\n출처: World Bank Pink Sheet 국제 시세\n선정: 환율 반영 원화 환산으로 국내 비교 가능',
+  import_price_usd:
+    '역할: 국제가가 국내로 들어오는 첫 관문(구간 A 하류)\n출처: 관세청 수입 통관 단가\n선정: 계약·운임이 반영된 실제 수입가격 포착',
+  ppi: '역할: 국내 생산자 단계 가격(구간 B 하류)\n출처: 한국은행 생산자물가지수\n선정: 가공·유통 초입의 가격 형성 반영',
+  wholesale_price:
+    '역할: 도매 유통 단계(구간 C와 D 경유)\n출처: KAMIS 도매가격\n선정: 산지에서 소비로 가는 중간 단계 포착',
+  cpi: '역할: 최종 소비자 단계, 전달 사슬의 종점\n출처: 한국은행 ECOS 소비자물가\n선정: 소비자 체감 물가로 전달의 최종 결과 확인',
+};
+
 const HUB: [number, number, number] = [4.5, 0, 0];
 
 export function Station1Sources({ active, rawPrices }: Props) {
@@ -44,6 +56,7 @@ export function Station1Sources({ active, rawPrices }: Props) {
         const lastIdx = [...sr.data].reverse().find((d) => d.index_2020 !== null)?.index_2020 ?? null;
         const hasAnomaly = sr.data.some((d) => d.has_anomaly);
         return {
+          source: sr.source,
           label: SOURCE_LABEL[sr.source] ?? sr.label_kr,
           color: RAW_PRICE_COLORS[sr.source] ?? sr.color_hint ?? '#0d9488',
           coverage,
@@ -51,7 +64,7 @@ export function Station1Sources({ active, rawPrices }: Props) {
           hasAnomaly,
         };
       })
-    : FALLBACK.map((f) => ({ label: f.label_kr, color: f.color, coverage: 0, lastIdx: null, hasAnomaly: false }));
+    : FALLBACK.map((f) => ({ source: '', label: f.label_kr, color: f.color, coverage: 0, lastIdx: null, hasAnomaly: false }));
 
   const maxCov = Math.max(1, ...items.map((it) => it.coverage));
   const count = items.length;
@@ -75,7 +88,7 @@ export function Station1Sources({ active, rawPrices }: Props) {
                   { label: '최신 index_2020', value: it.lastIdx != null ? it.lastIdx.toFixed(1) : '—' },
                   { label: '이상 포함', value: it.hasAnomaly ? '있음' : '없음' },
                 ],
-                note: '원천 가격 시리즈 — 병합 데이터셋으로 유입(Phase 0)',
+                note: SOURCE_NOTE[it.source] ?? '역할: 원천 가격 시리즈\n유입: 병합 데이터셋(Phase 0)',
                 viz: { kind: 'gauge', value: it.coverage, max: maxCov, label: '관측 커버리지(개월)', color: it.color },
               })}
             >

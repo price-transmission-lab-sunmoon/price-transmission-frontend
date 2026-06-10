@@ -15,9 +15,9 @@ interface Props extends StationProps {
 }
 
 const MODELS = [
-  { key: 'if', label: 'Isolation Forest', color: ML_MODEL_COLORS.isolation_forest, note: '무작위 분기 트리로 고립도 측정' },
-  { key: 'lof', label: 'LOF', color: ML_MODEL_COLORS.lof, note: '국소 도달 밀도 비율 — 점진적 이탈에 민감' },
-  { key: 'svm', label: 'One-Class SVM', color: ML_MODEL_COLORS.ocsvm, note: 'RBF 커널로 정상 분포 경계 학습' },
+  { key: 'if', label: 'Isolation Forest', color: ML_MODEL_COLORS.isolation_forest, note: '원리: 무작위 분기 트리로 고립도 측정\n특징: 소수 분기로 고립되면 이상' },
+  { key: 'lof', label: 'LOF', color: ML_MODEL_COLORS.lof, note: '원리: 국소 도달 밀도 비율\n특징: 점진적 이탈에 민감' },
+  { key: 'svm', label: 'One-Class SVM', color: ML_MODEL_COLORS.ocsvm, note: '원리: RBF 커널로 정상 분포 경계 학습\n특징: 경계 밖이면 이상' },
 ];
 
 const CENTER: [number, number, number] = [0, 2.4, 0];
@@ -66,7 +66,7 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
         position={CENTER}
         {...bind({
           title: '이상 후보 (동일 관측점)',
-          note: '계량·ML 두 분석이 같은 데이터를 독립 수행 — 판정은 공유하지 않음',
+          note: '수행: 계량과 ML이 같은 데이터를 독립 분석\n비고: 판정은 서로 공유하지 않음',
         })}
       >
         <sphereGeometry args={[0.55, 32, 32]} />
@@ -92,7 +92,8 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
             { label: 'IQR', value: sm?.iqr_outlier ? '이탈' : '범위 내' },
             { label: '탐지 사유', value: econReasons.length ? econReasons.join('·') : econHit ? 'Z/IQR' : '없음' },
           ],
-          note: '계량 탐지 3유형: 방향역전·시차 / Z·IQR / 스프레드 누적',
+          note: '유형1: 방향 역전과 시차 이탈\n유형2: Z-score+IQR 동시 초과\n유형3: 스프레드 누적',
+          diagram: 'term_zscore',
           viz: {
             kind: 'gauge',
             value: sm?.zscore != null ? Math.abs(sm.zscore) : 0,
@@ -239,7 +240,7 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
                 title: '앙상블 (2/3+ 합의)',
                 color: '#0891b2',
                 rows: [{ label: '모델 합의', value: `${vote}/3` }],
-                note: 'IF·LOF·OCSVM 3개 중 2개 이상이 이상으로 판정할 때만 앙상블 탐지로 확정.',
+                note: '판정: 3개 중 2개 이상 합의 시 앙상블 탐지 확정\n의미: 단일 모델 오탐을 합의로 걸러냄',
                 viz: {
                   kind: 'bars',
                   items: MODELS.map((m) => ({

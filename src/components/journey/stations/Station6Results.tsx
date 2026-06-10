@@ -88,7 +88,7 @@ export function Station6Results({ active, stream, events }: Props) {
                   { label: '기간', value: `${ev.start_date}~${ev.end_date}` },
                   { label: '구간 내 탐지', value: `${hits}건` },
                 ],
-                note: 'Weak Ground Truth — 외부충격 검증 구간(인과 아님)',
+                note: '성격: Weak Ground Truth 외부충격 검증 구간\n비고: 인과 해석 아님',
               })}
             >
               <boxGeometry args={[w, 3.2, 0.1]} />
@@ -131,7 +131,7 @@ export function Station6Results({ active, stream, events }: Props) {
                     { label: '등급', value: GRADE_KR[nd.confidence_grade] ?? nd.confidence_grade },
                     { label: '패턴', value: PATTERN_KR[nd.primary_pattern] ?? nd.primary_pattern },
                   ],
-                  note: '탐지된 이상 — 클릭 시 기준 이상으로 선택(②④⑤ 연동)',
+                  note: '동작: 클릭 시 기준 이상으로 선택(②④⑤ 연동)',
                   viz: {
                     kind: 'gauge',
                     value: nd.transmission_rate ?? 0,

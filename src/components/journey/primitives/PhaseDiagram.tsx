@@ -190,6 +190,31 @@ function Body({ phase }: { phase: string }) {
           <polyline points="6,23 34,25 62,29 92,35" fill="none" stroke={G} strokeWidth="1.4" />
         </>
       );
+    case 'term_zscore': // Z-score: 분포 중심 거리 + 주의 2.0/경보 2.5 임계
+      return (
+        <>
+          <path d="M4,36 C22,36 32,6 50,6 C68,6 78,36 96,36" fill="none" stroke={T} strokeWidth="1.4" />
+          <line x1="50" y1="6" x2="50" y2="38" stroke={D} strokeWidth="0.8" />
+          <line x1="76" y1="14" x2="76" y2="38" stroke={G} strokeWidth="0.9" strokeDasharray="2 2" />
+          <line x1="84" y1="14" x2="84" y2="38" stroke={R} strokeWidth="0.9" strokeDasharray="2 2" />
+          <circle cx="90" cy="34" r="2" fill={R} />
+          <text x="73" y="11" fontSize="4.2" fill={G}>2.0</text>
+          <text x="84" y="11" fontSize="4.2" fill={R}>2.5</text>
+        </>
+      );
+    case 'term_iqr': // IQR: 상자그림 + Tukey 상한 밖 이상점
+      return (
+        <>
+          <line x1="8" y1="20" x2="28" y2="20" stroke={G} strokeWidth="1" />
+          <line x1="8" y1="15" x2="8" y2="25" stroke={G} strokeWidth="1" />
+          <rect x="28" y="11" width="32" height="18" fill="#ede8de" stroke={G} strokeWidth="1" />
+          <line x1="42" y1="11" x2="42" y2="29" stroke={T} strokeWidth="1.3" />
+          <line x1="60" y1="20" x2="78" y2="20" stroke={G} strokeWidth="1" />
+          <line x1="78" y1="15" x2="78" y2="25" stroke={G} strokeWidth="1" />
+          <circle cx="90" cy="20" r="2.2" fill={R} />
+          <text x="62" y="9" fontSize="4.2" fill={G}>Q3+1.5×IQR</text>
+        </>
+      );
     default:
       return <circle cx="50" cy="20" r="3" fill={T} />;
   }

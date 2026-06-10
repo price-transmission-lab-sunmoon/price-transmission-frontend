@@ -2,7 +2,7 @@
 import { useJourneyHover } from '../journeyHover';
 import { PhaseDiagram } from './PhaseDiagram';
 
-const PANEL_W = 240;
+const PANEL_W = 268;
 const PANEL_H_EST = 260;
 
 export function HoverPanel() {
@@ -25,7 +25,7 @@ export function HoverPanel() {
         {info.color && (
           <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: info.color }} />
         )}
-        <span className="text-[13px] font-semibold text-primary leading-tight">{info.title}</span>
+        <span className="text-[13px] font-semibold text-primary leading-tight break-keep">{info.title}</span>
       </div>
       {info.rows && info.rows.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border-default flex flex-col gap-1">
@@ -101,8 +101,25 @@ export function HoverPanel() {
         </div>
       )}
       {info.note && (
-        <div className="mt-2 pt-2 border-t border-border-default text-[12px] leading-relaxed text-secondary whitespace-pre-line">
-          {info.note}
+        <div className="mt-2 pt-2 border-t border-border-default flex flex-col gap-1">
+          {info.note.split('\n').map((line, i) => {
+            const m = line.match(/^([^:]{1,8}):\s*(.+)$/);
+            return m ? (
+              <div key={i} className="flex gap-2 text-[12px] leading-snug">
+                <span className="text-tertiary text-[10px] font-medium shrink-0 w-9 pt-[2px]">{m[1]}</span>
+                <span className="text-secondary flex-1 break-keep">{m[2]}</span>
+              </div>
+            ) : (
+              <div key={i} className="text-[12px] leading-snug text-secondary break-keep">
+                {line}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {info.diagram && (
+        <div className="mt-2 pt-2 border-t border-border-default">
+          <PhaseDiagram phase={info.diagram} />
         </div>
       )}
     </div>

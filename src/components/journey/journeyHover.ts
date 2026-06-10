@@ -18,8 +18,9 @@ export interface HoverInfo {
   title: string;
   color?: string; // 제목 강조 점 색
   rows?: HoverRow[]; // 수치(라벨·값)
-  note?: string; // 정본 설명(여러 줄 가능)
+  note?: string; // 정본 설명 — '라벨: 내용' 줄은 라벨 캡션으로 구조화 렌더
   viz?: HoverViz; // 미니 시각화(게이지/막대/스파크라인)
+  diagram?: string; // 어려운 용어 개념 도식(PhaseDiagram id) — note 아래 별도 출력
 }
 
 interface HoverState {

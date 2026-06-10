@@ -22,9 +22,9 @@ const GRADES = [
 const STEP_ON = '#0d9488';
 const STEP_OFF = '#a8a298';
 const GRADE_NOTE: Record<string, string> = {
-  high: '계량·ML 두 분석이 모두 이상으로 판정. 독립 수행한 두 방법의 합의 → 가장 신뢰 높음.',
-  medium: '계량 규칙은 위반했으나 ML 이상점수는 정상 범위. 계량 단독 탐지.',
-  reference: 'ML(6피처 앙상블)만 이상으로 분류, 계량 규칙 위반 없음. 참고용.',
+  high: '판정: 계량과 ML 모두 이상\n의미: 독립 두 방법의 합의, 신뢰 가장 높음',
+  medium: '판정: 계량 규칙만 위반\n의미: ML 이상점수는 정상 범위',
+  reference: '판정: ML 앙상블만 이상\n의미: 계량 규칙 위반 없음, 참고용',
 };
 const PATTERN_KR: Record<string, string> = {
   pattern1: '방향 역전·시차 이탈',
@@ -32,9 +32,9 @@ const PATTERN_KR: Record<string, string> = {
   pattern3: '스프레드 누적',
 };
 const PATTERN_NOTE: Record<string, string> = {
-  pattern1: '상·하류 가격이 반대로 움직이거나, 충격반응(IRF) 피크+버퍼 이후에도 하류가 무반응(시차 이탈).',
-  pattern2: '월별 전이율이 롤링 Z-score(경보 2.5)와 IQR 상한을 동시 초과(상·하방 비대칭은 TECM).',
-  pattern3: '국제가 안정기(±3%)에 수입단가·PPI 수준 괴리가 연속(2·3·6개월) 확대.',
+  pattern1: '정의: 상류와 하류가 반대로 움직이거나 시차 이탈\n판정: IRF 피크+버퍼 이후에도 하류 무반응',
+  pattern2: '정의: 월별 전이율의 분포 이탈\n판정: Z-score(경보 2.5)와 IQR 상한 동시 초과\n비고: 상·하방 비대칭은 TECM',
+  pattern3: '정의: 안정기 마진 괴리의 누적\n판정: 국제가 ±3% 안정기에 수입단가와 PPI 괴리가 연속(2·3·6개월) 확대',
 };
 
 export function Station5Confidence({ active, detail, stream, normalMode }: Props) {
@@ -68,7 +68,7 @@ export function Station5Confidence({ active, detail, stream, normalMode }: Props
       label: '통계 탐지',
       on: econDet,
       info: {
-        title: '① 통계 탐지 — 근거',
+        title: '① 통계 탐지 근거',
         color: STEP_ON,
         rows: [
           { label: '탐지 사유', value: econDet ? econReasons.join(' · ') : '없음' },
@@ -85,7 +85,8 @@ export function Station5Confidence({ active, detail, stream, normalMode }: Props
                 color: STEP_ON,
               }
             : undefined,
-        note: '계량 규칙(Z-score·IQR·방향·시차·스프레드)으로 이상 여부를 판정. 좌측 사유가 이 이상이 탐지된 근거.',
+        note: '판정: 계량 규칙(Z-score, IQR, 방향, 시차, 스프레드)\n근거: 위 탐지 사유가 이 이상의 원인',
+        diagram: 'term_zscore',
       },
     },
     {
@@ -122,7 +123,8 @@ export function Station5Confidence({ active, detail, stream, normalMode }: Props
               ],
             }
           : undefined,
-        note: 'IF·LOF·OCSVM 이상점수 백분위(70~100 범위로 확대 표시 — 미세차 가시화). 3개 중 2개 이상 합의 시 ML 탐지.',
+        note: '모델: IF(고립도) / LOF(국소밀도) / OCSVM(경계)\n판정: 3개 중 2개 이상 합의 시 ML 탐지\n표시: 백분위 70~100 범위 확대(미세차 가시화)',
+        diagram: 'phase7_ml',
       },
     },
     {
@@ -142,7 +144,7 @@ export function Station5Confidence({ active, detail, stream, normalMode }: Props
             { label: 'ML', value: 1, max: 1, on: mlDet, color: STEP_ON },
           ],
         },
-        note: '두 독립 분석의 판정을 한눈에 대조. 양방 합의 시 최고 신뢰(H).',
+        note: '대조: 계량과 ML의 독립 판정을 한눈에\n의미: 양방 합의 시 최고 신뢰(H)',
       },
     },
     {
@@ -155,7 +157,7 @@ export function Station5Confidence({ active, detail, stream, normalMode }: Props
         rows: grade ? [{ label: '등급', value: confidenceLabel(grade) }] : undefined,
         viz: grade ? { kind: 'diagram', phase: `grade_${grade}` } : undefined,
         note: normalMode
-          ? '이상으로 분류되지 않은 정상 시점 — 계량·ML 모두 임계 이내.'
+          ? '판정: 이상으로 분류되지 않은 정상 시점\n의미: 계량과 ML 모두 임계 이내'
           : grade
             ? GRADE_NOTE[grade]
             : '등급 미산출.',
