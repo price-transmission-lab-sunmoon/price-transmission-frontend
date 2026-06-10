@@ -28,7 +28,7 @@ export interface AnomalySummaryItem {
   primary_pattern: PrimaryPattern;
   confidence_grade: ConfidenceGrade;
   is_new: boolean;
-  transmission_rate: number;
+  transmission_rate: number | null; // 백엔드 SoT: Optional
 }
 
 export interface AnomalySummaryResponse {

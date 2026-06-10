@@ -14,7 +14,8 @@ export type Cluster = (typeof CLUSTERS)[number];
 export const ROUTE_TYPES = ['3seg', '4seg'] as const;
 export type RouteType = (typeof ROUTE_TYPES)[number];
 
-export const MODEL_TYPES = ['VAR', 'VECM'] as const;
+// 백엔드 SoT(ed79246): asymmetry model_type에 TECM·asymmetric_VAR 포함.
+export const MODEL_TYPES = ['VAR', 'VECM', 'TECM', 'asymmetric_VAR'] as const;
 export type ModelType = (typeof MODEL_TYPES)[number];
 
 export const ECT_TYPES = ['ECT', 'log_spread'] as const;

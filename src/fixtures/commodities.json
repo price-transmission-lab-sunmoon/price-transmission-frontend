@@ -40,7 +40,7 @@
       "latest_anomaly_grade": null
     },
     {
-      "commodity_id": "palm_oil",
+      "commodity_id": "palmoil",
       "name_kr": "팜유",
       "name_en": "Palm Oil",
       "cluster": "oil_sugar",

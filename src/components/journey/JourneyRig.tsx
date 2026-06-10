@@ -1,5 +1,6 @@
 // 현재 스테이션(stage)의 고정 좌표로 카메라를 부드럽게 이동(이산 이동 + 정지점 정렬).
 // 스테이션 X폭에 맞춘 동적 거리(줌) + 좌측 안내패널을 피하는 우측 편향.
+import { useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { MathUtils, type PerspectiveCamera } from 'three';
 import {
@@ -14,7 +15,22 @@ import {
 export function JourneyRig() {
   const camera = useThree((s) => s.camera) as PerspectiveCamera;
   const size = useThree((s) => s.size);
+  const gl = useThree((s) => s.gl);
   const stage = useJourneyProgress((s) => s.stage);
+  const cameraZoom = useJourneyProgress((s) => s.cameraZoom);
+  const setCameraZoom = useJourneyProgress((s) => s.setCameraZoom);
+
+  // 캔버스 휠 → 카메라 dolly 줌(전 스테이지). <1=확대. stage 이동 시 1로 리셋(store).
+  useEffect(() => {
+    const el = gl.domElement;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const z = useJourneyProgress.getState().cameraZoom;
+      setCameraZoom(Math.max(0.55, Math.min(1.8, z * (1 + e.deltaY * 0.0012))));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [gl, setCameraZoom]);
 
   useFrame(() => {
     const hw = STAGE_HALF_WIDTH[stage] ?? 8;
@@ -24,7 +40,7 @@ export function JourneyRig() {
 
     const distX = (hw * CAMERA_PADDING) / (tanV * aspect * CONTENT_USABLE_W);
     const distY = (STAGE_HALF_HEIGHT * CAMERA_PADDING) / tanV;
-    const dist = Math.max(distX, distY, 12);
+    const dist = Math.max(distX, distY, 12) * cameraZoom;
 
     const visibleHalfW = dist * tanV * aspect;
     const targetX = -(1 - CONTENT_USABLE_W) * visibleHalfW;

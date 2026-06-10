@@ -3,8 +3,16 @@
 import { useAppStore } from '@/stores/useAppStore';
 import { useJourneyProgress, JOURNEY_STAGE_COUNT } from '../journeyContract';
 import { STATION_COPY } from './stationCopy';
+import { JourneyNodePicker } from './JourneyNodePicker';
+import type { ScatterResponse } from '@/types/timeseries';
 
-export function JourneyNarration() {
+export function JourneyNarration({
+  scatter,
+  segments,
+}: {
+  scatter?: ScatterResponse;
+  segments: string[];
+}) {
   const stage = useJourneyProgress((s) => s.stage);
   const setStage = useJourneyProgress((s) => s.setStage);
   const primaryId = useAppStore((s) => s.primaryCommodityId);
@@ -14,7 +22,7 @@ export function JourneyNarration() {
 
   return (
     <div className="absolute left-0 top-0 z-10 w-[clamp(280px,32%,420px)] h-full p-8 flex flex-col justify-center pointer-events-none">
-      <div className="pointer-events-auto bg-surface border border-border-default rounded-xl p-6 shadow-e2">
+      <div className="pointer-events-auto bg-surface border border-border-default rounded-xl p-6 shadow-e2 max-h-[calc(100vh-4rem)] overflow-y-auto">
         <div className="mb-5 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-subtle">
           <span className="w-2 h-2 rounded-full bg-brand" />
           <span className="text-secondary text-[13px] font-medium">분석 품목: {name}</span>
@@ -52,6 +60,8 @@ export function JourneyNarration() {
         <p className="text-tertiary text-[11px] mt-4 m-0">
           방향키 ↑↓ 또는 우측 버튼으로 단계 이동 · 상단에서 품목 변경
         </p>
+
+        <JourneyNodePicker scatter={scatter} segments={segments} />
       </div>
     </div>
   );

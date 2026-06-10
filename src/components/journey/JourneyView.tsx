@@ -6,6 +6,7 @@ import { JOURNEY_STAGE_COUNT, JOURNEY_THEME, useJourneyProgress } from './journe
 import { JourneyRig } from './JourneyRig';
 import { Stage } from './Stage';
 import { JourneyNarration } from './narration/JourneyNarration';
+import { HoverPanel } from './primitives/HoverPanel';
 import { useJourneyData } from './useJourneyData';
 import { Station1Sources } from './stations/Station1Sources';
 import { Station2Segments } from './stations/Station2Segments';
@@ -37,7 +38,8 @@ export function JourneyView() {
 
   return (
     <div className="relative w-full h-full">
-      <JourneyNarration />
+      <JourneyNarration scatter={data.scatter} segments={data.commodity?.segments ?? []} />
+      <HoverPanel />
       <Canvas camera={{ position: [0, 0, 23], fov: 45 }} dpr={[1, 2]} gl={{ antialias: true }}>
         <color attach="background" args={[JOURNEY_THEME.bg]} />
         <ambientLight intensity={JOURNEY_THEME.ambient} />
@@ -66,7 +68,7 @@ export function JourneyView() {
         </Stage>
         <Stage index={4}>
           {({ active }) => (
-            <Station5Confidence {...common} active={active} detail={data.detail} summary={data.summary} />
+            <Station5Confidence {...common} active={active} detail={data.detail} stream={data.stream} />
           )}
         </Stage>
         <Stage index={5}>

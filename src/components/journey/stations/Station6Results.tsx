@@ -6,6 +6,7 @@ import type { StreamResponse, StreamAnomalyNode } from '@/types/timeseries';
 import type { ExternalEvent } from '@/types/event';
 import { ANOMALY_COLORS } from '@/utils/colorUtils';
 import { Label3D } from '../primitives/Label3D';
+import { useHoverBinders } from '../journeyHover';
 
 interface Props extends StationProps {
   stream?: StreamResponse;
@@ -15,7 +16,13 @@ interface Props extends StationProps {
 const W = 15;
 const GRADE_Y: Record<string, number> = { high: 1.7, medium: 1.0, reference: 0.35 };
 // 등급 위계(논문 3-5: H=두 분석 모두·최고신뢰 / M=계량만 / R=ML만)를 발광으로도 차등.
-const GRADE_EMIS: Record<string, number> = { high: 0.5, medium: 0.25, reference: 0.05 };
+const GRADE_EMIS: Record<string, number> = { high: 0.25, medium: 0.12, reference: 0.03 }; // 과강조 완화(절반)
+const GRADE_KR: Record<string, string> = { high: '고신뢰', medium: '중신뢰', reference: '참고' };
+const PATTERN_KR: Record<string, string> = {
+  pattern1: '방향역전·시차',
+  pattern2: '전이율·비대칭',
+  pattern3: '스프레드',
+};
 
 function ym(period: string): number {
   const [y, m] = period.split('-').map(Number);
@@ -24,10 +31,11 @@ function ym(period: string): number {
 function markerRadius(rate: number | null): number {
   if (rate === null || !Number.isFinite(rate)) return 0.12;
   const c = Math.max(0, Math.min(2, rate));
-  return 0.08 + (c / 2) * 0.3; // 범위 확대 — 전이율 크기 차이가 눈에 보이게
+  return 0.07 + (c / 2) * 0.22; // 전이율 크기 반영하되 과강조 완화
 }
 
 export function Station6Results({ active, stream, events }: Props) {
+  const bind = useHoverBinders();
   const nodes = stream?.anomaly_nodes ?? [];
 
   // 데이터 기반 시간 도메인 — 고정 2000~2026 대신 실제 범위에 맞춰 균형 배치.
@@ -71,7 +79,18 @@ export function Station6Results({ active, stream, events }: Props) {
         const labelY = 2.2 + (i % 2) * 0.55; // y 스태거로 가로 겹침 완화(상단 클리핑 여유)
         return (
           <group key={ev.event_key}>
-            <mesh position={[cx, 1.2, -0.2]}>
+            <mesh
+              position={[cx, 1.2, -0.2]}
+              {...bind({
+                title: ev.label_kr,
+                color: ev.color_hex,
+                rows: [
+                  { label: '기간', value: `${ev.start_date}~${ev.end_date}` },
+                  { label: '구간 내 탐지', value: `${hits}건` },
+                ],
+                note: 'Weak Ground Truth — 외부충격 검증 구간(인과 아님)',
+              })}
+            >
               <boxGeometry args={[w, 3.2, 0.1]} />
               <meshStandardMaterial color={ev.color_hex} transparent opacity={0.16} />
             </mesh>
@@ -90,7 +109,28 @@ export function Station6Results({ active, stream, events }: Props) {
           const y = GRADE_Y[nd.confidence_grade] ?? 0.35;
           const c = ANOMALY_COLORS[nd.confidence_grade];
           return (
-            <mesh key={`${nd.anomaly_id}-${j}`} position={[tx(nd.period) + off, y, 0.1]}>
+            <mesh
+              key={`${nd.anomaly_id}-${j}`}
+              position={[tx(nd.period) + off, y, 0.1]}
+              {...bind({
+                title: `이상 · ${nd.period}`,
+                color: c,
+                rows: [
+                  { label: '등급', value: GRADE_KR[nd.confidence_grade] ?? nd.confidence_grade },
+                  { label: '전이율', value: nd.transmission_rate != null ? nd.transmission_rate.toFixed(2) : '—' },
+                  { label: '패턴', value: PATTERN_KR[nd.primary_pattern] ?? nd.primary_pattern },
+                ],
+                note: '탐지된 이상 — 시간축 위치(반경=전이율)',
+                viz: {
+                  kind: 'gauge',
+                  value: nd.transmission_rate ?? 0,
+                  max: 2,
+                  threshold: 1,
+                  label: '전이율(1=완전전달)',
+                  color: c,
+                },
+              })}
+            >
               <sphereGeometry args={[markerRadius(nd.transmission_rate ?? null), 16, 16]} />
               <meshStandardMaterial color={c} emissive={c} emissiveIntensity={GRADE_EMIS[nd.confidence_grade] ?? 0.2} />
             </mesh>

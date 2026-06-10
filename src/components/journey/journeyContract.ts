@@ -37,14 +37,33 @@ export const JOURNEY_THEME = {
 // 휠 단계마다 라벨이 움직여 모델과 싱크가 어긋나던 문제 해소(정지점에서 정렬).
 interface JourneyNavState {
   stage: number; // 현재 스테이션 0~N-1
+  cameraZoom: number; // 휠 줌 배율(<1=확대). stage 이동 시 1로 리셋.
   setStage: (i: number) => void;
   next: () => void;
   prev: () => void;
+  setCameraZoom: (z: number) => void;
 }
 
 export const useJourneyProgress = create<JourneyNavState>((set) => ({
   stage: 0,
-  setStage: (i) => set({ stage: Math.min(JOURNEY_STAGE_COUNT - 1, Math.max(0, i)) }),
-  next: () => set((s) => ({ stage: Math.min(JOURNEY_STAGE_COUNT - 1, s.stage + 1) })),
-  prev: () => set((s) => ({ stage: Math.max(0, s.stage - 1) })),
+  cameraZoom: 1,
+  setStage: (i) => set({ stage: Math.min(JOURNEY_STAGE_COUNT - 1, Math.max(0, i)), cameraZoom: 1 }),
+  next: () => set((s) => ({ stage: Math.min(JOURNEY_STAGE_COUNT - 1, s.stage + 1), cameraZoom: 1 })),
+  prev: () => set((s) => ({ stage: Math.max(0, s.stage - 1), cameraZoom: 1 })),
+  setCameraZoom: (z) => set({ cameraZoom: z }),
+}));
+
+// 좌측 패널 하단 노드 선택기 — 사용자가 고른 기준 이상(anomaly). null=자동.
+// 상세 기반 스테이션(②④⑤)이 이 노드의 /detail을 따른다.
+interface JourneySelectionState {
+  selectedAnomalyId: number | null;
+  setSelected: (id: number | null) => void;
+  pickerSegment: string | null; // 산점도 미니맵의 표시 구간(null=품목 첫 구간)
+  setPickerSegment: (s: string | null) => void;
+}
+export const useJourneySelection = create<JourneySelectionState>((set) => ({
+  selectedAnomalyId: null,
+  setSelected: (id) => set({ selectedAnomalyId: id }),
+  pickerSegment: null,
+  setPickerSegment: (s) => set({ pickerSegment: s }),
 }));

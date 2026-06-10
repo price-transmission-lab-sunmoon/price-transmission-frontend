@@ -16,9 +16,10 @@ import type { AnomaliesSummaryResponse } from '@/hooks/useAnomaliesSummary';
 import type { PipelineMetaResponse, AnalysisParamsResponse } from '@/types/meta';
 import type { Commodity } from '@/types/commodity';
 import type { AnomalyDetail } from '@/types/anomaly';
-import type { StreamResponse, RawPricesResponse } from '@/types/timeseries';
+import type { StreamResponse, RawPricesResponse, ScatterResponse } from '@/types/timeseries';
 import type { ExternalEvent } from '@/types/event';
 import { useAppStore } from '@/stores/useAppStore';
+import { useJourneySelection } from './journeyContract';
 
 export interface JourneyData {
   commodityId: string;
@@ -30,6 +31,8 @@ export interface JourneyData {
   detail?: AnomalyDetail;
   stream?: StreamResponse;
   rawPrices?: RawPricesResponse;
+  scatter?: ScatterResponse;
+  scatterSegment: string;
   events: ExternalEvent[];
 }
 
@@ -44,19 +47,6 @@ export function useJourneyData(): JourneyData {
 
   const commodity = commodities.data?.find((c) => c.commodity_id === commodityId);
 
-  // 대표 이상 선택: 해당 품목 고신뢰 → 해당 품목 아무거나 → 전체 고신뢰 → 첫 항목.
-  const anomalyId = useMemo(() => {
-    const list = summary.data?.anomalies ?? [];
-    const pick =
-      list.find((a) => a.commodity_id === commodityId && a.confidence_grade === 'high') ??
-      list.find((a) => a.commodity_id === commodityId) ??
-      list.find((a) => a.confidence_grade === 'high') ??
-      list[0];
-    return pick?.anomaly_id ?? null;
-  }, [summary.data, commodityId]);
-
-  const detail = usePanelDetail(anomalyId);
-
   // 선택 품목 stream(anomaly_nodes 전기간 타임라인) — 전역 store 무관 직접 조회.
   const stream = useQuery<StreamResponse>({
     queryKey: ['journey', 'stream', commodityId],
@@ -69,6 +59,24 @@ export function useJourneyData(): JourneyData {
     enabled: !!commodityId,
     staleTime: 5 * 60 * 1000,
   });
+
+  // 대표 이상 선택: ① 사용자가 좌측 패널에서 고른 노드(유효하면) → ② summary(당월) → ③ stream(전기간) 폴백.
+  const selectedId = useJourneySelection((s) => s.selectedAnomalyId);
+  const anomalyId = useMemo(() => {
+    const nodes = stream.data?.anomaly_nodes ?? [];
+    // 사용자가 고른 노드가 현재 품목 stream에 존재하면 우선(품목 바뀌면 무효 → 자동으로 폴백).
+    if (selectedId != null && nodes.some((n) => n.anomaly_id === selectedId)) return selectedId;
+    const list = (summary.data?.anomalies ?? []).filter((a) => a.commodity_id === commodityId);
+    const fromSummary = list.find((a) => a.confidence_grade === 'high') ?? list[0];
+    if (fromSummary) return fromSummary.anomaly_id;
+    const fromStream =
+      nodes.find((n) => n.confidence_grade === 'high') ??
+      nodes.find((n) => n.confidence_grade === 'medium') ??
+      nodes[nodes.length - 1]; // 최신(stream은 시간순)
+    return fromStream?.anomaly_id ?? null;
+  }, [summary.data, commodityId, stream.data, selectedId]);
+
+  const detail = usePanelDetail(anomalyId);
 
   // ① 원천데이터용 raw-prices(소스 커버리지·index_2020·has_anomaly) — 직접 조회.
   const rawPrices = useQuery<RawPricesResponse>({
@@ -84,6 +92,21 @@ export function useJourneyData(): JourneyData {
     staleTime: 5 * 60 * 1000,
   });
 
+  // 노드 선택기(전이 산점도 미니맵)용 scatter — 구간별. 구간은 store(없으면 품목 첫 구간).
+  const pickerSegment = useJourneySelection((s) => s.pickerSegment);
+  const scatterSegment = pickerSegment ?? commodity?.segments?.[0] ?? '';
+  const scatter = useQuery<ScatterResponse>({
+    queryKey: ['journey', 'scatter', commodityId, scatterSegment],
+    queryFn: async () => {
+      const res = await client.get<ScatterResponse>(ENDPOINTS.COMMODITY_SCATTER(commodityId), {
+        params: { segment: scatterSegment },
+      });
+      return res.data;
+    },
+    enabled: !!commodityId && !!scatterSegment,
+    staleTime: 5 * 60 * 1000,
+  });
+
   return {
     commodityId,
     anomalyId,
@@ -94,6 +117,8 @@ export function useJourneyData(): JourneyData {
     detail: detail.data,
     stream: stream.data,
     rawPrices: rawPrices.data,
+    scatter: scatter.data,
+    scatterSegment,
     events: events.data ?? [],
   };
 }

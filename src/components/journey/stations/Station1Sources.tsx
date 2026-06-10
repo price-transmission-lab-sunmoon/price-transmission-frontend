@@ -6,6 +6,7 @@ import type { RawPricesResponse } from '@/types/timeseries';
 import { RAW_PRICE_COLORS } from '@/utils/colorUtils';
 import { Label3D } from '../primitives/Label3D';
 import { FlowLine } from '../primitives/FlowLine';
+import { useHoverBinders } from '../journeyHover';
 
 interface Props extends StationProps {
   rawPrices?: RawPricesResponse;
@@ -34,6 +35,7 @@ const HUB: [number, number, number] = [4.5, 0, 0];
 export function Station1Sources({ active, rawPrices }: Props) {
   // 객체를 useFrame으로 직접 움직이지 않는다 — drei Html(transform) 라벨이 1프레임
   // 묵은 matrixWorld로 그려져 메시와 어긋나기 때문. 움직임은 카메라(JourneyRig)가 담당.
+  const bind = useHoverBinders();
   const series = rawPrices?.series ?? [];
   const items = series.length
     ? series.map((sr) => {
@@ -64,7 +66,20 @@ export function Station1Sources({ active, rawPrices }: Props) {
         const r = it.coverage > 0 ? 0.36 + (it.coverage / maxCov) * 0.3 : 0.5;
         return (
           <group key={it.label}>
-            <mesh position={pos}>
+            <mesh
+              position={pos}
+              {...bind({
+                title: it.label,
+                color: it.color,
+                rows: [
+                  { label: '관측 커버리지', value: `${it.coverage}개월` },
+                  { label: '최신 index_2020', value: it.lastIdx != null ? it.lastIdx.toFixed(1) : '—' },
+                  { label: '이상 포함', value: it.hasAnomaly ? '있음' : '없음' },
+                ],
+                note: '원천 가격 시리즈 — 병합 데이터셋으로 유입(Phase 0)',
+                viz: { kind: 'gauge', value: it.coverage, max: maxCov, label: '관측 커버리지', color: it.color },
+              })}
+            >
               <sphereGeometry args={[r, 32, 32]} />
               <meshStandardMaterial
                 color={it.color}
@@ -86,7 +101,16 @@ export function Station1Sources({ active, rawPrices }: Props) {
           </group>
         );
       })}
-      <RoundedBox position={HUB} args={[1.3, 1.3, 1.3]} radius={0.12} smoothness={4}>
+      <RoundedBox
+        position={HUB}
+        args={[1.3, 1.3, 1.3]}
+        radius={0.12}
+        smoothness={4}
+        {...bind({
+          title: '병합 데이터셋',
+          note: '전 소스를 품목별 단일 데이터셋으로 병합 (Phase 0). 이후 모든 분석의 입력.',
+        })}
+      >
         <meshStandardMaterial color="#1a1814" roughness={0.5} />
       </RoundedBox>
       {active && (

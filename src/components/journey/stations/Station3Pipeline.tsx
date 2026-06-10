@@ -5,13 +5,30 @@ import type { StationProps } from '../journeyContract';
 import type { PipelineMetaResponse, AnalysisParamsResponse } from '@/types/meta';
 import { Label3D } from '../primitives/Label3D';
 import { FlowLine } from '../primitives/FlowLine';
+import { useHoverBinders } from '../journeyHover';
 
 interface Props extends StationProps {
   pipeline?: PipelineMetaResponse;
   params?: AnalysisParamsResponse;
 }
 
+// Phase별 상세 설명(정본 논문 기반) — 호버 패널 note. 백엔드 description(짧음)은 폴백.
+const PHASE_DETAIL: Record<string, string> = {
+  phase0: '데이터 수집·전처리. 5개 공공 소스(World Bank·FAO·관세청·한국은행·KAMIS)를 품목별 단일 데이터셋으로 병합. 국제가는 환율로 원화 환산.',
+  phase1: '계절 조정. STL 분해(period=12)로 추세·계절·잔차 분리 후 계절 성분 제거. 견고성 분석상 결과에 가장 민감한 선택.',
+  phase2: '정상성 검정. ADF·KPSS 동시 적용으로 단위근 판정, 미충족 시 1차 차분.',
+  phase3: '공적분 검정. Johansen 검정으로 장기 균형관계 유무 판정 → 있으면 VECM, 없으면 VAR로 분기.',
+  phase4_vecm: 'VECM 추정. 공적분 존재 시 오차수정항(ECT) 포함 모형으로 장·단기 동학 추정 + 충격반응(IRF) 산출.',
+  phase4_var: 'VAR 추정. 공적분 없을 때 차분 변수로 단기 동적 관계 추정 + 충격반응(IRF) 산출.',
+  phase5: 'Granger 인과 검정. 양방향 검정으로 전달 방향 확정(도매가 단계가 있는 구간 C 한정).',
+  phase6: '구조 변화 검정. Bai-Perron·Chow로 전달 체계가 바뀐 시점(구조 단절) 탐지 → 분석기간 하위 분할.',
+  phase7: '계량 이상 탐지. 3유형 규칙 — ①방향 역전·시차 이탈 ②전이율 Z-score(2.0/2.5)+IQR 동시 초과·비대칭(TECM) ③안정기 스프레드 누적.',
+  phase7_ml: 'ML 보조 탐지. 6개 피처로 IF·LOF·OCSVM 비지도 학습, 3개 중 2개 이상 합의 시 앙상블 탐지(구간 A·B 한정).',
+  phase8: '결과 종합·등급화. 두 분석 교차 대조 → H(둘다)/M(계량만)/R(ML만) 신뢰도 등급 부여.',
+};
+
 export function Station3Pipeline({ active, pipeline, params }: Props) {
+  const bind = useHoverBinders();
   const nodes = pipeline?.nodes ?? [];
   // 데이터 미도달 시에도 빈 화면이 되지 않도록 fallback(다른 스테이션과 동일 정책).
   if (nodes.length === 0) {
@@ -66,7 +83,17 @@ export function Station3Pipeline({ active, pipeline, params }: Props) {
         const below = phases.indexOf(n.phase_number) % 2 === 0; // 열(phase) 단위 교번 — 다중행에도 안전
         return (
           <group key={n.id}>
-            <RoundedBox position={pp} args={[0.95, 0.62, 0.4]} radius={0.08} smoothness={4}>
+            <RoundedBox
+              position={pp}
+              args={[0.95, 0.62, 0.4]}
+              radius={0.08}
+              smoothness={4}
+              {...bind({
+                title: n.label,
+                rows: [{ label: 'Phase', value: String(n.phase_number) }],
+                note: PHASE_DETAIL[n.id] ?? n.description,
+              })}
+            >
               <meshStandardMaterial color="#0d9488" roughness={0.5} metalness={0.1} />
             </RoundedBox>
             {active && (
