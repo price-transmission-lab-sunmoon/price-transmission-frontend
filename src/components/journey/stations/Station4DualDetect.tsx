@@ -89,7 +89,6 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
           title: '계량 탐지 (Phase 7)',
           color: '#0d9488',
           rows: [
-            { label: 'Z-score', value: sm?.zscore != null ? sm.zscore.toFixed(2) : '—' },
             { label: 'IQR', value: sm?.iqr_outlier ? '이탈' : '범위 내' },
             { label: '탐지 사유', value: econReasons.length ? econReasons.join('·') : econHit ? 'Z/IQR' : '없음' },
           ],
@@ -202,10 +201,7 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
                     {...bind({
                       title: m.label,
                       color: m.color,
-                      rows: [
-                        { label: '이상점수 백분위', value: typeof p === 'number' ? `${p.toFixed(0)}%` : '—' },
-                        { label: '탐지 여부', value: hit ? '탐지' : '미탐지' },
-                      ],
+                      rows: [{ label: '탐지 여부', value: hit ? '탐지' : '미탐지' }],
                       note: m.note,
                       viz:
                         typeof p === 'number'

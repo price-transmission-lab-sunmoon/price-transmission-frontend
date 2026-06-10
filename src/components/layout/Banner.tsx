@@ -32,17 +32,8 @@ export function Banner() {
 
   const { anomalies, count_diff, total_count } = data;
 
-  if (total_count === 0) {
-    return (
-      <div
-        role="banner"
-        aria-label="이달의 이상 요약 배너"
-        className="h-10 px-5 bg-surface border-b border-border-default flex items-center gap-3 shrink-0 text-[13px]"
-      >
-        <span className="text-secondary">이번 달 탐지된 이상이 없습니다</span>
-      </div>
-    );
-  }
+  // 이상 0건이면 배너 자체를 표시하지 않음(빈 안내 패널 제거).
+  if (total_count === 0) return null;
 
   const diffText =
     count_diff > 0

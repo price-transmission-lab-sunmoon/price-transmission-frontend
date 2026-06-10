@@ -107,7 +107,6 @@ export function Station2Segments({ active, commodity, detail }: Props) {
                 rows:
                   isHot && sm
                     ? [
-                        { label: '전이율', value: formatRatio(sm.transmission_rate) },
                         { label: '모형', value: sm.model_type },
                         { label: '공적분', value: sm.cointegrated ? '예' : '아니오' },
                       ]

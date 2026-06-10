@@ -389,7 +389,7 @@ export function FilterBar() {
             )
           : availableSegments.map((seg) => {
               const isOn = activeSegments.includes(seg);
-              const label = seg === 'D_prime' ? "D'" : seg;
+              const label = seg === 'D_prime' ? 'E' : seg;
               return (
                 <Switch
                   key={seg}

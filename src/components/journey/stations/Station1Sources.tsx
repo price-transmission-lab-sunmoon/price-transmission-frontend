@@ -72,12 +72,11 @@ export function Station1Sources({ active, rawPrices }: Props) {
                 title: it.label,
                 color: it.color,
                 rows: [
-                  { label: '관측 커버리지', value: `${it.coverage}개월` },
                   { label: '최신 index_2020', value: it.lastIdx != null ? it.lastIdx.toFixed(1) : '—' },
                   { label: '이상 포함', value: it.hasAnomaly ? '있음' : '없음' },
                 ],
                 note: '원천 가격 시리즈 — 병합 데이터셋으로 유입(Phase 0)',
-                viz: { kind: 'gauge', value: it.coverage, max: maxCov, label: '관측 커버리지', color: it.color },
+                viz: { kind: 'gauge', value: it.coverage, max: maxCov, label: '관측 커버리지(개월)', color: it.color },
               })}
             >
               <sphereGeometry args={[r, 32, 32]} />

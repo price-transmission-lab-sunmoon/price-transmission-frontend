@@ -129,7 +129,6 @@ export function Station6Results({ active, stream, events }: Props) {
                   color: c,
                   rows: [
                     { label: '등급', value: GRADE_KR[nd.confidence_grade] ?? nd.confidence_grade },
-                    { label: '전이율', value: nd.transmission_rate != null ? nd.transmission_rate.toFixed(2) : '—' },
                     { label: '패턴', value: PATTERN_KR[nd.primary_pattern] ?? nd.primary_pattern },
                   ],
                   note: '탐지된 이상 — 클릭 시 기준 이상으로 선택(②④⑤ 연동)',

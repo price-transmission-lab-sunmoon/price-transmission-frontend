@@ -72,7 +72,6 @@ export function Station5Confidence({ active, detail, stream, normalMode }: Props
         color: STEP_ON,
         rows: [
           { label: '탐지 사유', value: econDet ? econReasons.join(' · ') : '없음' },
-          { label: 'Z-score', value: sm?.zscore != null ? sm.zscore.toFixed(2) : '—' },
           { label: 'IQR', value: sm?.iqr_outlier ? '상한 초과' : '범위 내' },
         ],
         viz:

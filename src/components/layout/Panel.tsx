@@ -628,7 +628,7 @@ export function Panel() {
             {!detail && fallbackNode && (
               <>
                 <h2 className="text-primary text-[16px] font-bold tracking-tight m-0">
-                  구간 {fallbackNode.segment_id === 'D_prime' ? "D'" : fallbackNode.segment_id}
+                  구간 {fallbackNode.segment_id === 'D_prime' ? 'E' : fallbackNode.segment_id}
                 </h2>
                 <ConfidenceBadge grade={fallbackNode.confidence_grade} size="sm" />
                 {fallbackNode.is_new && (

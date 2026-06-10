@@ -33,7 +33,7 @@ const SEGMENT_DISPLAY: Record<SegmentId, string> = {
   B: 'B',
   C: 'C',
   D: 'D',
-  D_prime: 'D′',
+  D_prime: 'E',
 };
 
 const TABS_3SEG: SegmentId[] = ['A', 'B', 'D_prime'];
