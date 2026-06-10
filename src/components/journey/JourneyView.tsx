@@ -63,12 +63,12 @@ export function JourneyView() {
         </Stage>
         <Stage index={3}>
           {({ active }) => (
-            <Station4DualDetect {...common} active={active} detail={data.detail} />
+            <Station4DualDetect {...common} active={active} detail={data.detail} normalMode={data.normalMode} />
           )}
         </Stage>
         <Stage index={4}>
           {({ active }) => (
-            <Station5Confidence {...common} active={active} detail={data.detail} stream={data.stream} />
+            <Station5Confidence {...common} active={active} detail={data.detail} stream={data.stream} normalMode={data.normalMode} />
           )}
         </Stage>
         <Stage index={5}>

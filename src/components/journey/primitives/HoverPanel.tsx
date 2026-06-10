@@ -1,8 +1,9 @@
 // 커서를 따라가는 호버 정보 카드(반응형 — 화면 밖으로 안 나가게 자동 보정). Canvas 밖 HTML 오버레이.
 import { useJourneyHover } from '../journeyHover';
+import { PhaseDiagram } from './PhaseDiagram';
 
 const PANEL_W = 240;
-const PANEL_H_EST = 180;
+const PANEL_H_EST = 260;
 
 export function HoverPanel() {
   const info = useJourneyHover((s) => s.info);
@@ -41,7 +42,9 @@ export function HoverPanel() {
           {info.viz.kind === 'gauge' &&
             (() => {
               const v = info.viz;
-              const pct = Math.max(0, Math.min(1, v.value / (v.max || 1)));
+              const lo = v.min ?? 0;
+              const span = v.max - lo || 1;
+              const pct = Math.max(0, Math.min(1, (v.value - lo) / span));
               const over = v.threshold != null && v.value > v.threshold;
               const fill = over ? '#d97706' : v.color || 'var(--brand)';
               return (
@@ -53,12 +56,12 @@ export function HoverPanel() {
                       {v.threshold != null ? ` / 임계 ${v.threshold}` : ''}
                     </span>
                   </div>
-                  <div className="relative h-2 rounded-full bg-subtle overflow-hidden">
+                  <div className="relative h-3 rounded-full bg-subtle overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${pct * 100}%`, backgroundColor: fill }} />
                     {v.threshold != null && v.max > 0 && (
                       <span
                         className="absolute top-0 bottom-0 w-px opacity-50"
-                        style={{ left: `${Math.min(100, (v.threshold / v.max) * 100)}%`, backgroundColor: 'var(--text-primary)' }}
+                        style={{ left: `${Math.max(0, Math.min(100, ((v.threshold - lo) / span) * 100))}%`, backgroundColor: 'var(--text-primary)' }}
                       />
                     )}
                   </div>
@@ -74,7 +77,7 @@ export function HoverPanel() {
                     <div
                       className="h-full rounded-full"
                       style={{
-                        width: `${Math.max(0, Math.min(1, it.value / (it.max || 1))) * 100}%`,
+                        width: `${Math.max(0, Math.min(1, (it.value - (it.min ?? 0)) / ((it.max - (it.min ?? 0)) || 1))) * 100}%`,
                         backgroundColor: it.on ? it.color || 'var(--brand)' : 'var(--border-strong)',
                       }}
                     />
@@ -84,7 +87,7 @@ export function HoverPanel() {
             </div>
           )}
           {info.viz.kind === 'spark' && (
-            <svg viewBox="0 0 100 24" preserveAspectRatio="none" className="w-full h-5">
+            <svg viewBox="0 0 100 24" preserveAspectRatio="none" className="w-full h-8">
               <polyline
                 fill="none"
                 stroke={info.viz.color || 'var(--brand)'}
@@ -94,10 +97,11 @@ export function HoverPanel() {
               />
             </svg>
           )}
+          {info.viz.kind === 'diagram' && <PhaseDiagram phase={info.viz.phase} />}
         </div>
       )}
       {info.note && (
-        <div className="mt-2 pt-2 border-t border-border-default text-[11px] leading-snug text-tertiary whitespace-pre-line">
+        <div className="mt-2 pt-2 border-t border-border-default text-[12px] leading-relaxed text-secondary whitespace-pre-line">
           {info.note}
         </div>
       )}

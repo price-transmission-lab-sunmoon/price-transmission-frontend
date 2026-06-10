@@ -5,11 +5,13 @@ import { Line, RoundedBox } from '@react-three/drei';
 import type { StationProps } from '../journeyContract';
 import type { AnomalyDetail } from '@/types/anomaly';
 import { ML_MODEL_COLORS } from '@/utils/colorUtils';
+import { JOURNEY_GRADE_COLORS } from '../journeyContract';
 import { Label3D } from '../primitives/Label3D';
 import { useHoverBinders } from '../journeyHover';
 
 interface Props extends StationProps {
   detail?: AnomalyDetail;
+  normalMode?: boolean;
 }
 
 const MODELS = [
@@ -21,8 +23,10 @@ const MODELS = [
 const CENTER: [number, number, number] = [0, 2.4, 0];
 const ECON: [number, number, number] = [-3.8, 0, 0];
 
-export function Station4DualDetect({ active, detail }: Props) {
+export function Station4DualDetect({ active, detail, normalMode }: Props) {
   const bind = useHoverBinders();
+  // '이상 후보' 색 = 선택 이상의 신뢰도 등급색(고=빨강/중=머스터드/참=청록).
+  const gradeColor = detail?.confidence_grade ? JOURNEY_GRADE_COLORS[detail.confidence_grade] : '#a8a298';
   const sm = detail?.stat_metrics;
   const ml = detail?.ml_summary;
   // 계량 탐지(Phase 7)는 3유형 전체: 패턴1(방향역전·시차) + 패턴2(Z·IQR) + 패턴3(스프레드).
@@ -66,11 +70,11 @@ export function Station4DualDetect({ active, detail }: Props) {
         })}
       >
         <sphereGeometry args={[0.55, 32, 32]} />
-        <meshStandardMaterial color="#1a1814" />
+        <meshStandardMaterial color={gradeColor} emissive={gradeColor} emissiveIntensity={0.35} />
       </mesh>
       {active && (
         <Label3D position={[CENTER[0], CENTER[1] + 1, 0]} chip>
-          이상 후보
+          {normalMode ? '정상 시점' : '이상 후보'}
         </Label3D>
       )}
 
@@ -205,7 +209,7 @@ export function Station4DualDetect({ active, detail }: Props) {
                       note: m.note,
                       viz:
                         typeof p === 'number'
-                          ? { kind: 'gauge', value: p, max: 100, label: '이상점수 백분위', color: m.color }
+                          ? { kind: 'gauge', value: p, min: 70, max: 100, label: '이상점수 백분위(70~100)', color: m.color }
                           : undefined,
                     })}
                   >

@@ -9,9 +9,10 @@ export interface HoverRow {
   value: string;
 }
 export type HoverViz =
-  | { kind: 'gauge'; value: number; max: number; threshold?: number; label?: string; color?: string }
-  | { kind: 'bars'; items: { label: string; value: number; max: number; on?: boolean; color?: string }[] }
-  | { kind: 'spark'; points: number[]; color?: string };
+  | { kind: 'gauge'; value: number; max: number; min?: number; threshold?: number; label?: string; color?: string }
+  | { kind: 'bars'; items: { label: string; value: number; max: number; min?: number; on?: boolean; color?: string }[] }
+  | { kind: 'spark'; points: number[]; color?: string }
+  | { kind: 'diagram'; phase: string }; // Phase 개념 도식(PhaseDiagram)
 
 export interface HoverInfo {
   title: string;

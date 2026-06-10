@@ -13,7 +13,7 @@ export const STAGE_GAP = 14;
 export const STAGE_HALF_WIDTH = [7.5, 5.5, 9.5, 7, 8.5, 8.5];
 export const STAGE_HALF_HEIGHT = 3.4;
 // 콘텐츠가 들어갈 가용 가로 비율(좌측 안내 패널 ~38% 제외 → 우측 0.62).
-export const CONTENT_USABLE_W = 0.62;
+export const CONTENT_USABLE_W = 0.7;
 // 카메라 거리 패딩 배수.
 export const CAMERA_PADDING = 1.25;
 
@@ -25,6 +25,13 @@ export interface StationProps {
   commodityId: string;
   anomalyId: number | null;
 }
+
+// 여정 전용 등급 배색 — 메인 탭 ANOMALY_COLORS는 발표 제출본이라 불변. 빨강·머스터드·청록(hue 분리).
+export const JOURNEY_GRADE_COLORS: Record<string, string> = {
+  high: '#dc2626', // 빨강
+  medium: '#ca8a04', // 머스터드(노랑끼) — 빨강과 분리
+  reference: '#0891b2', // 청록
+};
 
 // 무대 테마 — 라이트 단일(차분 화이트). bloom 없음.
 export const JOURNEY_THEME = {
@@ -55,15 +62,25 @@ export const useJourneyProgress = create<JourneyNavState>((set) => ({
 
 // 좌측 패널 하단 노드 선택기 — 사용자가 고른 기준 이상(anomaly). null=자동.
 // 상세 기반 스테이션(②④⑤)이 이 노드의 /detail을 따른다.
+export interface JourneyNormal {
+  period: string;
+  segment: string;
+  upstream_pct: number;
+  downstream_pct: number;
+}
 interface JourneySelectionState {
   selectedAnomalyId: number | null;
+  selectedNormal: JourneyNormal | null; // 정상(비이상) 점 선택 — 이상과 배타
   setSelected: (id: number | null) => void;
+  setSelectedNormal: (n: JourneyNormal | null) => void;
   pickerSegment: string | null; // 산점도 미니맵의 표시 구간(null=품목 첫 구간)
   setPickerSegment: (s: string | null) => void;
 }
 export const useJourneySelection = create<JourneySelectionState>((set) => ({
   selectedAnomalyId: null,
-  setSelected: (id) => set({ selectedAnomalyId: id }),
+  selectedNormal: null,
+  setSelected: (id) => set({ selectedAnomalyId: id, selectedNormal: null }),
+  setSelectedNormal: (n) => set({ selectedNormal: n, selectedAnomalyId: null }),
   pickerSegment: null,
   setPickerSegment: (s) => set({ pickerSegment: s }),
 }));

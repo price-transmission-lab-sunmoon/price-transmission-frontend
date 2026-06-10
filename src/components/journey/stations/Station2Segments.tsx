@@ -30,6 +30,15 @@ const SEG_NOTE: Record<string, string> = {
   D_prime: 'PPI → CPI (도매 미관측 품목)',
 };
 
+// 가격 단계별 노드 색(단색 → 구분). 국제가·수입단가·PPI·도매가·CPI.
+const LEVEL_COLOR: Record<string, string> = {
+  국제가: '#7c3aed',
+  수입단가: '#ea580c',
+  PPI: '#059669',
+  도매가: '#0891b2',
+  CPI: '#dc2626',
+};
+
 export function Station2Segments({ active, commodity, detail }: Props) {
   const bind = useHoverBinders();
   const segments = commodity?.segments ?? ['A', 'B', 'D_prime'];
@@ -61,7 +70,7 @@ export function Station2Segments({ active, commodity, detail }: Props) {
           >
             <cylinderGeometry args={[0.58, 0.58, 0.35, 36]} />
             <meshStandardMaterial
-              color="#d4cec1"
+              color={LEVEL_COLOR[lv] ?? '#d4cec1'}
               emissive={i === hotIdx || i === hotIdx + 1 ? hotColor : '#000000'}
               emissiveIntensity={i === hotIdx || i === hotIdx + 1 ? 0.35 : 0}
               roughness={0.5}
@@ -120,7 +129,7 @@ export function Station2Segments({ active, commodity, detail }: Props) {
             )}
             {active && isHot && sm && (
               <Label3D position={[mid[0], 1.7, 0]} size={11} chip color={color}>
-                {`전이율 ${formatRatio(sm.transmission_rate)} · ${sm.model_type}${sm.cointegrated ? ' · 공적분' : ''}`}
+                {`전이율 ${formatRatio(sm.transmission_rate)}${sm.model_type ? ` · ${sm.model_type}` : ''}${sm.cointegrated ? ' · 공적분' : ''}`}
               </Label3D>
             )}
           </group>

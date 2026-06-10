@@ -4,9 +4,9 @@ import { Line } from '@react-three/drei';
 import type { StationProps } from '../journeyContract';
 import type { StreamResponse, StreamAnomalyNode } from '@/types/timeseries';
 import type { ExternalEvent } from '@/types/event';
-import { ANOMALY_COLORS } from '@/utils/colorUtils';
 import { Label3D } from '../primitives/Label3D';
 import { useHoverBinders } from '../journeyHover';
+import { useJourneySelection, JOURNEY_GRADE_COLORS } from '../journeyContract';
 
 interface Props extends StationProps {
   stream?: StreamResponse;
@@ -28,14 +28,14 @@ function ym(period: string): number {
   const [y, m] = period.split('-').map(Number);
   return y + ((m || 1) - 1) / 12;
 }
-function markerRadius(rate: number | null): number {
-  if (rate === null || !Number.isFinite(rate)) return 0.12;
-  const c = Math.max(0, Math.min(2, rate));
-  return 0.07 + (c / 2) * 0.22; // 전이율 크기 반영하되 과강조 완화
-}
+// 마커 반경 균일 — 크기로 특정 노드(금융위기·우크라 등)를 강조하지 않음. 전이율은 호버 게이지로만.
+const MARKER_R = 0.13;
 
 export function Station6Results({ active, stream, events }: Props) {
   const bind = useHoverBinders();
+  const selectedId = useJourneySelection((s) => s.selectedAnomalyId);
+  const setSelected = useJourneySelection((s) => s.setSelected);
+  const setPickerSegment = useJourneySelection((s) => s.setPickerSegment);
   const nodes = stream?.anomaly_nodes ?? [];
 
   // 데이터 기반 시간 도메인 — 고정 2000~2026 대신 실제 범위에 맞춰 균형 배치.
@@ -107,33 +107,50 @@ export function Station6Results({ active, stream, events }: Props) {
         grp.map((nd, j) => {
           const off = (j - (grp.length - 1) / 2) * 0.32;
           const y = GRADE_Y[nd.confidence_grade] ?? 0.35;
-          const c = ANOMALY_COLORS[nd.confidence_grade];
+          const c = JOURNEY_GRADE_COLORS[nd.confidence_grade];
+          const rr = MARKER_R;
+          const isSel = nd.anomaly_id === selectedId; // 미니맵 선택과 동기화
           return (
-            <mesh
-              key={`${nd.anomaly_id}-${j}`}
-              position={[tx(nd.period) + off, y, 0.1]}
-              {...bind({
-                title: `이상 · ${nd.period}`,
-                color: c,
-                rows: [
-                  { label: '등급', value: GRADE_KR[nd.confidence_grade] ?? nd.confidence_grade },
-                  { label: '전이율', value: nd.transmission_rate != null ? nd.transmission_rate.toFixed(2) : '—' },
-                  { label: '패턴', value: PATTERN_KR[nd.primary_pattern] ?? nd.primary_pattern },
-                ],
-                note: '탐지된 이상 — 시간축 위치(반경=전이율)',
-                viz: {
-                  kind: 'gauge',
-                  value: nd.transmission_rate ?? 0,
-                  max: 2,
-                  threshold: 1,
-                  label: '전이율(1=완전전달)',
+            <group key={`${nd.anomaly_id}-${j}`} position={[tx(nd.period) + off, y, 0.1]}>
+              {isSel && (
+                <mesh>
+                  <torusGeometry args={[rr * 2.0, 0.05, 8, 28]} />
+                  <meshBasicMaterial color="#1a1814" />
+                </mesh>
+              )}
+              <mesh
+                scale={isSel ? 1.5 : 1}
+                onClick={() => {
+                  setSelected(nd.anomaly_id);
+                  setPickerSegment(nd.segment_id); // 미니맵을 이 노드 구간으로 전환(역방향 동기화)
+                }}
+                {...bind({
+                  title: `이상 · ${nd.period}`,
                   color: c,
-                },
-              })}
-            >
-              <sphereGeometry args={[markerRadius(nd.transmission_rate ?? null), 16, 16]} />
-              <meshStandardMaterial color={c} emissive={c} emissiveIntensity={GRADE_EMIS[nd.confidence_grade] ?? 0.2} />
-            </mesh>
+                  rows: [
+                    { label: '등급', value: GRADE_KR[nd.confidence_grade] ?? nd.confidence_grade },
+                    { label: '전이율', value: nd.transmission_rate != null ? nd.transmission_rate.toFixed(2) : '—' },
+                    { label: '패턴', value: PATTERN_KR[nd.primary_pattern] ?? nd.primary_pattern },
+                  ],
+                  note: '탐지된 이상 — 클릭 시 기준 이상으로 선택(②④⑤ 연동)',
+                  viz: {
+                    kind: 'gauge',
+                    value: nd.transmission_rate ?? 0,
+                    max: 2,
+                    threshold: 1,
+                    label: '전이율(1=완전전달)',
+                    color: c,
+                  },
+                })}
+              >
+                <sphereGeometry args={[rr, 16, 16]} />
+                <meshStandardMaterial
+                  color={c}
+                  emissive={c}
+                  emissiveIntensity={isSel ? 0.7 : GRADE_EMIS[nd.confidence_grade] ?? 0.1}
+                />
+              </mesh>
+            </group>
           );
         }),
       )}

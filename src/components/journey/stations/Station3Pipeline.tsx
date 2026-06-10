@@ -27,6 +27,18 @@ const PHASE_DETAIL: Record<string, string> = {
   phase8: '결과 종합·등급화. 두 분석 교차 대조 → H(둘다)/M(계량만)/R(ML만) 신뢰도 등급 부여.',
 };
 
+// Phase 진행(초록→주황) 그라데이션. 분기 노드는 같은 열 → 같은 t → 같은 색.
+const GRAD_FROM = '#059669'; // 초록(emerald)
+const GRAD_TO = '#ea580c'; // 주황(orange)
+function lerpColor(a: string, b: string, t: number): string {
+  const ca = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
+  const cb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+  return (
+    '#' +
+    ca.map((c, i) => Math.round(c + (cb[i] - c) * t).toString(16).padStart(2, '0')).join('')
+  );
+}
+
 export function Station3Pipeline({ active, pipeline, params }: Props) {
   const bind = useHoverBinders();
   const nodes = pipeline?.nodes ?? [];
@@ -53,16 +65,18 @@ export function Station3Pipeline({ active, pipeline, params }: Props) {
       </group>
     );
   }
-  const phases = Array.from(new Set(nodes.map((n) => n.phase_number))).sort((a, b) => a - b);
-  const xFor = (pi: number) => (phases.length > 1 ? -9 + (pi / (phases.length - 1)) * 18 : 0);
+  // 열 = phase 정수부(floor) → phase 4(VAR/VECM)·7(계량/7-ML)이 같은 열에서 분기.
+  const colKey = (n: { phase_number: number }) => Math.floor(n.phase_number);
+  const cols = Array.from(new Set(nodes.map(colKey))).sort((a, b) => a - b);
+  const xFor = (ci: number) => (cols.length > 1 ? -9 + (ci / (cols.length - 1)) * 18 : 0);
 
   const pos = new Map<string, [number, number, number]>();
-  phases.forEach((ph, pi) => {
-    const row = nodes.filter((n) => n.phase_number === ph);
+  cols.forEach((col, ci) => {
+    const row = nodes.filter((n) => colKey(n) === col);
     const rowGap = Math.min(1.8, 6 / Math.max(row.length, 1)); // 노드 많아도 화면 내
     row.forEach((n, j) => {
       const y = row.length > 1 ? (j - (row.length - 1) / 2) * rowGap : 0;
-      pos.set(n.id, [xFor(pi), y, 0]);
+      pos.set(n.id, [xFor(ci), y, 0]);
     });
   });
 
@@ -80,7 +94,9 @@ export function Station3Pipeline({ active, pipeline, params }: Props) {
       {nodes.map((n) => {
         const pp = pos.get(n.id);
         if (!pp) return null;
-        const below = phases.indexOf(n.phase_number) % 2 === 0; // 열(phase) 단위 교번 — 다중행에도 안전
+        const ci = cols.indexOf(colKey(n));
+        const below = ci % 2 === 0; // 열 단위 교번 — 다중행에도 안전
+        const nodeColor = lerpColor(GRAD_FROM, GRAD_TO, cols.length > 1 ? ci / (cols.length - 1) : 0);
         return (
           <group key={n.id}>
             <RoundedBox
@@ -89,12 +105,12 @@ export function Station3Pipeline({ active, pipeline, params }: Props) {
               radius={0.08}
               smoothness={4}
               {...bind({
-                title: n.label,
-                rows: [{ label: 'Phase', value: String(n.phase_number) }],
+                title: n.description || n.label, // 기법명(3D 라벨 'Phase N'과 중복 방지)
                 note: PHASE_DETAIL[n.id] ?? n.description,
+                viz: { kind: 'diagram', phase: n.id },
               })}
             >
-              <meshStandardMaterial color="#0d9488" roughness={0.5} metalness={0.1} />
+              <meshStandardMaterial color={nodeColor} roughness={0.5} metalness={0.1} />
             </RoundedBox>
             {active && (
               <Label3D position={[pp[0], pp[1] + (below ? -0.85 : 0.85), 0]} size={10} chip>

@@ -29,6 +29,7 @@ export interface JourneyData {
   commodity?: Commodity;
   summary?: AnomaliesSummaryResponse;
   detail?: AnomalyDetail;
+  normalMode: boolean; // 정상 점 선택 상태(합성 detail — 전이율만, 나머지 —)
   stream?: StreamResponse;
   rawPrices?: RawPricesResponse;
   scatter?: ScatterResponse;
@@ -62,7 +63,9 @@ export function useJourneyData(): JourneyData {
 
   // 대표 이상 선택: ① 사용자가 좌측 패널에서 고른 노드(유효하면) → ② summary(당월) → ③ stream(전기간) 폴백.
   const selectedId = useJourneySelection((s) => s.selectedAnomalyId);
+  const selectedNormal = useJourneySelection((s) => s.selectedNormal);
   const anomalyId = useMemo(() => {
+    if (selectedNormal) return null; // 정상 점 선택 시 이상 detail 미사용
     const nodes = stream.data?.anomaly_nodes ?? [];
     // 사용자가 고른 노드가 현재 품목 stream에 존재하면 우선(품목 바뀌면 무효 → 자동으로 폴백).
     if (selectedId != null && nodes.some((n) => n.anomaly_id === selectedId)) return selectedId;
@@ -74,9 +77,31 @@ export function useJourneyData(): JourneyData {
       nodes.find((n) => n.confidence_grade === 'medium') ??
       nodes[nodes.length - 1]; // 최신(stream은 시간순)
     return fromStream?.anomaly_id ?? null;
-  }, [summary.data, commodityId, stream.data, selectedId]);
+  }, [summary.data, commodityId, stream.data, selectedId, selectedNormal]);
 
   const detail = usePanelDetail(anomalyId);
+
+  // 정상 점 선택 → 합성 detail(전이율만 stream에서 조회, 나머지 필드는 undefined → 스테이션이 '—'/정상 처리).
+  const normalDetail = useMemo<AnomalyDetail | undefined>(() => {
+    if (!selectedNormal) return undefined;
+    const series = stream.data?.series?.find((s) => s.segment_id === selectedNormal.segment);
+    const dp = series?.data.find((d) => d.period === selectedNormal.period);
+    const tr =
+      dp?.transmission_rate ??
+      (selectedNormal.upstream_pct !== 0
+        ? selectedNormal.downstream_pct / selectedNormal.upstream_pct
+        : null);
+    return {
+      anomaly_id: -1,
+      commodity_id: commodityId,
+      segment_id: selectedNormal.segment,
+      period: selectedNormal.period,
+      pattern_types: [],
+      is_new: false,
+      judgment_path: [],
+      stat_metrics: { transmission_rate: tr },
+    } as unknown as AnomalyDetail;
+  }, [selectedNormal, stream.data, commodityId]);
 
   // ① 원천데이터용 raw-prices(소스 커버리지·index_2020·has_anomaly) — 직접 조회.
   const rawPrices = useQuery<RawPricesResponse>({
@@ -114,7 +139,8 @@ export function useJourneyData(): JourneyData {
     params: params.data,
     commodity,
     summary: summary.data,
-    detail: detail.data,
+    detail: normalDetail ?? detail.data,
+    normalMode: !!selectedNormal,
     stream: stream.data,
     rawPrices: rawPrices.data,
     scatter: scatter.data,
