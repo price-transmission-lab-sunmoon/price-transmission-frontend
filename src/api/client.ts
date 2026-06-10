@@ -62,7 +62,7 @@ interface MockRoute {
 
 // 3구간 품목 (has_wholesale=false) — layout=4 요청 시 WHOLESALE_NOT_AVAILABLE 반환
 const THREE_SEG_COMMODITIES = new Set([
-  'wheat', 'maize', 'soybean', 'palm_oil', 'sugar', 'coffee', 'beef',
+  'wheat', 'maize', 'soybean', 'palmoil', 'sugar', 'coffee', 'beef',
 ]);
 
 // @guide:API-03

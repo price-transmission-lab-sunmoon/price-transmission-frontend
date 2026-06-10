@@ -45,12 +45,13 @@ const SOURCES_ALL: RawPriceSource[] = [
   'wholesale_price',
   'cpi',
 ];
+// 백엔드 _SOURCE_META 正本(ed79246) 그대로 표시.
 const SOURCE_LABEL: Record<RawPriceSource, string> = {
-  intl_price_krw: '국제가 (원화)',
+  intl_price_krw: '국제가 (원화 환산)',
   import_price_usd: '수입단가',
-  ppi: 'PPI',
-  wholesale_price: '도매가',
-  cpi: 'CPI',
+  ppi: '생산자물가지수 (PPI)',
+  wholesale_price: '도매가격',
+  cpi: '소비자물가지수 (CPI)',
 };
 
 const parseYM = d3.timeParse('%Y-%m');

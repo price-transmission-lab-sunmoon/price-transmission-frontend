@@ -14,7 +14,8 @@ export type Cluster = (typeof CLUSTERS)[number];
 export const ROUTE_TYPES = ['3seg', '4seg'] as const;
 export type RouteType = (typeof ROUTE_TYPES)[number];
 
-export const MODEL_TYPES = ['VAR', 'VECM'] as const;
+// 백엔드 SoT(ed79246): asymmetry model_type에 TECM·asymmetric_VAR 포함.
+export const MODEL_TYPES = ['VAR', 'VECM', 'TECM', 'asymmetric_VAR'] as const;
 export type ModelType = (typeof MODEL_TYPES)[number];
 
 export const ECT_TYPES = ['ECT', 'log_spread'] as const;
@@ -28,7 +29,7 @@ export const SEGMENT_IDS = ['A', 'B', 'C', 'D', 'D_prime'] as const;
 export type SegmentId = (typeof SEGMENT_IDS)[number];
 
 // 뷰 탭 — web_plan_vN §3.3 상단 바 + §8 방법론 탭
-export const VIEW_TABS = ['stream', 'scatter', 'raw-prices', 'methodology'] as const;
+export const VIEW_TABS = ['stream', 'scatter', 'raw-prices', 'methodology', 'journey'] as const;
 export type ViewTab = (typeof VIEW_TABS)[number];
 
 // 기간 프리셋 — feature_dev_list_vN §feat/fe-layout-filter FilterBar 기간 프리셋 6종

@@ -45,7 +45,7 @@ export interface StreamAnomalyNode {
   primary_pattern: PrimaryPattern;
   pattern_types: PrimaryPattern[];
   confidence_grade: ConfidenceGrade;
-  transmission_rate: number;
+  transmission_rate: number | null; // 백엔드 SoT: Optional
   is_new: boolean;
 }
 

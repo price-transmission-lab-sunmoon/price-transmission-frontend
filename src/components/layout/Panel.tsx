@@ -721,11 +721,11 @@ export function Panel() {
                       ...(detail.stat_metrics.asymmetry_significant
                         ? [
                             {
-                              label: 'α+ (상방)',
+                              label: '상방 조정 속도',
                               value: formatNum(detail.stat_metrics.alpha_plus),
                             },
                             {
-                              label: 'α− (하방)',
+                              label: '하방 조정 속도',
                               value: formatNum(detail.stat_metrics.alpha_minus),
                             },
                             {

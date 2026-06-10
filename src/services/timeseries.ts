@@ -80,7 +80,8 @@ export function buildStreamChartData(
     .filter(
       (n: StreamAnomalyNode) =>
         segmentSet.has(n.segment_id as SegmentId) &&
-        gradeSet.has(n.confidence_grade as ConfidenceGrade),
+        gradeSet.has(n.confidence_grade as ConfidenceGrade) &&
+        n.transmission_rate !== null, // null rate는 rate 축에 배치 불가 → 차트 제외
     )
     .map((n: StreamAnomalyNode) => ({
       anomaly_id: n.anomaly_id,
@@ -88,7 +89,7 @@ export function buildStreamChartData(
       period: parseYYYYMM(n.period),
       periodStr: n.period,
       confidence_grade: n.confidence_grade as ConfidenceGrade,
-      transmission_rate: n.transmission_rate,
+      transmission_rate: n.transmission_rate ?? 0, // 위 필터로 null 제외됨
       primary_pattern: n.primary_pattern,
       is_new: n.is_new,
     }));

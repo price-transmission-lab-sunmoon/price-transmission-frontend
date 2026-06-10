@@ -38,6 +38,7 @@ const VIEW_TABS: ViewTabConfig[] = [
   { id: 'scatter', label: '전달 구조', icon: 'compare' },
   { id: 'raw-prices', label: '원시 시계열', icon: 'list' },
   { id: 'methodology', label: '방법론', icon: 'info' },
+  { id: 'journey', label: '분석 여정', icon: 'sparkles' },
 ];
 
 // @guide:LAYOUT-02
@@ -105,7 +106,8 @@ export function Header() {
 
   function handleTabClick(tab: ViewTab) {
     setActiveTab(tab);
-    const targetPath = tab === 'methodology' ? '/methodology' : '/';
+    const targetPath =
+      tab === 'methodology' ? '/methodology' : tab === 'journey' ? '/journey' : '/';
     if (location.pathname !== targetPath) navigate(targetPath);
   }
 
@@ -113,7 +115,12 @@ export function Header() {
   useEffect(() => {
     if (location.pathname === '/methodology' && activeTab !== 'methodology') {
       setActiveTab('methodology');
-    } else if (location.pathname === '/' && activeTab === 'methodology') {
+    } else if (location.pathname === '/journey' && activeTab !== 'journey') {
+      setActiveTab('journey');
+    } else if (
+      location.pathname === '/' &&
+      (activeTab === 'methodology' || activeTab === 'journey')
+    ) {
       setActiveTab('stream');
     }
   }, [location.pathname, activeTab, setActiveTab]);

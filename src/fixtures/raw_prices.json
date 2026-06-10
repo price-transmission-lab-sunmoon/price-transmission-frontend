@@ -10,88 +10,532 @@
   "series": [
     {
       "source": "intl_price_krw",
-      "label_kr": "Íµ?†úÍ∞Ä (?êÌôî ?òÏÇ∞)",
+      "label_kr": "Íµ≠Ï†úÍ∞Ä (ÏõêÌôî ÌôòÏÇ∞)",
       "color_hint": "purple",
       "data": [
-        { "period": "2023-04", "value": 289.3, "index_2020": 137.5, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-05", "value": 285.1, "index_2020": 135.4, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-06", "value": 281.7, "index_2020": 133.8, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-07", "value": 278.4, "index_2020": 132.2, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-08", "value": 274.9, "index_2020": 130.5, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-09", "value": 271.3, "index_2020": 128.8, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-10", "value": 268.6, "index_2020": 127.5, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-11", "value": 265.2, "index_2020": 125.9, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-12", "value": 262.8, "index_2020": 124.7, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-01", "value": 260.1, "index_2020": 123.5, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-02", "value": 258.4, "index_2020": 122.7, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-03", "value": null, "index_2020": null, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-04", "value": 263.7, "index_2020": 125.2, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-05", "value": 267.2, "index_2020": 126.9, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-06", "value": 295.8, "index_2020": 140.5, "has_anomaly": true, "anomaly_ids": [1] },
-        { "period": "2024-07", "value": 278.3, "index_2020": 132.1, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-08", "value": 273.6, "index_2020": 129.9, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-09", "value": 271.1, "index_2020": 128.7, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-10", "value": 269.4, "index_2020": 127.9, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-11", "value": 282.6, "index_2020": 134.2, "has_anomaly": true, "anomaly_ids": [2] },
-        { "period": "2024-12", "value": 276.3, "index_2020": 131.2, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-01", "value": 273.9, "index_2020": 130.0, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-02", "value": 271.5, "index_2020": 128.9, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-03", "value": 269.2, "index_2020": 127.8, "has_anomaly": true, "anomaly_ids": [3] },
-        { "period": "2025-04", "value": 266.8, "index_2020": 126.7, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-05", "value": 264.1, "index_2020": 125.4, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-06", "value": 261.7, "index_2020": 124.3, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-07", "value": 259.3, "index_2020": 123.1, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-08", "value": 257.8, "index_2020": 122.4, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-09", "value": 256.2, "index_2020": 121.7, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-10", "value": 254.9, "index_2020": 121.0, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-11", "value": 253.4, "index_2020": 120.3, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-12", "value": 252.1, "index_2020": 119.7, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2026-01", "value": 308.7, "index_2020": 146.6, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2026-02", "value": 309.5, "index_2020": 146.9, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2026-03", "value": 310.2, "index_2020": 147.3, "has_anomaly": false, "anomaly_ids": [] }
+        {
+          "period": "2023-04",
+          "value": 289.3,
+          "index_2020": 137.5,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-05",
+          "value": 285.1,
+          "index_2020": 135.4,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-06",
+          "value": 281.7,
+          "index_2020": 133.8,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-07",
+          "value": 278.4,
+          "index_2020": 132.2,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-08",
+          "value": 274.9,
+          "index_2020": 130.5,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-09",
+          "value": 271.3,
+          "index_2020": 128.8,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-10",
+          "value": 268.6,
+          "index_2020": 127.5,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-11",
+          "value": 265.2,
+          "index_2020": 125.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-12",
+          "value": 262.8,
+          "index_2020": 124.7,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-01",
+          "value": 260.1,
+          "index_2020": 123.5,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-02",
+          "value": 258.4,
+          "index_2020": 122.7,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-03",
+          "value": null,
+          "index_2020": null,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-04",
+          "value": 263.7,
+          "index_2020": 125.2,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-05",
+          "value": 267.2,
+          "index_2020": 126.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-06",
+          "value": 295.8,
+          "index_2020": 140.5,
+          "has_anomaly": true,
+          "anomaly_ids": [
+            1
+          ]
+        },
+        {
+          "period": "2024-07",
+          "value": 278.3,
+          "index_2020": 132.1,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-08",
+          "value": 273.6,
+          "index_2020": 129.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-09",
+          "value": 271.1,
+          "index_2020": 128.7,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-10",
+          "value": 269.4,
+          "index_2020": 127.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-11",
+          "value": 282.6,
+          "index_2020": 134.2,
+          "has_anomaly": true,
+          "anomaly_ids": [
+            2
+          ]
+        },
+        {
+          "period": "2024-12",
+          "value": 276.3,
+          "index_2020": 131.2,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-01",
+          "value": 273.9,
+          "index_2020": 130.0,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-02",
+          "value": 271.5,
+          "index_2020": 128.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-03",
+          "value": 269.2,
+          "index_2020": 127.8,
+          "has_anomaly": true,
+          "anomaly_ids": [
+            3
+          ]
+        },
+        {
+          "period": "2025-04",
+          "value": 266.8,
+          "index_2020": 126.7,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-05",
+          "value": 264.1,
+          "index_2020": 125.4,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-06",
+          "value": 261.7,
+          "index_2020": 124.3,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-07",
+          "value": 259.3,
+          "index_2020": 123.1,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-08",
+          "value": 257.8,
+          "index_2020": 122.4,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-09",
+          "value": 256.2,
+          "index_2020": 121.7,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-10",
+          "value": 254.9,
+          "index_2020": 121.0,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-11",
+          "value": 253.4,
+          "index_2020": 120.3,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-12",
+          "value": 252.1,
+          "index_2020": 119.7,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2026-01",
+          "value": 308.7,
+          "index_2020": 146.6,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2026-02",
+          "value": 309.5,
+          "index_2020": 146.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2026-03",
+          "value": 310.2,
+          "index_2020": 147.3,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        }
       ]
     },
     {
       "source": "import_price_usd",
-      "label_kr": "?òÏûÖ?®Í?",
+      "label_kr": "ÏàòÏûÖÎã®Í∞Ä",
       "color_hint": "blue",
       "data": [
-        { "period": "2023-04", "value": 520.1, "index_2020": 125.3, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-05", "value": 515.7, "index_2020": 124.2, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-06", "value": 511.2, "index_2020": 123.2, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-07", "value": 507.8, "index_2020": 122.3, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-08", "value": 504.3, "index_2020": 121.5, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-09", "value": 500.9, "index_2020": 120.7, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-10", "value": 497.6, "index_2020": 119.9, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-11", "value": 494.2, "index_2020": 119.1, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-12", "value": 491.8, "index_2020": 118.5, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-01", "value": 489.1, "index_2020": 117.8, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-02", "value": 487.4, "index_2020": 117.4, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-03", "value": 485.9, "index_2020": 117.0, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-04", "value": 491.2, "index_2020": 118.3, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-05", "value": 494.8, "index_2020": 119.2, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-06", "value": 528.4, "index_2020": 127.3, "has_anomaly": true, "anomaly_ids": [1] },
-        { "period": "2024-07", "value": 510.3, "index_2020": 122.9, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-08", "value": 505.7, "index_2020": 121.8, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-09", "value": 502.1, "index_2020": 120.9, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-10", "value": 499.6, "index_2020": 120.3, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-11", "value": 513.2, "index_2020": 123.6, "has_anomaly": true, "anomaly_ids": [2] },
-        { "period": "2024-12", "value": 507.4, "index_2020": 122.2, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-01", "value": 504.8, "index_2020": 121.6, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-02", "value": 502.3, "index_2020": 121.0, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-03", "value": 499.7, "index_2020": 120.4, "has_anomaly": true, "anomaly_ids": [3] },
-        { "period": "2025-04", "value": 497.2, "index_2020": 119.8, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-05", "value": 494.6, "index_2020": 119.2, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-06", "value": 492.1, "index_2020": 118.6, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-07", "value": 489.8, "index_2020": 118.0, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-08", "value": 487.3, "index_2020": 117.4, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-09", "value": 485.1, "index_2020": 116.9, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-10", "value": 483.6, "index_2020": 116.5, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-11", "value": 481.9, "index_2020": 116.1, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-12", "value": 480.4, "index_2020": 115.7, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2026-01", "value": 558.3, "index_2020": 134.5, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2026-02", "value": 559.1, "index_2020": 134.7, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2026-03", "value": 560.2, "index_2020": 135.0, "has_anomaly": false, "anomaly_ids": [] }
+        {
+          "period": "2023-04",
+          "value": 520.1,
+          "index_2020": 125.3,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-05",
+          "value": 515.7,
+          "index_2020": 124.2,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-06",
+          "value": 511.2,
+          "index_2020": 123.2,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-07",
+          "value": 507.8,
+          "index_2020": 122.3,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-08",
+          "value": 504.3,
+          "index_2020": 121.5,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-09",
+          "value": 500.9,
+          "index_2020": 120.7,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-10",
+          "value": 497.6,
+          "index_2020": 119.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-11",
+          "value": 494.2,
+          "index_2020": 119.1,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-12",
+          "value": 491.8,
+          "index_2020": 118.5,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-01",
+          "value": 489.1,
+          "index_2020": 117.8,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-02",
+          "value": 487.4,
+          "index_2020": 117.4,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-03",
+          "value": 485.9,
+          "index_2020": 117.0,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-04",
+          "value": 491.2,
+          "index_2020": 118.3,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-05",
+          "value": 494.8,
+          "index_2020": 119.2,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-06",
+          "value": 528.4,
+          "index_2020": 127.3,
+          "has_anomaly": true,
+          "anomaly_ids": [
+            1
+          ]
+        },
+        {
+          "period": "2024-07",
+          "value": 510.3,
+          "index_2020": 122.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-08",
+          "value": 505.7,
+          "index_2020": 121.8,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-09",
+          "value": 502.1,
+          "index_2020": 120.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-10",
+          "value": 499.6,
+          "index_2020": 120.3,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-11",
+          "value": 513.2,
+          "index_2020": 123.6,
+          "has_anomaly": true,
+          "anomaly_ids": [
+            2
+          ]
+        },
+        {
+          "period": "2024-12",
+          "value": 507.4,
+          "index_2020": 122.2,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-01",
+          "value": 504.8,
+          "index_2020": 121.6,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-02",
+          "value": 502.3,
+          "index_2020": 121.0,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-03",
+          "value": 499.7,
+          "index_2020": 120.4,
+          "has_anomaly": true,
+          "anomaly_ids": [
+            3
+          ]
+        },
+        {
+          "period": "2025-04",
+          "value": 497.2,
+          "index_2020": 119.8,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-05",
+          "value": 494.6,
+          "index_2020": 119.2,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-06",
+          "value": 492.1,
+          "index_2020": 118.6,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-07",
+          "value": 489.8,
+          "index_2020": 118.0,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-08",
+          "value": 487.3,
+          "index_2020": 117.4,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-09",
+          "value": 485.1,
+          "index_2020": 116.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-10",
+          "value": 483.6,
+          "index_2020": 116.5,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-11",
+          "value": 481.9,
+          "index_2020": 116.1,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-12",
+          "value": 480.4,
+          "index_2020": 115.7,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2026-01",
+          "value": 558.3,
+          "index_2020": 134.5,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2026-02",
+          "value": 559.1,
+          "index_2020": 134.7,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2026-03",
+          "value": 560.2,
+          "index_2020": 135.0,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        }
       ]
     }
   ],
@@ -99,42 +543,228 @@
     {
       "segment_id": "A",
       "data": [
-        { "period": "2023-04", "transmission_rate": 0.89, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-05", "transmission_rate": 0.88, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-06", "transmission_rate": 0.87, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-07", "transmission_rate": 0.86, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-08", "transmission_rate": 0.87, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-09", "transmission_rate": 0.88, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-10", "transmission_rate": 0.89, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-11", "transmission_rate": 0.90, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2023-12", "transmission_rate": 0.91, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-01", "transmission_rate": 0.90, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-02", "transmission_rate": 0.89, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-03", "transmission_rate": null, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-04", "transmission_rate": 0.88, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-05", "transmission_rate": 0.89, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-06", "transmission_rate": 1.21, "has_anomaly": true, "anomaly_ids": [1] },
-        { "period": "2024-07", "transmission_rate": 0.95, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-08", "transmission_rate": 0.92, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-09", "transmission_rate": 0.91, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-10", "transmission_rate": 0.90, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2024-11", "transmission_rate": 1.08, "has_anomaly": true, "anomaly_ids": [2] },
-        { "period": "2024-12", "transmission_rate": 0.94, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-01", "transmission_rate": 0.93, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-02", "transmission_rate": 0.92, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-03", "transmission_rate": 0.96, "has_anomaly": true, "anomaly_ids": [3] },
-        { "period": "2025-04", "transmission_rate": 0.91, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-05", "transmission_rate": 0.90, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-06", "transmission_rate": 0.89, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-07", "transmission_rate": 0.88, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-08", "transmission_rate": 0.87, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-09", "transmission_rate": 0.88, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-10", "transmission_rate": 0.89, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-11", "transmission_rate": 0.90, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2025-12", "transmission_rate": 0.91, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2026-01", "transmission_rate": 1.35, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2026-02", "transmission_rate": 1.38, "has_anomaly": false, "anomaly_ids": [] },
-        { "period": "2026-03", "transmission_rate": 1.43, "has_anomaly": false, "anomaly_ids": [] }
+        {
+          "period": "2023-04",
+          "transmission_rate": 0.89,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-05",
+          "transmission_rate": 0.88,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-06",
+          "transmission_rate": 0.87,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-07",
+          "transmission_rate": 0.86,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-08",
+          "transmission_rate": 0.87,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-09",
+          "transmission_rate": 0.88,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-10",
+          "transmission_rate": 0.89,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-11",
+          "transmission_rate": 0.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2023-12",
+          "transmission_rate": 0.91,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-01",
+          "transmission_rate": 0.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-02",
+          "transmission_rate": 0.89,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-03",
+          "transmission_rate": null,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-04",
+          "transmission_rate": 0.88,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-05",
+          "transmission_rate": 0.89,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-06",
+          "transmission_rate": 1.21,
+          "has_anomaly": true,
+          "anomaly_ids": [
+            1
+          ]
+        },
+        {
+          "period": "2024-07",
+          "transmission_rate": 0.95,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-08",
+          "transmission_rate": 0.92,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-09",
+          "transmission_rate": 0.91,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-10",
+          "transmission_rate": 0.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2024-11",
+          "transmission_rate": 1.08,
+          "has_anomaly": true,
+          "anomaly_ids": [
+            2
+          ]
+        },
+        {
+          "period": "2024-12",
+          "transmission_rate": 0.94,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-01",
+          "transmission_rate": 0.93,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-02",
+          "transmission_rate": 0.92,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-03",
+          "transmission_rate": 0.96,
+          "has_anomaly": true,
+          "anomaly_ids": [
+            3
+          ]
+        },
+        {
+          "period": "2025-04",
+          "transmission_rate": 0.91,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-05",
+          "transmission_rate": 0.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-06",
+          "transmission_rate": 0.89,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-07",
+          "transmission_rate": 0.88,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-08",
+          "transmission_rate": 0.87,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-09",
+          "transmission_rate": 0.88,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-10",
+          "transmission_rate": 0.89,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-11",
+          "transmission_rate": 0.9,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2025-12",
+          "transmission_rate": 0.91,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2026-01",
+          "transmission_rate": 1.35,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2026-02",
+          "transmission_rate": 1.38,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        },
+        {
+          "period": "2026-03",
+          "transmission_rate": 1.43,
+          "has_anomaly": false,
+          "anomaly_ids": []
+        }
       ]
     }
   ],

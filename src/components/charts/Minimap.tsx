@@ -125,10 +125,8 @@ export function Minimap({ variant }: MinimapProps) {
 
     // actual_from/to 는 항상 YYYY-MM 형식 (stream minimap도 "2000-01" 반환)
     const parseYM = d3.timeParse('%Y-%m');
-    // 데이터 포인트 period: stream="YYYY", raw-prices="YYYY-MM"
-    const parseY = d3.timeParse('%Y');
-    const parsePeriod = (p: string): Date | null =>
-      variant === 'stream' ? parseY(p) : parseYM(p);
+    // 백엔드 SoT: stream·raw-prices 데이터 포인트 period 모두 "YYYY-MM"(yearly도 12월 고정)
+    const parsePeriod = (p: string): Date | null => parseYM(p);
     const formatMonth = d3.timeFormat('%Y-%m');
 
     const domainStart = parseYM(actual_from)!;
