@@ -1,0 +1,343 @@
+{
+  "commodity_id": "wheat",
+  "segment_id": "A",
+  "upstream_label": "국제가 (원화 환산)",
+  "downstream_label": "수입단가",
+  "requested_from": "2023-04",
+  "requested_to": "2026-03",
+  "actual_from": "2023-04",
+  "actual_to": "2026-03",
+  "granularity": "monthly",
+  "total_points": 36,
+  "until": "2026-03",
+  "baseline": {
+    "transmission_elasticity": 0.72,
+    "normal_transmission_lag": 2
+  },
+  "points": [
+    {
+      "period": "2023-04",
+      "upstream_pct": 3.1,
+      "downstream_pct": 2.9,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2023-05",
+      "upstream_pct": 2.4,
+      "downstream_pct": 2.1,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2023-06",
+      "upstream_pct": -1.2,
+      "downstream_pct": -0.9,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2023-07",
+      "upstream_pct": 4.3,
+      "downstream_pct": 3.8,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2023-08",
+      "upstream_pct": -0.7,
+      "downstream_pct": -0.5,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2023-09",
+      "upstream_pct": 1.8,
+      "downstream_pct": 1.5,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2023-10",
+      "upstream_pct": 3.2,
+      "downstream_pct": 2.7,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2023-11",
+      "upstream_pct": -2.1,
+      "downstream_pct": -1.8,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2023-12",
+      "upstream_pct": 0.9,
+      "downstream_pct": 0.7,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2024-01",
+      "upstream_pct": 5.4,
+      "downstream_pct": 4.9,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2024-02",
+      "upstream_pct": 9.7,
+      "downstream_pct": 14.1,
+      "is_anomaly": true,
+      "anomaly_id": 43,
+      "confidence_grade": "reference",
+      "primary_pattern": "pattern1"
+    },
+    {
+      "period": "2024-03",
+      "upstream_pct": -3.1,
+      "downstream_pct": -2.8,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2024-04",
+      "upstream_pct": 1.1,
+      "downstream_pct": 0.9,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2024-05",
+      "upstream_pct": 7.2,
+      "downstream_pct": 6.8,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2024-06",
+      "upstream_pct": -4.2,
+      "downstream_pct": -3.7,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2024-07",
+      "upstream_pct": 2.8,
+      "downstream_pct": 2.3,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2024-08",
+      "upstream_pct": -5.4,
+      "downstream_pct": 1.2,
+      "is_anomaly": true,
+      "anomaly_id": 87,
+      "confidence_grade": "medium",
+      "primary_pattern": "pattern3"
+    },
+    {
+      "period": "2024-09",
+      "upstream_pct": 0.3,
+      "downstream_pct": 0.1,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2024-10",
+      "upstream_pct": -1.5,
+      "downstream_pct": -1.2,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2024-11",
+      "upstream_pct": 6.1,
+      "downstream_pct": 5.6,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2024-12",
+      "upstream_pct": 3.4,
+      "downstream_pct": 3.0,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2025-01",
+      "upstream_pct": -2.8,
+      "downstream_pct": -2.5,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2025-02",
+      "upstream_pct": 4.7,
+      "downstream_pct": 4.2,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2025-03",
+      "upstream_pct": 1.6,
+      "downstream_pct": 1.3,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2025-04",
+      "upstream_pct": -0.9,
+      "downstream_pct": -0.7,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2025-05",
+      "upstream_pct": 5.3,
+      "downstream_pct": 4.8,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2025-06",
+      "upstream_pct": -3.4,
+      "downstream_pct": -3.0,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2025-07",
+      "upstream_pct": 2.1,
+      "downstream_pct": 1.7,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2025-08",
+      "upstream_pct": 8.6,
+      "downstream_pct": 7.9,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2025-09",
+      "upstream_pct": 18.2,
+      "downstream_pct": 26.1,
+      "is_anomaly": true,
+      "anomaly_id": 142,
+      "confidence_grade": "high",
+      "primary_pattern": "pattern2"
+    },
+    {
+      "period": "2025-10",
+      "upstream_pct": 1.2,
+      "downstream_pct": 0.9,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2025-11",
+      "upstream_pct": -1.8,
+      "downstream_pct": -1.5,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2025-12",
+      "upstream_pct": 4.1,
+      "downstream_pct": 3.7,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2026-01",
+      "upstream_pct": 2.7,
+      "downstream_pct": 2.4,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2026-02",
+      "upstream_pct": -0.6,
+      "downstream_pct": -0.4,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    },
+    {
+      "period": "2026-03",
+      "upstream_pct": 3.8,
+      "downstream_pct": 3.4,
+      "is_anomaly": false,
+      "anomaly_id": null,
+      "confidence_grade": null,
+      "primary_pattern": null
+    }
+  ]
+}

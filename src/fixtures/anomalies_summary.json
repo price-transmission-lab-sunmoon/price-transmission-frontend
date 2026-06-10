@@ -1,0 +1,41 @@
+{
+  "reference_month": "2026-03",
+  "total_count": 3,
+  "prev_month_count": 1,
+  "count_diff": 2,
+  "anomalies": [
+    {
+      "anomaly_id": 142,
+      "commodity_id": "wheat",
+      "commodity_name_kr": "밀",
+      "segment_id": "A",
+      "period": "2026-03",
+      "primary_pattern": "pattern2",
+      "confidence_grade": "high",
+      "is_new": true,
+      "transmission_rate": 1.43
+    },
+    {
+      "anomaly_id": 138,
+      "commodity_id": "palmoil",
+      "commodity_name_kr": "팜유",
+      "segment_id": "B",
+      "period": "2026-03",
+      "primary_pattern": "pattern1",
+      "confidence_grade": "medium",
+      "is_new": false,
+      "transmission_rate": 0.21
+    },
+    {
+      "anomaly_id": 135,
+      "commodity_id": "soybean",
+      "commodity_name_kr": "대두",
+      "segment_id": "A",
+      "period": "2026-03",
+      "primary_pattern": "pattern3",
+      "confidence_grade": "high",
+      "is_new": true,
+      "transmission_rate": 0.18
+    }
+  ]
+}

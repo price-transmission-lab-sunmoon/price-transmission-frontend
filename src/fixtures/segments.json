@@ -1,0 +1,59 @@
+{
+  "segments": [
+    {
+      "segment_id": "A",
+      "label_kr": "구간 A (국제가→수입단가)",
+      "upstream_label": "국제가 (원화 환산)",
+      "downstream_label": "수입단가",
+      "applies_to": "all",
+      "pattern1": true,
+      "pattern2": true,
+      "pattern3": false,
+      "ml_applied": true
+    },
+    {
+      "segment_id": "B",
+      "label_kr": "구간 B (수입단가→PPI)",
+      "upstream_label": "수입단가",
+      "downstream_label": "PPI",
+      "applies_to": "all",
+      "pattern1": true,
+      "pattern2": true,
+      "pattern3": true,
+      "ml_applied": true
+    },
+    {
+      "segment_id": "C",
+      "label_kr": "구간 C (PPI→도매가)",
+      "upstream_label": "PPI",
+      "downstream_label": "도매가",
+      "applies_to": "4seg",
+      "pattern1": true,
+      "pattern2": false,
+      "pattern3": false,
+      "ml_applied": false
+    },
+    {
+      "segment_id": "D",
+      "label_kr": "구간 D (도매가→CPI)",
+      "upstream_label": "도매가",
+      "downstream_label": "CPI",
+      "applies_to": "4seg",
+      "pattern1": true,
+      "pattern2": false,
+      "pattern3": false,
+      "ml_applied": false
+    },
+    {
+      "segment_id": "D_prime",
+      "label_kr": "구간 D′ (PPI→CPI)",
+      "upstream_label": "PPI",
+      "downstream_label": "CPI",
+      "applies_to": "3seg",
+      "pattern1": true,
+      "pattern2": false,
+      "pattern3": false,
+      "ml_applied": false
+    }
+  ]
+}

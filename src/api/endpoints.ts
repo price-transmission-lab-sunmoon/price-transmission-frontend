@@ -1,0 +1,28 @@
+// API 엔드포인트 18종 — api_spec_vN 정의
+// 버전 해석은 docs/docs_manifest.md를 따른다 (v4와 v5는 구조 동일, 외부 참조 표기만 차이)
+
+// @guide:API-01
+export const ENDPOINTS = {
+  COMMODITIES_LIST: '/commodities',
+  COMMODITY_DETAIL: (id: string) => `/commodities/${id}`,
+
+  SEGMENTS: '/segments',
+  EVENTS: '/events',
+  FRESHNESS: '/freshness',
+  ANOMALIES_SUMMARY: '/anomalies/summary',
+
+  COMMODITY_STREAM: (id: string) => `/commodities/${id}/stream`,
+  COMMODITY_STREAM_MINIMAP: (id: string) => `/commodities/${id}/stream/minimap`,
+  COMMODITY_SCATTER: (id: string) => `/commodities/${id}/scatter`,
+  COMMODITY_RAW_PRICES: (id: string) => `/commodities/${id}/raw-prices`,
+  COMMODITY_RAW_PRICES_MINIMAP: (id: string) => `/commodities/${id}/raw-prices/minimap`,
+
+  ANOMALY_DETAIL: (id: number) => `/anomalies/${id}/detail`,
+  ANOMALY_STAT_SERIES: (id: number) => `/anomalies/${id}/stat-series`,
+  ANOMALY_STAT_SNAPSHOT: (id: number) => `/anomalies/${id}/stat-snapshot`,
+  ANOMALY_IRF: (id: number) => `/anomalies/${id}/irf`,
+  ANOMALY_ML_MAP: (id: number) => `/anomalies/${id}/ml-map`,
+
+  META_PIPELINE: '/meta/pipeline',
+  META_ANALYSIS_PARAMS: '/meta/analysis-params',
+} as const;

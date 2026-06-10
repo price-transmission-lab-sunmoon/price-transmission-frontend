@@ -1,0 +1,23 @@
+{
+  "anomaly_id": 142,
+  "commodity_id": "wheat",
+  "segment_id": "A",
+  "metric": "zscore",
+  "highlight_period": "2026-03",
+  "requested_from": "2000-01",
+  "requested_to": "2026-03",
+  "actual_from": "2000-01",
+  "actual_to": "2026-03",
+  "granularity": "monthly",
+  "total_points": 8,
+  "data": [
+    { "period": "2025-08", "zscore": 0.41, "in_warmup_period": false },
+    { "period": "2025-09", "zscore": 0.67, "in_warmup_period": false },
+    { "period": "2025-10", "zscore": 0.88, "in_warmup_period": false },
+    { "period": "2025-11", "zscore": 1.12, "in_warmup_period": false },
+    { "period": "2025-12", "zscore": 1.45, "in_warmup_period": false },
+    { "period": "2026-01", "zscore": 1.89, "in_warmup_period": false },
+    { "period": "2026-02", "zscore": 2.21, "in_warmup_period": false },
+    { "period": "2026-03", "zscore": 2.71, "in_warmup_period": false }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "events": [
+    {
+      "event_key": "E1_financial_crisis_2008",
+      "label_kr": "2008 글로벌 금융위기",
+      "start_date": "2008-07",
+      "end_date": "2009-01",
+      "color_hex": "#F97316"
+    },
+    {
+      "event_key": "E6_russia_drought_2010",
+      "label_kr": "2010 러시아 가뭄·수출 금지",
+      "start_date": "2010-08",
+      "end_date": "2011-06",
+      "color_hex": "#A855F7"
+    },
+    {
+      "event_key": "E9_elnino_2015",
+      "label_kr": "2015-16 역대급 엘니뇨",
+      "start_date": "2015-09",
+      "end_date": "2016-06",
+      "color_hex": "#38BDF8"
+    },
+    {
+      "event_key": "E2_covid19_2020",
+      "label_kr": "2020 COVID-19 팬데믹",
+      "start_date": "2020-02",
+      "end_date": "2020-06",
+      "color_hex": "#22C55E"
+    },
+    {
+      "event_key": "E4_ukraine_war_2022",
+      "label_kr": "2022 우크라이나 전쟁",
+      "start_date": "2022-02",
+      "end_date": "2022-10",
+      "color_hex": "#EF4444"
+    }
+  ]
+}

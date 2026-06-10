@@ -1,0 +1,12 @@
+{
+  "anomaly_id": 142,
+  "metric": "iqr",
+  "period": "2026-03",
+  "q1": 0.52,
+  "median": 0.81,
+  "q3": 1.09,
+  "iqr_lower": 0.35,
+  "iqr_upper": 1.26,
+  "current_value": 1.43,
+  "window_months": 48
+}
