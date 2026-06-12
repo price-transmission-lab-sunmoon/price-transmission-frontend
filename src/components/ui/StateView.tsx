@@ -52,7 +52,7 @@ export function StateView({
   const iconName = icon ?? VARIANT_ICON_DEFAULT[variant];
   const role = ARIA_ROLE[variant];
 
-  // Loading — spinner pattern (no icon, animated SVG)
+  // loading은 아이콘 대신 애니메이션 SVG 스피너 사용
   if (variant === 'loading' && size !== 'chip') {
     return (
       <div
@@ -128,16 +128,9 @@ export function StateView({
       >
         <Icon name={iconName} size={32} />
       </div>
-      {title && (
-        <h3 className="text-[14px] font-semibold text-secondary m-0">
-          {title}
-        </h3>
-      )}
+      {title && <h3 className="text-[14px] font-semibold text-secondary m-0">{title}</h3>}
       {description && (
-        <p
-          className="text-[12px] text-tertiary leading-[1.5] m-0"
-          style={{ maxWidth: 320 }}
-        >
+        <p className="text-[12px] text-tertiary leading-[1.5] m-0" style={{ maxWidth: 320 }}>
           {description}
         </p>
       )}

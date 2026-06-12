@@ -18,7 +18,7 @@ export function useIRF({ anomalyId, includeSubperiods = true, enabled = true }: 
       });
       return res.data;
     },
-    enabled: anomalyId !== null && enabled,
+    enabled: anomalyId != null && enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

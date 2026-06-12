@@ -2,19 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================
-   Design Tokens (single source of truth for runtime CSS access)
-   docs/re-design_specs/01-design-tokens.md
-   ============================================================ */
+/* 디자인 토큰 */
 :root {
-  /* Background — warm white scale */
+  /* Background: warm white scale */
   --bg-canvas: #faf8f4;
   --bg-surface: #ffffff;
   --bg-subtle: #f5f1ea;
   --bg-muted: #ede8de;
   --bg-inverse: #1a1814;
 
-  /* Text — warm near-black scale */
+  /* Text: warm near-black scale */
   --text-primary: #1a1814;
   --text-secondary: #4a463e;
   --text-tertiary: #78736a;
@@ -27,7 +24,7 @@
   --border-default: #e7e2d8;
   --border-strong: #d4cec1;
 
-  /* Brand — teal */
+  /* Brand: teal */
   --brand: #0d9488;
   --brand-hover: #0f766e;
   --brand-active: #115e59;
@@ -61,10 +58,9 @@
   --anomaly-reference-border: #a5f3fc;
 
   /* Typography */
-  --font-sans: 'Pretendard Variable', 'Pretendard', -apple-system,
-    BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo,
-    Consolas, monospace;
+  --font-sans: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui,
+    'Apple SD Gothic Neo', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Radius */
   --r-sm: 6px;
@@ -73,7 +69,7 @@
   --r-xl: 16px;
   --r-pill: 9999px;
 
-  /* Shadow — warm-tinted */
+  /* Shadow: warm-tinted */
   --e1: 0 1px 2px rgba(28, 24, 18, 0.04), 0 1px 1px rgba(28, 24, 18, 0.06);
   --e2: 0 2px 4px rgba(28, 24, 18, 0.04), 0 1px 2px rgba(28, 24, 18, 0.06);
   --e3: 0 4px 12px rgba(28, 24, 18, 0.06), 0 1px 3px rgba(28, 24, 18, 0.04);
@@ -92,9 +88,7 @@
   --ease-emph: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* ============================================================
-   Base
-   ============================================================ */
+/* base */
 html {
   scroll-behavior: smooth;
 }
@@ -107,7 +101,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Focus ring — keyboard nav only */
+/* Focus ring: keyboard nav only */
 *:focus {
   outline: none;
 }
@@ -117,9 +111,7 @@ body {
   border-radius: inherit;
 }
 
-/* ============================================================
-   Custom scrollbar — warm-tinted, thin, transparent track
-   ============================================================ */
+/* 스크롤바 커스텀 */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -142,9 +134,7 @@ body {
   scrollbar-color: rgba(168, 162, 152, 0.4) transparent;
 }
 
-/* ============================================================
-   Skip-to-content (a11y)
-   ============================================================ */
+/* skip-to-content (접근성) */
 .skip-link {
   position: absolute;
   top: -40px;
@@ -161,14 +151,19 @@ body {
   top: 0;
 }
 
-/* ============================================================
-   Keyframes
-   ============================================================ */
+/* keyframes */
 
-/* StreamChart anomaly pulse (rev.6 contract — CSS only, no SVG <animate>) */
+/* StreamChart 이상치 펄스. SVG animate 대신 CSS로 처리 */
 @keyframes anomaly-pulse-high {
-  0%, 100% { transform: scale(1);   opacity: 0.6; }
-  50%      { transform: scale(1.7); opacity: 0;   }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
 }
 .anomaly-pulse-high {
   animation: anomaly-pulse-high 1.8s ease-in-out infinite;
@@ -176,18 +171,31 @@ body {
   transform-origin: center;
 }
 
-/* Legacy keyframe — kept for backward compat with existing nodes that may
-   still reference 'anomaly-pulse'. Will be removed after StreamChart refresh. */
+/* TODO: 옛 노드가 아직 참조해서 남겨둠. 정리 필요 */
 @keyframes anomaly-pulse {
-  0%   { r: var(--pulse-min, 8px);  opacity: 0.35; }
-  50%  { r: var(--pulse-max, 12px); opacity: 0.10; }
-  100% { r: var(--pulse-min, 8px);  opacity: 0.35; }
+  0% {
+    r: var(--pulse-min, 8px);
+    opacity: 0.35;
+  }
+  50% {
+    r: var(--pulse-max, 12px);
+    opacity: 0.1;
+  }
+  100% {
+    r: var(--pulse-min, 8px);
+    opacity: 0.35;
+  }
 }
 
 /* Live data indicator (FreshnessChip) */
 @keyframes live-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5); }
-  50%      { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
+  }
 }
 .live-indicator {
   animation: live-pulse 2s ease-in-out infinite;
@@ -195,7 +203,8 @@ body {
 
 /* Onboarding spotlight pulse */
 @keyframes onboarding-pulse {
-  0%, 100% {
+  0%,
+  100% {
     outline-color: var(--brand);
     outline-width: 2.5px;
   }
@@ -210,25 +219,51 @@ body {
 
 /* Overlay enter/exit */
 @keyframes overlay-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes overlay-content-in {
-  from { opacity: 0; transform: scale(0.96) translateY(8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 @keyframes toast-slide-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.overlay-fade-in    { animation: overlay-fade-in 200ms var(--ease-out); }
-.overlay-content-in { animation: overlay-content-in 240ms var(--ease-emph); }
-.toast-slide-in     { animation: toast-slide-in 240ms var(--ease-emph); }
+.overlay-fade-in {
+  animation: overlay-fade-in 200ms var(--ease-out);
+}
+.overlay-content-in {
+  animation: overlay-content-in 240ms var(--ease-emph);
+}
+.toast-slide-in {
+  animation: toast-slide-in 240ms var(--ease-emph);
+}
 
 /* Loading shimmer */
 @keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 .skeleton-bar {
   height: 16px;
@@ -245,22 +280,37 @@ body {
 
 /* Loading spinner */
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Loading dots bounce */
 @keyframes bounce {
-  0%, 100% { transform: translateY(0);    opacity: 0.5; }
-  50%      { transform: translateY(-3px); opacity: 1;   }
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
 }
 
 /* Scale-in (for dropdowns) */
 @keyframes scale-in {
-  from { opacity: 0; transform: scale(0.97) translateY(-2px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
-/* Range slider thumb — brand teal with surface ring */
+/* Range slider thumb: brand teal with surface ring */
 input[type='range'] {
   outline: none;
 }
@@ -289,9 +339,7 @@ input[type='range']:focus-visible::-webkit-slider-thumb {
   box-shadow: var(--ring-brand);
 }
 
-/* ============================================================
-   Reduced motion — accessibility mandate
-   ============================================================ */
+/* reduced motion 대응 */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

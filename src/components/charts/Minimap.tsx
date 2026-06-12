@@ -4,11 +4,7 @@ import { useMinimapData, type MinimapVariant } from '@/hooks/useMinimapData';
 import { useAppStore } from '@/stores/useAppStore';
 import { SEGMENT_COLORS_PRIMARY, RAW_PRICE_COLORS, ANOMALY_COLORS } from '@/utils/colorUtils';
 import { CHART_THEME } from '@/utils/chartTheme';
-import type {
-  AnomalyDensityItem,
-  StreamSeriesItem,
-  RawPriceSeriesItem,
-} from '@/types/timeseries';
+import type { AnomalyDensityItem, StreamSeriesItem, RawPriceSeriesItem } from '@/types/timeseries';
 import type { SegmentId, RawPriceSource } from '@/types/literals';
 
 interface MinimapProps {
@@ -47,7 +43,7 @@ export function Minimap({ variant }: MinimapProps) {
   const setFilterFrom = useAppStore((s) => s.setFilterFrom);
   const setFilterTo = useAppStore((s) => s.setFilterTo);
 
-  // stale closure 방지용 최신값 ref
+  // 브러시 핸들러 stale closure 방지
   const filterFromRef = useRef(filterFrom);
   const filterToRef = useRef(filterTo);
   useEffect(() => {
@@ -59,27 +55,28 @@ export function Minimap({ variant }: MinimapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  // D3 object refs (브러시 상태 유지)
   const xScaleRef = useRef<d3.ScaleTime<number, number> | null>(null);
   const brushGroupDomRef = useRef<SVGGElement | null>(null);
   const brushBehaviorRef = useRef<d3.BrushBehavior<unknown> | null>(null);
   const isProgrammaticRef = useRef(false);
 
-  // variant별 구간/소스 색상 반환
   const getSegmentColor = useCallback(
     (item: StreamSeriesItem | RawPriceSeriesItem): string => {
       if (variant === 'stream') {
-        return SEGMENT_COLORS_PRIMARY[(item as StreamSeriesItem).segment_id as SegmentId] ?? CHART_THEME.axisText;
+        return (
+          SEGMENT_COLORS_PRIMARY[(item as StreamSeriesItem).segment_id as SegmentId] ??
+          CHART_THEME.axisText
+        );
       }
-      return RAW_PRICE_COLORS[(item as RawPriceSeriesItem).source as RawPriceSource] ?? CHART_THEME.axisText;
+      return (
+        RAW_PRICE_COLORS[(item as RawPriceSeriesItem).source as RawPriceSource] ??
+        CHART_THEME.axisText
+      );
     },
     [variant],
   );
 
-  // FE-D3-003: ResizeObserver로 컨테이너 크기 복구 감지 → 재렌더링.
-  // mount 직후 getBoundingClientRect와 ResizeObserver 첫 fire가 모두 0 가능.
-  // 양쪽 무시 시 영영 0 → 차트 렌더 안 됨, 다른 탭 갔다 와야 풀림.
-  // → rAF 폴링으로 첫 non-zero width 확보 후 observer 부착.
+  // mount 직후 getBoundingClientRect가 0일 수 있어 rAF로 첫 non-zero width 확보 후 observer 부착
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -106,7 +103,6 @@ export function Minimap({ variant }: MinimapProps) {
     };
   }, []);
 
-  // ── 메인 D3 렌더링 ──────────────────────────────────────────
   useEffect(() => {
     const svg = svgRef.current;
     if (!data || !svg || containerWidth === 0) return;
@@ -114,7 +110,6 @@ export function Minimap({ variant }: MinimapProps) {
     const { anomaly_density, actual_from, actual_to } = data;
     const series = data.series as (StreamSeriesItem | RawPriceSeriesItem)[];
 
-    // FE-D3-001: 유효 데이터 없음 → 렌더 중단 (fallback UI가 대신 표시됨)
     const hasData = series.length > 0 && series.some((s) => s.data.length > 0);
     if (!hasData) return;
 
@@ -122,9 +117,7 @@ export function Minimap({ variant }: MinimapProps) {
     const innerWidth = width - MARGIN.left - MARGIN.right;
     const innerHeight = TOTAL_HEIGHT - MARGIN.top - MARGIN.bottom;
 
-    // actual_from/to 는 항상 YYYY-MM 형식 (stream minimap도 "2000-01" 반환)
     const parseYM = d3.timeParse('%Y-%m');
-    // 백엔드 SoT: stream·raw-prices 데이터 포인트 period 모두 "YYYY-MM"(yearly도 12월 고정)
     const parsePeriod = (p: string): Date | null => parseYM(p);
     const formatMonth = d3.timeFormat('%Y-%m');
 
@@ -134,7 +127,6 @@ export function Minimap({ variant }: MinimapProps) {
     const xScale = d3.scaleTime().domain([domainStart, domainEnd]).range([0, innerWidth]);
     xScaleRef.current = xScale;
 
-    // Y 도메인: variant별 값 추출
     let allValues: number[];
     if (variant === 'stream') {
       allValues = (series as StreamSeriesItem[]).flatMap((s) =>
@@ -152,19 +144,14 @@ export function Minimap({ variant }: MinimapProps) {
     const yMax = allValues.length > 0 ? Math.max(...allValues) : 1;
     const yScale = d3.scaleLinear().domain([yMin, yMax]).range([innerHeight, 0]);
 
-    // SVG 초기화
     const root = d3.select(svg);
     root.selectAll('*').remove();
     root.attr('width', width).attr('height', TOTAL_HEIGHT);
 
     const g = root.append('g').attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
-    // ① 이상 밀도 배경 밴드 (연도 단위)
     const densityMap = new Map(anomaly_density.map((d) => [d.period, d]));
-    const years = d3.timeYear.range(
-      d3.timeYear.floor(domainStart),
-      d3.timeYear.ceil(domainEnd),
-    );
+    const years = d3.timeYear.range(d3.timeYear.floor(domainStart), d3.timeYear.ceil(domainEnd));
     years.forEach((year) => {
       const yearStr = d3.timeFormat('%Y')(year);
       const item = densityMap.get(yearStr);
@@ -182,7 +169,6 @@ export function Minimap({ variant }: MinimapProps) {
         .attr('opacity', style.opacity);
     });
 
-    // ② 구간별 전이율 곡선 (배경, opacity 0.3)
     series.forEach((seriesItem) => {
       if (variant === 'stream') {
         const sItem = seriesItem as StreamSeriesItem;
@@ -223,7 +209,6 @@ export function Minimap({ variant }: MinimapProps) {
       }
     });
 
-    // ③ X축 (연도 눈금)
     const yearSpan = domainEnd.getFullYear() - domainStart.getFullYear();
     const tickEvery = yearSpan > 15 ? d3.timeYear.every(2) : d3.timeYear.every(1);
     const xAxis = d3
@@ -243,7 +228,6 @@ export function Minimap({ variant }: MinimapProps) {
           .attr('font-family', CHART_THEME.fontFamilyMono);
       });
 
-    // ④ d3.brushX() 뷰포트 박스
     const brushGroup = g.append('g');
     brushGroupDomRef.current = brushGroup.node();
 
@@ -275,7 +259,6 @@ export function Minimap({ variant }: MinimapProps) {
         const newFrom = formatMonth(xScale.invert(x0));
         const newTo = formatMonth(xScale.invert(x1));
 
-        // 무한 루프 방지: 값이 실제로 바뀐 경우에만 store 갱신
         if (newFrom !== filterFromRef.current || newTo !== filterToRef.current) {
           setFilterFrom(newFrom);
           setFilterTo(newTo);
@@ -285,7 +268,6 @@ export function Minimap({ variant }: MinimapProps) {
     brushBehaviorRef.current = brush;
     brushGroup.call(brush);
 
-    // 브러시 스타일
     brushGroup
       .select('.selection')
       .attr('fill', BRUSH_FILL)
@@ -293,11 +275,9 @@ export function Minimap({ variant }: MinimapProps) {
       .attr('stroke-width', 1);
     brushGroup.selectAll<SVGElement, unknown>('.handle').attr('fill', BRUSH_STROKE);
 
-    // store의 현재 기간으로 초기 브러시 위치 설정
     const initFrom = filterFromRef.current;
     const initTo = filterToRef.current;
     if (initFrom && initTo) {
-      // filterFrom/To는 항상 YYYY-MM 형식
       const pFrom = parseYM(initFrom);
       const pTo = parseYM(initTo);
       if (pFrom && pTo) {
@@ -308,8 +288,7 @@ export function Minimap({ variant }: MinimapProps) {
     }
   }, [data, containerWidth, setFilterFrom, setFilterTo, getSegmentColor, variant]);
 
-  // ── 브러시 위치 동기화 (store → brush) ──────────────────────
-  // 메인 차트 휠 줌 등 외부에서 filterFrom/filterTo가 바뀔 때 뷰포트 박스 위치 갱신
+  // filterFrom/filterTo 외부 변경 시(메인 차트 줌 등) 브러시 위치 동기화
   useEffect(() => {
     const brush = brushBehaviorRef.current;
     const groupDom = brushGroupDomRef.current;
@@ -327,13 +306,9 @@ export function Minimap({ variant }: MinimapProps) {
     isProgrammaticRef.current = false;
   }, [filterFrom, filterTo]);
 
-  // ── FE-D3-001 / API 오류 fallback ────────────────────────────
-  const hasData =
-    data && data.series.length > 0 && data.series.some((s) => s.data.length > 0);
+  const hasData = data && data.series.length > 0 && data.series.some((s) => s.data.length > 0);
 
-  // CLAUDE.md §StreamChart 방어 패턴 (Minimap도 동일 회귀 대상):
-  // 컨테이너 항상 mount. loading/empty/error는 overlay로.
-  // empty-deps resize useEffect가 첫 발화 시 ref 확보되도록 보장.
+  // 컨테이너 div를 조건부로 마운트하면 ResizeObserver가 발화하지 않아 차트가 안 그려진다
   return (
     <div
       ref={containerRef}

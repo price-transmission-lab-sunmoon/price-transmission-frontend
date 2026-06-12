@@ -1,13 +1,6 @@
 import { Z_INDEX } from './zIndex';
 
-/**
- * Shared tooltip element factory for D3 charts.
- * Light-theme solid white card with warm-tinted border + shadow.
- * Reference: docs/re-design_specs/02-chart-palette.md §8.
- *
- * Returned <div> is mounted on document.body and reused on each call
- * (idempotent by id).
- */
+// D3 차트용 공통 툴팁 요소 팩토리. id 기준으로 재사용(idempotent).
 export function createChartTooltip(id: string): HTMLDivElement {
   let tip = document.getElementById(id) as HTMLDivElement | null;
   if (tip) return tip;

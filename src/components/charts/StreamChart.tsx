@@ -24,8 +24,7 @@ import {
   pickXTickInterval,
 } from './streamChartHelpers';
 
-// rev.6 spec margins — top/right/bottom/left bumped for breathing room
-// (warmup label, event labels, y-axis title).
+// warmup 라벨, 이벤트 라벨, y축 제목을 위한 여백
 const MARGIN = { top: 28, right: 32, bottom: 36, left: 56 };
 const ANIMATION_DURATION = 800;
 const ZOOM_END_DEBOUNCE_MS = 200;
@@ -36,7 +35,7 @@ export function StreamChart() {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // ZOOM-1: 외부 filter 동기화용 보존
+  // 외부 필터 동기화에 쓰는 줌 상태
   const zoomBehaviorRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const xScaleRef = useRef<d3.ScaleTime<number, number> | null>(null);
   const yScaleRef = useRef<d3.ScaleLinear<number, number> | null>(null);
@@ -45,7 +44,10 @@ export function StreamChart() {
 
   // zoom 종료 debounce + 자기 push 가드
   const zoomEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastPushedRef = useRef<{ from: string | null; to: string | null }>({ from: null, to: null });
+  const lastPushedRef = useRef<{ from: string | null; to: string | null }>({
+    from: null,
+    to: null,
+  });
 
   const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
   const secondaryCommodityId = useAppStore((s) => s.secondaryCommodityId);
@@ -73,9 +75,6 @@ export function StreamChart() {
   const { data: primaryData, isLoading: primaryLoading, isError: primaryError } = useStreamData();
   const { data: secondaryRaw } = useSecondaryStreamData();
 
-  // 자동 anomaly 선택 + 패널 자동 열림 폐기 (2026-05-21).
-  // 사용자 클릭 없이 패널이 열리면 차트 가림 + 매번 같은 노드 강제 강조.
-
   const chartData = useMemo(() => {
     if (!primaryData) return null;
     return buildStreamChartData(primaryData, activeSegments, confidenceFilter);
@@ -86,7 +85,7 @@ export function StreamChart() {
     return buildStreamChartData(secondaryRaw, activeSegments, []);
   }, [secondaryRaw, activeSegments]);
 
-  // ─── 메인 셋업 useEffect ──────────────────────────────
+  // 차트 셋업
   useEffect(() => {
     if (!chartData || !svgRef.current || !containerRef.current) return;
 
@@ -96,7 +95,7 @@ export function StreamChart() {
     const innerW = width - MARGIN.left - MARGIN.right;
     const innerH = height - MARGIN.top - MARGIN.bottom;
     if (innerW <= 0 || innerH <= 0) return;
-    // ResizeObserver 첫 fire 전 0크기 진입 차단 — 2회 setup 방지.
+    // 컨테이너 크기 잡히기 전이면 그리지 않는다
     if (containerSize.w === 0 || containerSize.h === 0) return;
 
     const svg = d3.select(svgRef.current);
@@ -115,13 +114,21 @@ export function StreamChart() {
       .attr('width', innerW)
       .attr('height', innerH);
 
-    // xScale: 전체 도메인 고정 (viewport는 zoom transform으로)
-    const xScale = d3.scaleTime().domain([chartData.domainFrom, chartData.domainTo]).range([0, innerW]);
+    // X 전체 도메인 고정, viewport는 zoom transform으로 제어
+    const xScale = d3
+      .scaleTime()
+      .domain([chartData.domainFrom, chartData.domainTo])
+      .range([0, innerW]);
 
-    // 초기 Y 도메인: filterFrom/To viewport 기준 (rev.6 viewport dynamic sync)
+    // 초기 Y 도메인: filterFrom/To viewport 기준
     const initViewFrom = parseFilterYM(filterFrom) ?? chartData.domainFrom;
     const initViewTo = parseFilterYM(filterTo) ?? chartData.domainTo;
-    const [initYMin, initYMax] = computeYDomain(chartData, secondaryChartData, initViewFrom, initViewTo);
+    const [initYMin, initYMax] = computeYDomain(
+      chartData,
+      secondaryChartData,
+      initViewFrom,
+      initViewTo,
+    );
     const yScale = d3.scaleLinear().domain([initYMin, initYMax]).range([innerH, 0]);
 
     xScaleRef.current = xScale;
@@ -129,7 +136,6 @@ export function StreamChart() {
     innerWRef.current = innerW;
     innerHRef.current = innerH;
 
-    // ─── 축 + 그리드 ───────────────────────────────────
     const xAxisG = root
       .append('g')
       .attr('class', 'x-axis')
@@ -172,7 +178,13 @@ export function StreamChart() {
     };
     const drawGrid = (scale: d3.ScaleLinear<number, number>) => {
       gridG
-        .call(d3.axisLeft(scale).ticks(5).tickSize(-innerW).tickFormat('' as never))
+        .call(
+          d3
+            .axisLeft(scale)
+            .ticks(5)
+            .tickSize(-innerW)
+            .tickFormat('' as never),
+        )
         .selectAll('line')
         .attr('stroke', CHART_THEME.gridLine)
         .attr('stroke-dasharray', CHART_THEME.gridDasharray);
@@ -184,7 +196,6 @@ export function StreamChart() {
     drawGrid(yScale);
     root.selectAll('.domain, .tick line').attr('stroke', CHART_THEME.axisLine);
 
-    // Y-axis title — uppercase, tracking-wider
     root
       .append('text')
       .attr('class', 'y-title')
@@ -197,10 +208,9 @@ export function StreamChart() {
       .attr('font-family', CHART_THEME.fontFamilyMono)
       .text('TRANSMISSION');
 
-    // ─── 클립된 차트 영역 ────────────────────────────
     const chartGroup = root.append('g').attr('clip-path', `url(#${CLIP_ID})`);
 
-    // 기준선 y=1 (완전 전달) + y=0 (역전 경계) — brand teal at low opacity
+    // y=1 완전 전달 기준선, y=0 역전 경계선
     const refLineGroup = chartGroup.append('g').attr('class', 'ref-lines');
     const drawRefLine = (yVal: number, label: string) => {
       const yPx = yScale(yVal);
@@ -233,8 +243,7 @@ export function StreamChart() {
     drawRefLine(0, '역전 경계 (0)');
     drawRefLine(1, '완전 전달 (1.0)');
 
-    // ─── warmup 배경 band ─────────────────────────────
-    // 라인은 끊지 않음. 회색 vertical band. events 보다 먼저 그려서 events가 위에.
+    // warmup 구간 회색 band — 이벤트보다 먼저 그려 이벤트가 위에 오도록
     const warmupGroup = chartGroup.append('g').attr('class', 'warmup-bands');
     const warmupBands = computeWarmupBands(chartData.series);
     for (let i = 0; i < warmupBands.length; i++) {
@@ -262,7 +271,6 @@ export function StreamChart() {
       }
     }
 
-    // ─── 이벤트 오버레이 (data-event-key) ─────────────
     const eventGroup = chartGroup.append('g').attr('class', 'events');
     const activeEvents =
       eventFilter.length > 0 ? events.filter((e) => eventFilter.includes(e.event_key)) : [];
@@ -290,7 +298,6 @@ export function StreamChart() {
         .attr('opacity', 0.5);
     }
 
-    // ─── line generators (single path per segment — rev.6) ─
     type ChartPt = { period: Date; transmission_rate: number | null; in_warmup_period?: boolean };
     const lineGen = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) =>
       d3
@@ -299,21 +306,15 @@ export function StreamChart() {
         .x((p) => xSc(p.period))
         .y((p) => ySc(p.transmission_rate!))
         .curve(d3.curveMonotoneX);
-    // area fill 폐기 — y=0~rate 면적은 물리적 의미 없음 (rev.6 contract).
 
     const seriesGroup = chartGroup.append('g').attr('class', 'series');
 
-    const drawSeries = (
-      segId: SegmentId,
-      data: ChartPt[],
-      isSecondary: boolean,
-      prefix = '',
-    ) => {
+    const drawSeries = (segId: SegmentId, data: ChartPt[], isSecondary: boolean, prefix = '') => {
       const colorMap = isSecondary ? SEGMENT_COLORS_SECONDARY : SEGMENT_COLORS_PRIMARY;
       const color = colorMap[segId] ?? CHART_THEME.axisText;
       const opacity = isSecondary ? 0.7 : 1;
 
-      // null 사전 필터 — 라인이 완전 연속.
+      // null 점 제거해 라인 연속 유지
       const clean = data.filter((p) => p.transmission_rate !== null);
 
       const path = seriesGroup
@@ -350,13 +351,14 @@ export function StreamChart() {
     }
     for (const s of chartData.series) drawSeries(s.segment_id, s.data, false);
 
-    // ─── 노드 렌더 (3-layer: pulse → white ring → dot) ───
     const anomalyGroup = chartGroup.append('g').attr('class', 'anomaly-nodes');
 
-    const renderNodes = (xSc: d3.ScaleTime<number, number>, ySc: d3.ScaleLinear<number, number>) => {
+    const renderNodes = (
+      xSc: d3.ScaleTime<number, number>,
+      ySc: d3.ScaleLinear<number, number>,
+    ) => {
       anomalyGroup.selectAll('*').remove();
-      // 정렬: reference → medium → high (낮은 등급 먼저, 높은 등급 위로).
-      // X spread 폐기: 자기 시점에 정직하게 위치. 겹치면 stack.
+      // reference → medium → high 순 정렬, 높은 등급이 위에 쌓임
       const gradeOrder = { reference: 0, medium: 1, high: 2 } as const;
       const list = [...chartData.anomalies].sort(
         (a, b) => gradeOrder[a.confidence_grade] - gradeOrder[b.confidence_grade],
@@ -403,16 +405,10 @@ export function StreamChart() {
           .attr('cy', cy)
           .attr('r', r)
           .attr('fill', isReference ? 'var(--bg-surface)' : color)
-          .attr(
-            'stroke',
-            isSelected ? 'var(--brand)' : isReference ? color : 'transparent',
-          )
+          .attr('stroke', isSelected ? 'var(--brand)' : isReference ? color : 'transparent')
           .attr('stroke-width', isSelected ? 3 : isReference ? 2 : 0)
           .attr('cursor', 'pointer')
-          .style(
-            'filter',
-            isSelected ? 'drop-shadow(0 0 8px rgba(13, 148, 136, 0.5))' : 'none',
-          );
+          .style('filter', isSelected ? 'drop-shadow(0 0 8px rgba(13, 148, 136, 0.5))' : 'none');
 
         // NEW dot top-right
         if (an.is_new) {
@@ -446,10 +442,7 @@ export function StreamChart() {
           })
           .on('mousemove', (event: MouseEvent) => moveTooltip(event))
           .on('mouseleave', function () {
-            d3.select(this)
-              .transition()
-              .duration(120)
-              .attr('r', r);
+            d3.select(this).transition().duration(120).attr('r', r);
             hideTooltip();
           });
       }
@@ -457,7 +450,6 @@ export function StreamChart() {
 
     renderNodes(xScale, yScale);
 
-    // ─── 줌 redraw (rev.6: viewport Y dynamic sync) ────
     const applyTransform = (transform: d3.ZoomTransform) => {
       const newX = transform.rescaleX(xScale);
       const [viewFrom, viewTo] = newX.domain() as [Date, Date];
@@ -470,11 +462,12 @@ export function StreamChart() {
       drawGrid(newY);
       root.selectAll('.domain, .tick line').attr('stroke', CHART_THEME.axisLine);
 
-      // path 갱신 — null 사전 필터로 연속성 유지.
       if (secondaryChartData) {
         for (const s of secondaryChartData.series) {
           const clean = s.data.filter((p) => p.transmission_rate !== null);
-          seriesGroup.select(`.sec-line-${s.segment_id}`).attr('d', lineGen(newX, newY)(clean) ?? '');
+          seriesGroup
+            .select(`.sec-line-${s.segment_id}`)
+            .attr('d', lineGen(newX, newY)(clean) ?? '');
         }
       }
       for (const s of chartData.series) {
@@ -482,7 +475,6 @@ export function StreamChart() {
         seriesGroup.select(`.line-${s.segment_id}`).attr('d', lineGen(newX, newY)(clean) ?? '');
       }
 
-      // 노드 위치 — X spread 폐기, cx = 정확 시점, cy = newY.
       const list = chartData.anomalies;
       for (const an of list) {
         const cx = newX(an.period);
@@ -516,7 +508,9 @@ export function StreamChart() {
         const x0 = newX(b0);
         const x1 = newX(b1);
         const g = warmupGroup.select(`[data-warmup-idx="${i}"]`);
-        g.select('.warmup-rect').attr('x', x0).attr('width', Math.max(0, x1 - x0));
+        g.select('.warmup-rect')
+          .attr('x', x0)
+          .attr('width', Math.max(0, x1 - x0));
         if (i === 0) g.select('.warmup-label').attr('x', x0 + 6);
       }
 
@@ -525,18 +519,28 @@ export function StreamChart() {
         const x0 = newX(parseYearMonth(ev.start_date));
         const x1 = newX(parseYearMonth(ev.end_date));
         const g = eventGroup.select(`[data-event-key="${ev.event_key}"]`);
-        g.select('.ev-rect').attr('x', x0).attr('width', Math.max(0, x1 - x0));
+        g.select('.ev-rect')
+          .attr('x', x0)
+          .attr('width', Math.max(0, x1 - x0));
         g.select('.ev-line').attr('x1', x0).attr('x2', x0);
       }
     };
 
-    // ─── 줌 동작 (rev.6 contract — 변경 금지) ──────────
+    // 줌 동작
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 30])
-      .translateExtent([[0, 0], [innerW, innerH]])
-      .extent([[0, 0], [innerW, innerH]])
-      .wheelDelta((event) => -event.deltaY * (event.deltaMode === 1 ? 0.06 : event.deltaMode ? 1 : 0.0025))
+      .translateExtent([
+        [0, 0],
+        [innerW, innerH],
+      ])
+      .extent([
+        [0, 0],
+        [innerW, innerH],
+      ])
+      .wheelDelta(
+        (event) => -event.deltaY * (event.deltaMode === 1 ? 0.06 : event.deltaMode ? 1 : 0.0025),
+      )
       .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
         applyTransform(event.transform);
       })
@@ -561,7 +565,7 @@ export function StreamChart() {
     if (filterFrom && filterTo) {
       const fromDate = parseFilterYM(filterFrom);
       const toDate = parseFilterYM(filterTo);
-      if (fromDate && toDate && toDate > fromDate) {
+      if (fromDate != null && toDate != null && toDate > fromDate) {
         const fromPx = xScale(fromDate);
         const toPx = xScale(toDate);
         const k = innerW / (toPx - fromPx);
@@ -578,9 +582,18 @@ export function StreamChart() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chartData, secondaryChartData, events, eventFilter, sameCluster, setFilterFrom, setFilterTo, containerSize]);
+  }, [
+    chartData,
+    secondaryChartData,
+    events,
+    eventFilter,
+    sameCluster,
+    setFilterFrom,
+    setFilterTo,
+    containerSize,
+  ]);
 
-  // ─── 선택 상태 토글 (재구성 회피) ─────────────────
+  // 선택 노드 하이라이트 (전체 재구성 없이 스타일만 갱신)
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
@@ -593,14 +606,10 @@ export function StreamChart() {
         sel
           .attr('stroke', isSelected ? 'var(--brand)' : 'transparent')
           .attr('stroke-width', isSelected ? 3 : 0)
-          .style(
-            'filter',
-            isSelected ? 'drop-shadow(0 0 8px rgba(13, 148, 136, 0.5))' : 'none',
-          );
+          .style('filter', isSelected ? 'drop-shadow(0 0 8px rgba(13, 148, 136, 0.5))' : 'none');
       });
   }, [selectedAnomalyId]);
 
-  // ─── 외부 filter 동기화 ─────────────────────────
   useEffect(() => {
     const svgEl = svgRef.current;
     const zoomBehavior = zoomBehaviorRef.current;
@@ -612,7 +621,7 @@ export function StreamChart() {
 
     const fromDate = parseFilterYM(filterFrom);
     const toDate = parseFilterYM(filterTo);
-    if (!fromDate || !toDate || !(toDate > fromDate)) return;
+    if (fromDate == null || toDate == null || !(toDate > fromDate)) return;
     const fromPx = xScale(fromDate);
     const toPx = xScale(toDate);
     if (toPx <= fromPx) return;
@@ -625,7 +634,6 @@ export function StreamChart() {
     lastPushedRef.current = { from: filterFrom, to: filterTo };
   }, [filterFrom, filterTo]);
 
-  // ─── tooltip DOM helpers (light theme — createChartTooltip) ─
   function showTooltip(
     event: MouseEvent,
     period: string,
@@ -663,6 +671,7 @@ export function StreamChart() {
   function moveTooltip(event: MouseEvent) {
     const tip = document.getElementById(TOOLTIP_ID);
     if (!tip) return;
+    // TODO: 툴팁이 차트 영역 밖으로 잘릴 때 방향 반전 처리 필요
     tip.style.left = `${event.clientX + 14}px`;
     tip.style.top = `${event.clientY - 8}px`;
   }
@@ -671,10 +680,7 @@ export function StreamChart() {
     if (tip) tip.style.display = 'none';
   }
 
-  // ─── resize ────────────────────────────────────
-  // 첫 fire가 0×0 가능 (mount 직후 layout 미완). getBoundingClientRect도 0 가능.
-  // 양쪽 모두 0이면 ResizeObserver가 size 변화 못 감지 → 차트 영영 안 그려짐.
-  // → rAF 폴링으로 첫 non-zero 값 확보 후 observer 부착. 회귀 방지 박제 (rev.6+).
+  // mount 직후 getBoundingClientRect가 0일 수 있어 rAF로 첫 non-zero 값 확보 후 ResizeObserver 부착
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -707,10 +713,8 @@ export function StreamChart() {
     };
   }, []);
 
-  // CLAUDE.md §StreamChart 방어 패턴: 컨테이너 div는 **항상 outermost로 마운트**.
-  // early return으로 컨테이너 자체를 조건부 마운트 금지 — empty-deps useEffect
-  // (위 resize hook)가 첫 발화 시 ref null이면 영영 재발화 안 되어 차트 영영 안 그려짐.
-  // loading/empty/error는 컨테이너 안 absolute 오버레이로 처리.
+  // 컨테이너 div를 조건부로 마운트하면 ResizeObserver가 발화하지 않아 차트가 안 그려진다
+  // loading/empty/error는 컨테이너 안 absolute 오버레이로 처리
   const noAnomalies = chartData != null && chartData.anomalies.length === 0;
 
   return (
@@ -721,7 +725,7 @@ export function StreamChart() {
     >
       <svg ref={svgRef} className="w-full h-full overflow-visible" />
 
-      {/* state overlays (절대 위치, 컨테이너 mount는 영향 X) */}
+      {/* 상태 오버레이 — 컨테이너 mount에 영향 없음 */}
       {!primaryCommodityId && (
         <div className="absolute inset-0 flex items-center justify-center">
           <StateView variant="empty" size="inline" icon="list" title="품목을 선택하세요" />

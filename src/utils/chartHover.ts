@@ -1,6 +1,6 @@
-// FX-5: 인라인 차트 hover overlay 공통 유틸.
-// SVG 위에 mouse overlay rect + vertical guide line + dot + tooltip 추가.
-// 차트별로 데이터 포인트와 값 추출만 다르므로 그 부분은 콜백으로 받음.
+// 인라인 차트 hover overlay 공통 유틸.
+// SVG에 mouse overlay rect, 수직 가이드 라인, dot, tooltip을 추가한다.
+// 데이터 포인트 추출 방식만 차트마다 다르므로 콜백으로 받는다.
 import * as d3 from 'd3';
 import { CHART_THEME } from './chartTheme';
 import { Z_INDEX } from './zIndex';
@@ -26,7 +26,8 @@ export interface HoverOverlayOptions<T> {
 }
 
 export function attachHoverOverlay<T>(opts: HoverOverlayOptions<T>) {
-  const { g, containerRef, data, x, y, width, height, margin, getDate, buildHover, tooltipId } = opts;
+  const { g, containerRef, data, x, y, width, height, margin, getDate, buildHover, tooltipId } =
+    opts;
 
   if (data.length === 0) return;
 
@@ -49,10 +50,9 @@ export function attachHoverOverlay<T>(opts: HoverOverlayOptions<T>) {
     .attr('stroke', 'var(--text-primary)')
     .attr('stroke-width', 1.5);
 
-  // bisector
   const bisect = d3.bisector<T, Date>((d) => getDate(d)).left;
 
-  // tooltip element — light theme (warm white card + warm border)
+  // 라이트 테마 툴팁 요소 (body에 마운트, id 기준 재사용)
   let tip = document.getElementById(tooltipId);
   if (!tip) {
     tip = document.createElement('div');
@@ -61,7 +61,6 @@ export function attachHoverOverlay<T>(opts: HoverOverlayOptions<T>) {
     document.body.appendChild(tip);
   }
 
-  // overlay rect — capture all mouse events
   g.append('rect')
     .attr('class', 'hover-overlay')
     .attr('width', width)
@@ -122,7 +121,6 @@ export function attachHoverOverlay<T>(opts: HoverOverlayOptions<T>) {
           .join('');
         tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${periodLabel}</div>${rows}`;
 
-        // 위치: 컨테이너 기준 mouse + offset
         const rect = containerRef.current?.getBoundingClientRect();
         if (rect) {
           const absX = rect.left + margin.left + px;
@@ -134,7 +132,6 @@ export function attachHoverOverlay<T>(opts: HoverOverlayOptions<T>) {
     });
 }
 
-// 컴포넌트 unmount 시 tooltip cleanup
 export function removeHoverTooltip(tooltipId: string) {
   const tip = document.getElementById(tooltipId);
   if (tip) tip.remove();

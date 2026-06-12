@@ -1,9 +1,8 @@
-// 커서를 따라가는 호버 정보 카드(반응형 — 화면 밖으로 안 나가게 자동 보정). Canvas 밖 HTML 오버레이.
+// 커서를 따라가는 호버 카드. 화면 밖으로 나가지 않게 위치를 보정한다.
 import { useJourneyHover } from '../journeyHover';
 import { PhaseDiagram } from './PhaseDiagram';
 
 const PANEL_W = 268;
-const PANEL_H_EST = 260;
 
 export function HoverPanel() {
   const info = useJourneyHover((s) => s.info);
@@ -14,7 +13,7 @@ export function HoverPanel() {
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
   const left = Math.min(x + 16, vw - PANEL_W - 12);
-  const top = Math.min(y + 16, vh - PANEL_H_EST - 12);
+  const top = Math.min(y + 16, vh - 260 - 12);
 
   return (
     <div
@@ -23,9 +22,14 @@ export function HoverPanel() {
     >
       <div className="flex items-center gap-2">
         {info.color && (
-          <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: info.color }} />
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: info.color }}
+          />
         )}
-        <span className="text-[13px] font-semibold text-primary leading-tight break-keep">{info.title}</span>
+        <span className="text-[13px] font-semibold text-primary leading-tight break-keep">
+          {info.title}
+        </span>
       </div>
       {info.rows && info.rows.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border-default flex flex-col gap-1">
@@ -57,11 +61,17 @@ export function HoverPanel() {
                     </span>
                   </div>
                   <div className="relative h-3 rounded-full bg-subtle overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${pct * 100}%`, backgroundColor: fill }} />
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${pct * 100}%`, backgroundColor: fill }}
+                    />
                     {v.threshold != null && v.max > 0 && (
                       <span
                         className="absolute top-0 bottom-0 w-px opacity-50"
-                        style={{ left: `${Math.max(0, Math.min(100, ((v.threshold - lo) / span) * 100))}%`, backgroundColor: 'var(--text-primary)' }}
+                        style={{
+                          left: `${Math.max(0, Math.min(100, ((v.threshold - lo) / span) * 100))}%`,
+                          backgroundColor: 'var(--text-primary)',
+                        }}
                       />
                     )}
                   </div>
@@ -77,8 +87,10 @@ export function HoverPanel() {
                     <div
                       className="h-full rounded-full"
                       style={{
-                        width: `${Math.max(0, Math.min(1, (it.value - (it.min ?? 0)) / ((it.max - (it.min ?? 0)) || 1))) * 100}%`,
-                        backgroundColor: it.on ? it.color || 'var(--brand)' : 'var(--border-strong)',
+                        width: `${Math.max(0, Math.min(1, (it.value - (it.min ?? 0)) / (it.max - (it.min ?? 0) || 1))) * 100}%`,
+                        backgroundColor: it.on
+                          ? it.color || 'var(--brand)'
+                          : 'var(--border-strong)',
                       }}
                     />
                   </div>
@@ -106,7 +118,9 @@ export function HoverPanel() {
             const m = line.match(/^([^:]{1,8}):\s*(.+)$/);
             return m ? (
               <div key={i} className="flex gap-2 text-[12px] leading-snug">
-                <span className="text-tertiary text-[10px] font-medium shrink-0 w-9 pt-[2px]">{m[1]}</span>
+                <span className="text-tertiary text-[10px] font-medium shrink-0 w-9 pt-[2px]">
+                  {m[1]}
+                </span>
                 <span className="text-secondary flex-1 break-keep">{m[2]}</span>
               </div>
             ) : (

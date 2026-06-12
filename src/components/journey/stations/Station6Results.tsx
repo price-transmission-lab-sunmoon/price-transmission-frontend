@@ -1,5 +1,4 @@
-// ⑥ 결과 · 외부충격 검증 — 시간축에 탐지 이상(등급색·반경=전이율) × 5 외부충격(음영).
-// 데이터 기반 시간 도메인(우측 쏠림 방지) + 동일좌표 마커 분산 + 이벤트 라벨 y 스태거.
+// ⑥ 결과 · 외부충격 검증 — 시간축에 탐지 이상(등급색) × 외부충격 음영.
 import { Line } from '@react-three/drei';
 import type { StationProps } from '../journeyContract';
 import type { StreamResponse, StreamAnomalyNode } from '@/types/timeseries';
@@ -15,8 +14,8 @@ interface Props extends StationProps {
 
 const W = 15;
 const GRADE_Y: Record<string, number> = { high: 1.7, medium: 1.0, reference: 0.35 };
-// 등급 위계(논문 3-5: H=두 분석 모두·최고신뢰 / M=계량만 / R=ML만)를 발광으로도 차등.
-const GRADE_EMIS: Record<string, number> = { high: 0.25, medium: 0.12, reference: 0.03 }; // 과강조 완화(절반)
+// 등급별 발광 강도. H>M>R 위계를 시각적으로 차등한다.
+const GRADE_EMIS: Record<string, number> = { high: 0.25, medium: 0.12, reference: 0.03 };
 const GRADE_KR: Record<string, string> = { high: '고신뢰', medium: '중신뢰', reference: '참고' };
 const PATTERN_KR: Record<string, string> = {
   pattern1: '방향역전·시차',
@@ -28,7 +27,7 @@ function ym(period: string): number {
   const [y, m] = period.split('-').map(Number);
   return y + ((m || 1) - 1) / 12;
 }
-// 마커 반경 균일 — 크기로 특정 노드(금융위기·우크라 등)를 강조하지 않음. 전이율은 호버 게이지로만.
+// 마커 반경 균일. 특정 시점을 크기로 강조하지 않고 전이율은 호버 게이지로만 표시한다.
 const MARKER_R = 0.13;
 
 export function Station6Results({ active, stream, events }: Props) {
@@ -38,7 +37,7 @@ export function Station6Results({ active, stream, events }: Props) {
   const setPickerSegment = useJourneySelection((s) => s.setPickerSegment);
   const nodes = stream?.anomaly_nodes ?? [];
 
-  // 데이터 기반 시간 도메인 — 고정 2000~2026 대신 실제 범위에 맞춰 균형 배치.
+  // 실제 데이터 범위로 시간 도메인을 계산해 균형 배치한다.
   const times = [
     ...nodes.map((n) => ym(n.period)),
     ...events.flatMap((e) => [ym(e.start_date), ym(e.end_date)]),
@@ -48,7 +47,7 @@ export function Station6Results({ active, stream, events }: Props) {
   const span = Math.max(0.5, T1 - T0);
   const tx = (period: string) => ((ym(period) - T0) / span) * W - W / 2;
 
-  // 동일 (period, grade) 마커 그룹 → x 오프셋 분산(완전 중첩 방지).
+  // 동일 (period, grade) 마커 그룹을 x 오프셋으로 분산해 중첩을 줄인다.
   const groups = new Map<string, StreamAnomalyNode[]>();
   nodes.forEach((n) => {
     const k = `${n.period}|${n.confidence_grade}`;
@@ -76,7 +75,7 @@ export function Station6Results({ active, stream, events }: Props) {
         const hits = nodes.filter(
           (n) => ym(n.period) >= ym(ev.start_date) && ym(n.period) <= ym(ev.end_date),
         ).length;
-        const labelY = 2.2 + (i % 2) * 0.55; // y 스태거로 가로 겹침 완화(상단 클리핑 여유)
+        const labelY = 2.2 + (i % 2) * 0.55; // y 스태거로 가로 겹침 완화
         return (
           <group key={ev.event_key}>
             <mesh
@@ -109,7 +108,7 @@ export function Station6Results({ active, stream, events }: Props) {
           const y = GRADE_Y[nd.confidence_grade] ?? 0.35;
           const c = JOURNEY_GRADE_COLORS[nd.confidence_grade];
           const rr = MARKER_R;
-          const isSel = nd.anomaly_id === selectedId; // 미니맵 선택과 동기화
+          const isSel = nd.anomaly_id === selectedId;
           return (
             <group key={`${nd.anomaly_id}-${j}`} position={[tx(nd.period) + off, y, 0.1]}>
               {isSel && (
@@ -122,7 +121,7 @@ export function Station6Results({ active, stream, events }: Props) {
                 scale={isSel ? 1.5 : 1}
                 onClick={() => {
                   setSelected(nd.anomaly_id);
-                  setPickerSegment(nd.segment_id); // 미니맵을 이 노드 구간으로 전환(역방향 동기화)
+                  setPickerSegment(nd.segment_id); // 미니맵 구간 동기화
                 }}
                 {...bind({
                   title: `이상 · ${nd.period}`,

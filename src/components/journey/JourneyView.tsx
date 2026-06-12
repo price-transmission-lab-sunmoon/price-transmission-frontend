@@ -1,5 +1,4 @@
-// 분석 여정 3D 무대 — 라이트 단일 룩. 스크롤 없음(방향키 ↑↓·우측 버튼 이산 이동).
-// 데이터는 Canvas 밖 useJourneyData로 받아 props 주입(Canvas 안은 react-query 미도달).
+// 분석 여정 3D 무대. 데이터는 Canvas 밖 useJourneyData로 받아 props로 주입한다.
 import { useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { JOURNEY_STAGE_COUNT, JOURNEY_THEME, useJourneyProgress } from './journeyContract';
@@ -53,32 +52,58 @@ export function JourneyView() {
         </Stage>
         <Stage index={1}>
           {({ active }) => (
-            <Station2Segments {...common} active={active} commodity={data.commodity} detail={data.detail} />
+            <Station2Segments
+              {...common}
+              active={active}
+              commodity={data.commodity}
+              detail={data.detail}
+            />
           )}
         </Stage>
         <Stage index={2}>
           {({ active }) => (
-            <Station3Pipeline {...common} active={active} pipeline={data.pipeline} params={data.params} />
+            <Station3Pipeline
+              {...common}
+              active={active}
+              pipeline={data.pipeline}
+              params={data.params}
+            />
           )}
         </Stage>
         <Stage index={3}>
           {({ active }) => (
-            <Station4DualDetect {...common} active={active} detail={data.detail} normalMode={data.normalMode} />
+            <Station4DualDetect
+              {...common}
+              active={active}
+              detail={data.detail}
+              normalMode={data.normalMode}
+            />
           )}
         </Stage>
         <Stage index={4}>
           {({ active }) => (
-            <Station5Confidence {...common} active={active} detail={data.detail} stream={data.stream} normalMode={data.normalMode} />
+            <Station5Confidence
+              {...common}
+              active={active}
+              detail={data.detail}
+              stream={data.stream}
+              normalMode={data.normalMode}
+            />
           )}
         </Stage>
         <Stage index={5}>
           {({ active }) => (
-            <Station6Results {...common} active={active} stream={data.stream} events={data.events} />
+            <Station6Results
+              {...common}
+              active={active}
+              stream={data.stream}
+              events={data.events}
+            />
           )}
         </Stage>
       </Canvas>
 
-      {/* 이산 이동 컨트롤 (방향키 ↑↓와 동일) */}
+      {/* 이산 이동 컨트롤 */}
       <div className="absolute right-6 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-3">
         <button
           onClick={prev}

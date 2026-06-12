@@ -108,10 +108,8 @@ const config: Config = {
         e3: 'var(--e3)',
         e4: 'var(--e4)',
         e5: 'var(--e5)',
-        'brand-cta':
-          '0 4px 12px rgba(13, 148, 136, 0.24), 0 1px 3px rgba(13, 148, 136, 0.16)',
-        'brand-fab':
-          '0 8px 24px rgba(13, 148, 136, 0.32), 0 2px 6px rgba(13, 148, 136, 0.18)',
+        'brand-cta': '0 4px 12px rgba(13, 148, 136, 0.24), 0 1px 3px rgba(13, 148, 136, 0.16)',
+        'brand-fab': '0 8px 24px rgba(13, 148, 136, 0.32), 0 2px 6px rgba(13, 148, 136, 0.18)',
         'brand-fab-hover':
           '0 12px 32px rgba(13, 148, 136, 0.4), 0 4px 8px rgba(13, 148, 136, 0.22)',
         'ring-brand': '0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--brand)',

@@ -27,7 +27,7 @@ export function useRawPricesData() {
       );
       return res.data;
     },
-    enabled: primaryCommodityId !== null,
+    enabled: primaryCommodityId != null,
     retry: 3,
   });
 }

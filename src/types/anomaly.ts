@@ -14,9 +14,7 @@ import type {
   StatSnapshotMetric,
 } from './literals';
 
-// ============================================================
-// /anomalies/summary — 이달 이상 요약 배너 (web_plan_vN §3.2)
-// ============================================================
+// /anomalies/summary — 이달 이상 요약 배너
 
 export interface AnomalySummaryItem {
   anomaly_id: number;
@@ -27,7 +25,7 @@ export interface AnomalySummaryItem {
   primary_pattern: PrimaryPattern;
   confidence_grade: ConfidenceGrade;
   is_new: boolean;
-  transmission_rate: number | null; // 백엔드 SoT: Optional
+  transmission_rate: number | null; // 백엔드에서 null로 올 수 있음
 }
 
 export interface AnomalySummaryResponse {
@@ -38,11 +36,9 @@ export interface AnomalySummaryResponse {
   anomalies: AnomalySummaryItem[];
 }
 
-// ============================================================
-// /anomalies/{id}/detail — 패널 통합 응답 (web_plan_vN §6)
-// ============================================================
+// /anomalies/{id}/detail — 패널 통합 응답
 
-// stat_metrics — 30개 필드 (구간별 적용 차이는 api_spec_vN §패널 §`stat_metrics` 적용 구간 참조)
+// stat_metrics — 30개 필드, 구간별 적용 여부는 백엔드 스펙 참조
 export interface StatMetrics {
   // 패턴 2 — A·B 구간
   transmission_rate: number | null;
@@ -90,9 +86,7 @@ export interface StatMetrics {
   bp_dates: string[]; // YYYY-MM[]
 }
 
-// ml_summary — 11개 필드
-// BE-5 (2026-05-20): 백엔드 응답상 percentile은 null 가능 (warmup/데이터 결손 케이스).
-// score도 데이터 결손 시 null 반환 가능. UI는 formatNum/null 가드 처리.
+// ml_summary — 11개 필드. percentile·score는 데이터 결손 시 null 가능
 export interface MlSummary {
   ml_vote: number; // 0~3
   ml_detected: boolean;
@@ -107,7 +101,6 @@ export interface MlSummary {
   svm_percentile: number | null;
 }
 
-// judgment_path — 패턴별 6 step
 export interface JudgmentPathStep {
   step: number;
   label: string;
@@ -131,9 +124,7 @@ export interface AnomalyDetail {
   judgment_path: JudgmentPathStep[];
 }
 
-// ============================================================
 // /anomalies/{id}/stat-series — 지표별 인라인 시계열
-// ============================================================
 
 interface StatSeriesEnvelope {
   anomaly_id: number;
@@ -201,9 +192,7 @@ export type StatSeriesResponse =
   | StatSeriesZscoreResponse
   | StatSeriesEctResponse;
 
-// ============================================================
 // /anomalies/{id}/stat-snapshot — 비시계열 스냅샷
-// ============================================================
 
 export interface StatSnapshotIqrResponse {
   anomaly_id: number;
@@ -232,16 +221,14 @@ export interface StatSnapshotAsymmetryResponse {
 
 export type StatSnapshotResponse = StatSnapshotIqrResponse | StatSnapshotAsymmetryResponse;
 
-// metric → 응답 타입 매핑 (호출 측 타입 안내용)
+// metric에 따른 응답 타입 매핑
 export type StatSnapshotResponseFor<M extends StatSnapshotMetric> = M extends 'iqr'
   ? StatSnapshotIqrResponse
   : M extends 'asymmetry'
     ? StatSnapshotAsymmetryResponse
     : never;
 
-// ============================================================
 // /anomalies/{id}/irf — IRF 차트
-// ============================================================
 
 export interface IrfDataPoint {
   horizon: number;
@@ -268,9 +255,7 @@ export interface IrfResponse {
   irfs: IrfCurve[];
 }
 
-// ============================================================
 // /anomalies/{id}/ml-map — ML 결과맵 2D 투영
-// ============================================================
 
 export interface MlMapPoint {
   period: string;

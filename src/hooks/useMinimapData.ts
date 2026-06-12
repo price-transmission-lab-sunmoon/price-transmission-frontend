@@ -38,6 +38,6 @@ export function useMinimapData(variant: MinimapVariant) {
         return res.data;
       }
     },
-    enabled: primaryCommodityId !== null,
+    enabled: primaryCommodityId != null,
   });
 }

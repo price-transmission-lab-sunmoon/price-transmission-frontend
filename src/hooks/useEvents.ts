@@ -23,9 +23,6 @@ export function useEvents() {
   useEffect(() => {
     if (!query.data) return;
     setEvents(query.data);
-    // 자동 이벤트 활성 폐기 (2026-05-21).
-    // 사용자 의도 없이 음영이 깔리면 anomaly가 "이벤트 때문"이라는 인지 편향 유발.
-    // 클린 슬레이트로 진입 → FilterBar에서 사용자가 명시적으로 토글.
   }, [query.data, setEvents]);
 
   return query;

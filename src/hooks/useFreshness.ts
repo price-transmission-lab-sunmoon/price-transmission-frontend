@@ -4,7 +4,6 @@ import { client } from '@/api/client';
 import { useAppStore } from '@/stores/useAppStore';
 import type { Freshness } from '@/types/meta';
 
-// feature_spec_fe-api-connect_vN §3.2: staleTime 60_000 / gcTime 300_000
 export function useFreshness() {
   const query = useQuery<Freshness>({
     queryKey: ['freshness'],

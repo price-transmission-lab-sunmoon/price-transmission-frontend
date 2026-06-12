@@ -1,5 +1,4 @@
-// ① 원천 데이터 — 선택 품목의 가격 시리즈(국제가·수입단가·PPI·도매가·CPI)가 중앙
-// '병합 데이터셋'으로 흘러듦. 반경=관측 커버리지, 라벨=최신 index_2020, has_anomaly→발광.
+// ① 원천 데이터 — 가격 시리즈가 중앙 병합 데이터셋으로 흘러듦. 반경=커버리지, 이상 포함 시 라벨 표시.
 import { RoundedBox } from '@react-three/drei';
 import type { StationProps } from '../journeyContract';
 import type { RawPricesResponse } from '@/types/timeseries';
@@ -12,7 +11,7 @@ interface Props extends StationProps {
   rawPrices?: RawPricesResponse;
 }
 
-// rawPrices 미도달 시 폴백(정적 소스 목록).
+// 데이터 미도달 시 정적 폴백.
 const FALLBACK = [
   { label_kr: 'World Bank', color: '#7c3aed' },
   { label_kr: 'FAO FFPI', color: '#059669' },
@@ -21,7 +20,7 @@ const FALLBACK = [
   { label_kr: 'KAMIS', color: '#ea580c' },
 ];
 
-// fixture label_kr이 인코딩 손상(mojibake)된 경우가 있어 신뢰하지 않고 source로 깨끗한 라벨 매핑.
+// label_kr은 인코딩 손상이 있을 수 있어 source 키 기반 매핑을 우선한다.
 const SOURCE_LABEL: Record<string, string> = {
   intl_price_krw: '국제가(원화)',
   import_price_usd: '수입단가',
@@ -30,7 +29,7 @@ const SOURCE_LABEL: Record<string, string> = {
   cpi: 'CPI',
 };
 
-// 소스별 선정 이유 — 전달 사슬에서의 위치와 출처(정본 §2 데이터 구성 근거).
+// 소스별 호버 설명.
 const SOURCE_NOTE: Record<string, string> = {
   intl_price_krw:
     '역할: 전달 사슬의 시작점, 상류 충격의 원천\n출처: World Bank Pink Sheet 국제 시세\n선정: 환율 반영 원화 환산으로 국내 비교 가능',
@@ -45,15 +44,16 @@ const SOURCE_NOTE: Record<string, string> = {
 const HUB: [number, number, number] = [4.5, 0, 0];
 
 export function Station1Sources({ active, rawPrices }: Props) {
-  // 객체를 useFrame으로 직접 움직이지 않는다 — drei Html(transform) 라벨이 1프레임
-  // 묵은 matrixWorld로 그려져 메시와 어긋나기 때문. 움직임은 카메라(JourneyRig)가 담당.
+  // 객체를 useFrame으로 직접 움직이지 않는다. drei Html 라벨이 1프레임 묵은 matrixWorld로
+  // 그려져 메시와 어긋나기 때문이다. 움직임은 카메라(JourneyRig)가 담당한다.
   const bind = useHoverBinders();
   const series = rawPrices?.series ?? [];
   const items = series.length
     ? series.map((sr) => {
         const valid = sr.data.filter((d) => d.value !== null);
         const coverage = valid.length;
-        const lastIdx = [...sr.data].reverse().find((d) => d.index_2020 !== null)?.index_2020 ?? null;
+        const lastIdx =
+          [...sr.data].reverse().find((d) => d.index_2020 !== null)?.index_2020 ?? null;
         const hasAnomaly = sr.data.some((d) => d.has_anomaly);
         return {
           source: sr.source,
@@ -64,11 +64,18 @@ export function Station1Sources({ active, rawPrices }: Props) {
           hasAnomaly,
         };
       })
-    : FALLBACK.map((f) => ({ source: '', label: f.label_kr, color: f.color, coverage: 0, lastIdx: null, hasAnomaly: false }));
+    : FALLBACK.map((f) => ({
+        source: '',
+        label: f.label_kr,
+        color: f.color,
+        coverage: 0,
+        lastIdx: null,
+        hasAnomaly: false,
+      }));
 
   const maxCov = Math.max(1, ...items.map((it) => it.coverage));
   const count = items.length;
-  // 시리즈가 많아져도(백엔드 실데이터) 장면 밖으로 안 나가게 간격 동적 클램프.
+  // 시리즈가 많아져도 장면 밖으로 나가지 않게 간격을 동적으로 클램프한다.
   const gap = Math.min(1.6, 9 / Math.max(count, 1));
 
   return (
@@ -85,19 +92,25 @@ export function Station1Sources({ active, rawPrices }: Props) {
                 title: it.label,
                 color: it.color,
                 rows: [
-                  { label: '최신 index_2020', value: it.lastIdx != null ? it.lastIdx.toFixed(1) : '—' },
+                  {
+                    label: '최신 index_2020',
+                    value: it.lastIdx != null ? it.lastIdx.toFixed(1) : '—',
+                  },
                   { label: '이상 포함', value: it.hasAnomaly ? '있음' : '없음' },
                 ],
-                note: SOURCE_NOTE[it.source] ?? '역할: 원천 가격 시리즈\n유입: 병합 데이터셋(Phase 0)',
-                viz: { kind: 'gauge', value: it.coverage, max: maxCov, label: '관측 커버리지(개월)', color: it.color },
+                note:
+                  SOURCE_NOTE[it.source] ?? '역할: 원천 가격 시리즈\n유입: 병합 데이터셋(Phase 0)',
+                viz: {
+                  kind: 'gauge',
+                  value: it.coverage,
+                  max: maxCov,
+                  label: '관측 커버리지(개월)',
+                  color: it.color,
+                },
               })}
             >
               <sphereGeometry args={[r, 32, 32]} />
-              <meshStandardMaterial
-                color={it.color}
-                roughness={0.4}
-                metalness={0.1}
-              />
+              <meshStandardMaterial color={it.color} roughness={0.4} metalness={0.1} />
             </mesh>
             <FlowLine from={pos} to={HUB} color={it.color} />
             {active && (

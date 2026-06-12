@@ -24,7 +24,6 @@ export function AsymmetryHistogram({ data, height = 180 }: Props) {
     const width = container.getBoundingClientRect().width;
     if (width === 0) return;
 
-    // PM 별건 #3: 'symmetric' 분기 — 데이터가 없으면 렌더링 생략
     if (data.up_samples.length === 0 && data.down_samples.length === 0) return;
 
     const w = width - MARGIN.left - MARGIN.right;
@@ -55,7 +54,6 @@ export function AsymmetryHistogram({ data, height = 180 }: Props) {
     );
     const y = d3.scaleLinear().domain([0, yMax]).range([h, 0]);
 
-    // down bins
     g.selectAll('.down-bar')
       .data(downBins)
       .join('rect')
@@ -67,7 +65,6 @@ export function AsymmetryHistogram({ data, height = 180 }: Props) {
       .attr('fill', PANEL_CHART_COLORS.asymmetryDownBin)
       .attr('opacity', 0.6);
 
-    // up bins
     g.selectAll('.up-bar')
       .data(upBins)
       .join('rect')
@@ -79,7 +76,10 @@ export function AsymmetryHistogram({ data, height = 180 }: Props) {
       .attr('fill', PANEL_CHART_COLORS.asymmetryUpBin)
       .attr('opacity', 0.6);
 
-    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(5)).attr('color', CHART_THEME.axisText);
+    g.append('g')
+      .attr('transform', `translate(0,${h})`)
+      .call(d3.axisBottom(x).ticks(5))
+      .attr('color', CHART_THEME.axisText);
     g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', CHART_THEME.axisText);
   }, [data, height]);
 

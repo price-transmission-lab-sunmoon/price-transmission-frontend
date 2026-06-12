@@ -1,7 +1,3 @@
-// feature_spec_fe-api-connect_vN §6 — ErrorBoundary (C3)
-// React 컴포넌트 트리 에러 전파 방지. FE-BOUNDARY-001 Toast 발화.
-// error.cause 직접 접근 금지 — formatErrorChain(error) 사용 (frame_spec v5 §6.4 정합)
-
 import { Component, type ReactNode, type ErrorInfo } from 'react';
 import { showToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
@@ -43,8 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
-      const isDev =
-        typeof import.meta !== 'undefined' && import.meta.env?.DEV === true;
+      const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV === true;
       return (
         <div className="flex flex-col items-center justify-center h-full p-8 gap-4 text-center">
           <div
@@ -56,12 +51,9 @@ export class ErrorBoundary extends Component<Props, State> {
           <h2 className="text-[16px] font-semibold text-primary m-0">
             예기치 못한 오류가 발생했습니다
           </h2>
-          <p
-            className="text-[14px] text-secondary leading-[1.625] m-0"
-            style={{ maxWidth: 480 }}
-          >
-            페이지를 새로고침하거나 잠시 후 다시 시도해주세요. 문제가
-            계속되면 관리자에게 문의하세요.
+          <p className="text-[14px] text-secondary leading-[1.625] m-0" style={{ maxWidth: 480 }}>
+            페이지를 새로고침하거나 잠시 후 다시 시도해주세요. 문제가 계속되면 관리자에게
+            문의하세요.
           </p>
           <Button
             variant="primary"

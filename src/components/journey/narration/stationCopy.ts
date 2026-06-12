@@ -1,4 +1,4 @@
-// 6 스테이션 좌측 해설 — 정본 v40 용어 준수, 객관적 정보 전달(주장 금지).
+// 6 스테이션 좌측 해설 텍스트.
 export interface StationCopy {
   index: number;
   title: string;

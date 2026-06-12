@@ -1,5 +1,4 @@
-// z-index priority SoT — docs/re-design_specs/01-design-tokens.md §16.
-// Never use inline numeric zIndex in components.
+// z-index 우선순위 단일 출처. 컴포넌트 내 숫자 직접 사용 금지.
 export const Z_INDEX = {
   HEADER: 50,
   PANEL: 100,

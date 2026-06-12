@@ -57,21 +57,21 @@ export function ZScoreChart({
     const yMin = Math.min(...vals, -0.5);
     const y = d3.scaleLinear().domain([yMin, yMax]).range([h, 0]);
 
-    // threshold lines
     [
       { val: warningThreshold, color: PANEL_CHART_COLORS.zscoreWarningLine },
       { val: alertThreshold, color: PANEL_CHART_COLORS.zscoreAlertLine },
     ].forEach(({ val, color }) => {
       const yv = y(val);
       g.append('line')
-        .attr('x1', 0).attr('x2', w)
-        .attr('y1', yv).attr('y2', yv)
+        .attr('x1', 0)
+        .attr('x2', w)
+        .attr('y1', yv)
+        .attr('y2', yv)
         .attr('stroke', color)
         .attr('stroke-width', 1)
         .attr('stroke-dasharray', '2 2');
     });
 
-    // zscore line
     const line = d3
       .line<ZscoreDataPoint>()
       .defined((d) => d.zscore !== null)
@@ -84,10 +84,12 @@ export function ZScoreChart({
       .attr('stroke-width', 1.5)
       .attr('d', line);
 
-    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(4)).attr('color', CHART_THEME.axisText);
+    g.append('g')
+      .attr('transform', `translate(0,${h})`)
+      .call(d3.axisBottom(x).ticks(4))
+      .attr('color', CHART_THEME.axisText);
     g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', CHART_THEME.axisText);
 
-    // FX-5: hover overlay
     attachHoverOverlay({
       g,
       containerRef,
@@ -105,7 +107,11 @@ export function ZScoreChart({
         values: [
           { label: 'Z-Score', value: d.zscore, color: PANEL_CHART_COLORS.zscoreLine },
           { label: '경보 임계', value: alertThreshold, color: PANEL_CHART_COLORS.zscoreAlertLine },
-          { label: '주의 임계', value: warningThreshold, color: PANEL_CHART_COLORS.zscoreWarningLine },
+          {
+            label: '주의 임계',
+            value: warningThreshold,
+            color: PANEL_CHART_COLORS.zscoreWarningLine,
+          },
         ],
       }),
     });
@@ -115,7 +121,10 @@ export function ZScoreChart({
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center text-tertiary text-[12px]" style={{ height }}>
+      <div
+        className="flex items-center justify-center text-tertiary text-[12px]"
+        style={{ height }}
+      >
         해당 기간 데이터가 없습니다.
       </div>
     );

@@ -1,9 +1,5 @@
 import type { ConfidenceGrade } from '@/types/literals';
-import {
-  ANOMALY_BG_COLORS,
-  ANOMALY_BORDER_COLORS,
-  ANOMALY_COLORS,
-} from '@/utils/colorUtils';
+import { ANOMALY_BG_COLORS, ANOMALY_BORDER_COLORS, ANOMALY_COLORS } from '@/utils/colorUtils';
 
 const LABEL: Record<ConfidenceGrade, string> = {
   high: '고신뢰',
@@ -22,11 +18,7 @@ const SIZE_CLASS = {
   md: 'h-[26px] px-2.5 text-[12px]',
 };
 
-export function ConfidenceBadge({
-  grade,
-  size = 'md',
-  className = '',
-}: ConfidenceBadgeProps) {
+export function ConfidenceBadge({ grade, size = 'md', className = '' }: ConfidenceBadgeProps) {
   return (
     <span
       className={[

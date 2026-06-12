@@ -56,11 +56,16 @@
     "svm_percentile": 62.0
   },
   "judgment_path": [
-    { "step": 1, "label": "전이율 산출",       "value": "해당 월 전이율 = 1.43",          "passed": true },
-    { "step": 2, "label": "롤링 Z-score",      "value": "2.71 → 경보 기준(2.5) 초과",     "passed": true },
-    { "step": 3, "label": "IQR 판정",          "value": "Q3 + 1.5×IQR 상한(1.26) 초과",  "passed": true },
-    { "step": 4, "label": "두 기준 동시 충족", "value": "통계 경보 확정",                  "passed": true },
-    { "step": 5, "label": "ML 탐지",           "value": "IF ✓ / LOF ✓ / SVM ✗",          "passed": true },
-    { "step": 6, "label": "신뢰도 등급 확정",  "value": "통계 O + ML 동시 확인 → 고신뢰", "passed": true }
+    { "step": 1, "label": "전이율 산출", "value": "해당 월 전이율 = 1.43", "passed": true },
+    { "step": 2, "label": "롤링 Z-score", "value": "2.71 → 경보 기준(2.5) 초과", "passed": true },
+    { "step": 3, "label": "IQR 판정", "value": "Q3 + 1.5×IQR 상한(1.26) 초과", "passed": true },
+    { "step": 4, "label": "두 기준 동시 충족", "value": "통계 경보 확정", "passed": true },
+    { "step": 5, "label": "ML 탐지", "value": "IF ✓ / LOF ✓ / SVM ✗", "passed": true },
+    {
+      "step": 6,
+      "label": "신뢰도 등급 확정",
+      "value": "통계 O + ML 동시 확인 → 고신뢰",
+      "passed": true
+    }
   ]
 }

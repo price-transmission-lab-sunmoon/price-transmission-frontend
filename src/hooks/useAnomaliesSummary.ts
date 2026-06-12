@@ -29,7 +29,6 @@ export function useAnomaliesSummary() {
       const res = await client.get<AnomaliesSummaryResponse>('/anomalies/summary');
       return res.data;
     },
-    // feature_spec_fe-api-connect_vN §3.2: staleTime 60_000 / gcTime 300_000
     staleTime: 60_000,
     gcTime: 300_000,
   });

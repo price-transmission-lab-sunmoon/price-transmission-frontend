@@ -16,7 +16,7 @@ import streamFixture from '@/fixtures/stream.json';
 import pipelineFixture from '@/fixtures/pipeline.json';
 import analysisParamsFixture from '@/fixtures/analysis_params.json';
 
-// feat/fe-panel fixtures
+// 패널 fixture
 import panelDetailFixture from '@/fixtures/panel_detail.json';
 import panelStatSeriesTransmissionRateFixture from '@/fixtures/panel_stat_series_transmission_rate.json';
 import panelStatSeriesZscoreFixture from '@/fixtures/panel_stat_series_zscore.json';
@@ -41,15 +41,7 @@ export const client = axios.create({
   timeout: 30000,
 });
 
-// ============================================================
-// Mock 라우트 시스템 — 정적·동적 경로 + 성공/에러 응답 지원
-// frame_spec_vN §8.1 더미 응답 정책
-//
-// MockResult:
-//   { type: 'success', data }          → 200 OK 응답으로 resolve
-//   { type: 'error', status, data }    → status 에러로 parseApiError 경유 reject
-// ============================================================
-
+// Mock 성공은 200 resolve, 에러는 parseApiError 경유 reject로 처리함
 type MockResult =
   | { type: 'success'; data: unknown }
   | { type: 'error'; status: number; data: unknown };
@@ -59,25 +51,51 @@ interface MockRoute {
   handle: (config: InternalAxiosRequestConfig) => MockResult;
 }
 
-// 3구간 품목 (has_wholesale=false) — layout=4 요청 시 WHOLESALE_NOT_AVAILABLE 반환
+// 도매 데이터 없는 3구간 품목 — layout=4 요청 시 WHOLESALE_NOT_AVAILABLE 반환
+// TODO: 품목 목록이 늘어나면 fixtures/commodities.json과 이 Set을 함께 갱신해야 함
 const THREE_SEG_COMMODITIES = new Set([
-  'wheat', 'maize', 'soybean', 'palmoil', 'sugar', 'coffee', 'beef',
+  'wheat',
+  'maize',
+  'soybean',
+  'palmoil',
+  'sugar',
+  'coffee',
+  'beef',
 ]);
 
 const MOCK_ROUTES: MockRoute[] = [
-  // ── 정적 경로 ─────────────────────────────────────────────────
-  { test: (u) => u === '/commodities', handle: () => ({ type: 'success', data: commoditiesFixture }) },
+  {
+    test: (u) => u === '/commodities',
+    handle: () => ({ type: 'success', data: commoditiesFixture }),
+  },
   { test: (u) => u === '/segments', handle: () => ({ type: 'success', data: segmentsFixture }) },
   { test: (u) => u === '/events', handle: () => ({ type: 'success', data: eventsFixture }) },
   { test: (u) => u === '/freshness', handle: () => ({ type: 'success', data: freshnessFixture }) },
-  { test: (u) => u.split('?')[0] === '/anomalies/summary', handle: () => ({ type: 'success', data: anomaliesSummaryFixture }) },
-  { test: (u) => u === '/meta/pipeline', handle: () => ({ type: 'success', data: pipelineFixture }) },
-  { test: (u) => u === '/meta/analysis-params', handle: () => ({ type: 'success', data: analysisParamsFixture }) },
+  {
+    test: (u) => u.split('?')[0] === '/anomalies/summary',
+    handle: () => ({ type: 'success', data: anomaliesSummaryFixture }),
+  },
+  {
+    test: (u) => u === '/meta/pipeline',
+    handle: () => ({ type: 'success', data: pipelineFixture }),
+  },
+  {
+    test: (u) => u === '/meta/analysis-params',
+    handle: () => ({ type: 'success', data: analysisParamsFixture }),
+  },
 
-  // ── 동적 경로 — 시계열 ────────────────────────────────────────
-  { test: (u) => /^\/commodities\/[^/]+\/stream$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: streamFixture }) },
-  { test: (u) => /^\/commodities\/[^/]+\/stream\/minimap$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: streamMinimapFixture }) },
-  { test: (u) => /^\/commodities\/[^/]+\/scatter$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: scatterFixture }) },
+  {
+    test: (u) => /^\/commodities\/[^/]+\/stream$/.test(u.split('?')[0]),
+    handle: () => ({ type: 'success', data: streamFixture }),
+  },
+  {
+    test: (u) => /^\/commodities\/[^/]+\/stream\/minimap$/.test(u.split('?')[0]),
+    handle: () => ({ type: 'success', data: streamMinimapFixture }),
+  },
+  {
+    test: (u) => /^\/commodities\/[^/]+\/scatter$/.test(u.split('?')[0]),
+    handle: () => ({ type: 'success', data: scatterFixture }),
+  },
   {
     test: (u) => /^\/commodities\/[^/]+\/raw-prices$/.test(u.split('?')[0]),
     handle: (config) => {
@@ -95,15 +113,23 @@ const MOCK_ROUTES: MockRoute[] = [
       return { type: 'success', data: rawPricesFixture };
     },
   },
-  { test: (u) => /^\/commodities\/[^/]+\/raw-prices\/minimap$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: rawPricesMinimapFixture }) },
+  {
+    test: (u) => /^\/commodities\/[^/]+\/raw-prices\/minimap$/.test(u.split('?')[0]),
+    handle: () => ({ type: 'success', data: rawPricesMinimapFixture }),
+  },
 
-  // ── feat/fe-panel — 패널 엔드포인트 ──────────────────────────
-  { test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: panelDetailFixture }) },
+  // 패널 엔드포인트
+  {
+    test: (u) => /^\/anomalies\/\d+\/detail$/.test(u.split('?')[0]),
+    handle: () => ({ type: 'success', data: panelDetailFixture }),
+  },
   {
     test: (u) => {
       const path = u.split('?')[0];
       const params = new URLSearchParams(u.includes('?') ? u.split('?')[1] : '');
-      return /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'transmission_rate';
+      return (
+        /^\/anomalies\/\d+\/stat-series$/.test(path) && params.get('metric') === 'transmission_rate'
+      );
     },
     handle: () => ({ type: 'success', data: panelStatSeriesTransmissionRateFixture }),
   },
@@ -147,7 +173,10 @@ const MOCK_ROUTES: MockRoute[] = [
     },
     handle: () => ({ type: 'success', data: panelStatSnapshotAsymmetryFixture }),
   },
-  { test: (u) => /^\/anomalies\/\d+\/irf$/.test(u.split('?')[0]), handle: () => ({ type: 'success', data: panelIrfFixture }) },
+  {
+    test: (u) => /^\/anomalies\/\d+\/irf$/.test(u.split('?')[0]),
+    handle: () => ({ type: 'success', data: panelIrfFixture }),
+  },
   {
     test: (u) => {
       const path = u.split('?')[0];
@@ -174,9 +203,6 @@ const MOCK_ROUTES: MockRoute[] = [
   },
 ];
 
-// ──────────────────────────────────────────────────────────────
-// 내부 Mock 통신 마커 타입
-// ──────────────────────────────────────────────────────────────
 interface MockInternal {
   isMockResponse: true;
   isMockError: boolean;
@@ -186,7 +212,6 @@ interface MockInternal {
 }
 
 if (useMock) {
-  // 요청 인터셉터: 매칭 라우트가 있으면 실제 HTTP 요청 차단
   client.interceptors.request.use((config) => {
     const url = config.url ?? '';
     const route = MOCK_ROUTES.find((r) => r.test(url));
@@ -205,10 +230,9 @@ if (useMock) {
     return config;
   });
 
-  // 응답 에러 인터셉터: Mock 성공/에러를 각각 처리
   client.interceptors.response.use(undefined, (error: unknown) => {
     if (
-      error !== null &&
+      error != null &&
       typeof error === 'object' &&
       'isMockResponse' in error &&
       (error as MockInternal).isMockResponse
@@ -216,19 +240,24 @@ if (useMock) {
       const mock = error as MockInternal;
 
       if (mock.isMockError && mock.status !== undefined) {
-        // Mock 에러 → AxiosError 형태로 변환 → 하위 parseApiError 인터셉터로 전달
+        // AxiosError 형태로 변환해 하위 parseApiError 인터셉터로 넘긴다
         const axiosErr = new AxiosError(
           `Request failed with status code ${mock.status}`,
           AxiosError.ERR_BAD_REQUEST,
           mock.config,
           undefined,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          { data: mock.data, status: mock.status, statusText: 'Bad Request', headers: {}, config: mock.config } as any,
+          {
+            data: mock.data,
+            status: mock.status,
+            statusText: 'Bad Request',
+            headers: {},
+            config: mock.config,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any,
         );
         return Promise.reject(axiosErr);
       }
 
-      // Mock 성공 → 정상 응답으로 resolve
       return Promise.resolve({ data: mock.data });
     }
 
@@ -236,7 +265,6 @@ if (useMock) {
   });
 }
 
-// Error response interceptor — parseApiError 단일 경로
 client.interceptors.response.use(
   (response) => response,
   (error: unknown) => {

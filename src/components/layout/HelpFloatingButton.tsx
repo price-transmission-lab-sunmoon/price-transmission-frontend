@@ -8,7 +8,6 @@ export function HelpFloatingButton() {
 
   return (
     <>
-      {/* 우하단 고정 floating help 버튼 (web_plan_vN §9.2) */}
       <button
         onClick={() => setIsHelpOpen(true)}
         aria-label="도움말 열기"

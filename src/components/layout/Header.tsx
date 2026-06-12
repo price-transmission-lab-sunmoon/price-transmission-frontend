@@ -32,7 +32,6 @@ interface ViewTabConfig {
   icon: IconName;
 }
 
-// literals.ts VIEW_TABS SoT(4탭) 정합. methodology 포함.
 const VIEW_TABS: ViewTabConfig[] = [
   { id: 'stream', label: '흐름 보기', icon: 'trend-up' },
   { id: 'scatter', label: '전달 구조', icon: 'compare' },
@@ -110,7 +109,7 @@ export function Header() {
     if (location.pathname !== targetPath) navigate(targetPath);
   }
 
-  // URL → activeTab 단방향 동기화. /methodology 직접 진입 시 activeTab=stream 유지 버그 차단.
+  // URL 직접 진입 시 activeTab을 경로에 맞춰 동기화한다.
   useEffect(() => {
     if (location.pathname === '/methodology' && activeTab !== 'methodology') {
       setActiveTab('methodology');
@@ -132,15 +131,9 @@ export function Header() {
     >
       {/* 좌측: 서비스명 + 주 품목 + 보조 품목 + 뷰 탭 */}
       <div className="flex items-center gap-5">
-        {/* 서비스명 — brand teal logo */}
+        {/* 서비스명 */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 22 22"
-            fill="none"
-            aria-hidden="true"
-          >
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
             <polyline
               points="2,17 6,11 11,14 16,7 20,3"
               stroke="var(--brand)"
@@ -150,9 +143,7 @@ export function Header() {
             />
             <circle cx="20" cy="3" r="2.5" fill="var(--brand)" />
           </svg>
-          <span className="text-primary font-bold text-[15px] tracking-tight">
-            SeePick
-          </span>
+          <span className="text-primary font-bold text-[15px] tracking-tight">SeePick</span>
         </div>
 
         <div className="w-px h-[22px] bg-border-default" aria-hidden />
@@ -183,8 +174,10 @@ export function Header() {
                   className="w-2 h-2 rounded-full shrink-0"
                   style={{
                     background:
-                      primaryCommodity.has_anomaly_this_month && primaryCommodity.latest_anomaly_grade
-                        ? GRADE_DOT_COLOR[primaryCommodity.latest_anomaly_grade] ?? 'var(--text-muted)'
+                      primaryCommodity.has_anomaly_this_month &&
+                      primaryCommodity.latest_anomaly_grade
+                        ? GRADE_DOT_COLOR[primaryCommodity.latest_anomaly_grade] ??
+                          'var(--text-muted)'
                         : 'var(--text-muted)',
                   }}
                 />
@@ -319,7 +312,7 @@ export function Header() {
 
         <div className="w-px h-[22px] bg-border-default" aria-hidden />
 
-        {/* 뷰 전환 탭 (4탭 SoT — 방법론 포함) */}
+        {/* 뷰 전환 탭 */}
         <nav aria-label="뷰 탭" className="flex items-center gap-0.5">
           {VIEW_TABS.map((tab) => {
             const isActive = activeTab === tab.id;

@@ -27,7 +27,7 @@ export function useScatterData() {
       );
       return res.data;
     },
-    enabled: primaryCommodityId !== null,
+    enabled: primaryCommodityId != null,
     retry: 3,
     staleTime: 5 * 60 * 1000,
   });

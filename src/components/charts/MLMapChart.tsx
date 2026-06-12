@@ -39,10 +39,7 @@ export function MLMapChart({ points, model, xLabel, yLabel, height = 240 }: Prop
       .append('g')
       .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
-    // filter valid — PARSE-NUM-002
-    const valid = points.filter(
-      (p) => isFinite(p.x_value) && isFinite(p.y_value),
-    );
+    const valid = points.filter((p) => isFinite(p.x_value) && isFinite(p.y_value));
     if (valid.length === 0) return;
 
     const xExt = d3.extent(valid, (p) => p.x_value) as [number, number];
@@ -50,23 +47,25 @@ export function MLMapChart({ points, model, xLabel, yLabel, height = 240 }: Prop
     const xPad = (xExt[1] - xExt[0]) * 0.1 || 0.5;
     const yPad = (yExt[1] - yExt[0]) * 0.1 || 0.5;
 
-    const x = d3.scaleLinear().domain([xExt[0] - xPad, xExt[1] + xPad]).range([0, w]);
-    const y = d3.scaleLinear().domain([yExt[0] - yPad, yExt[1] + yPad]).range([h, 0]);
+    const x = d3
+      .scaleLinear()
+      .domain([xExt[0] - xPad, xExt[1] + xPad])
+      .range([0, w]);
+    const y = d3
+      .scaleLinear()
+      .domain([yExt[0] - yPad, yExt[1] + yPad])
+      .range([h, 0]);
 
-    // 모델 색 그라데이션 — anomaly 점만 normalFill → modelColor로 진해짐.
-    // 모델별로 도메인을 분리해서 anomaly 점들 사이 score 분포가 색 진하기로 보이게 함.
     const modelColor = ML_MODEL_COLORS[model];
     const anomalyScores = valid.filter((p) => p.is_anomaly).map((p) => p.anomaly_score);
-    const scoreExt = anomalyScores.length > 0
-      ? (d3.extent(anomalyScores) as [number, number])
-      : [0, 1];
-    // IF/LOF/SVM 모두 낮을수록 이상 → 도메인 반전해서 "더 음수 = 더 진한 모델 색"
+    const scoreExt =
+      anomalyScores.length > 0 ? (d3.extent(anomalyScores) as [number, number]) : [0, 1];
+    // score가 낮을수록 이상 → 도메인 반전해서 낮은 값이 더 진한 모델 색
     const colorScale = d3
       .scaleSequential()
       .domain([scoreExt[1], scoreExt[0]])
       .interpolator(d3.interpolateRgb(PANEL_CHART_COLORS.mlMapNormalFill, modelColor));
 
-    // normal points (is_anomaly=false 또는 is_highlight=true가 아닌 점)
     g.selectAll('.normal-dot')
       .data(valid.filter((p) => !p.is_highlight))
       .join('circle')
@@ -74,10 +73,11 @@ export function MLMapChart({ points, model, xLabel, yLabel, height = 240 }: Prop
       .attr('cx', (p) => x(p.x_value))
       .attr('cy', (p) => y(p.y_value))
       .attr('r', 3)
-      .attr('fill', (p) => p.is_anomaly ? colorScale(p.anomaly_score) : PANEL_CHART_COLORS.mlMapNormalFill)
+      .attr('fill', (p) =>
+        p.is_anomaly ? colorScale(p.anomaly_score) : PANEL_CHART_COLORS.mlMapNormalFill,
+      )
       .attr('opacity', 0.7);
 
-    // highlight point (current anomaly) — 모델 색 + stroke로 강조
     const highlighted = valid.filter((p) => p.is_highlight);
     g.selectAll('.highlight-dot')
       .data(highlighted)
@@ -90,31 +90,39 @@ export function MLMapChart({ points, model, xLabel, yLabel, height = 240 }: Prop
       .attr('stroke', CHART_THEME.axisText)
       .attr('stroke-width', 2);
 
-    // axes
-    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(4)).attr('color', CHART_THEME.axisText);
+    g.append('g')
+      .attr('transform', `translate(0,${h})`)
+      .call(d3.axisBottom(x).ticks(4))
+      .attr('color', CHART_THEME.axisText);
     g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', CHART_THEME.axisText);
 
-    // axis labels from API response
     if (xLabel) {
       g.append('text')
-        .attr('x', w / 2).attr('y', h + 32)
+        .attr('x', w / 2)
+        .attr('y', h + 32)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '10px').attr('fill', CHART_THEME.axisText)
+        .attr('font-size', '10px')
+        .attr('fill', CHART_THEME.axisText)
         .text(xLabel);
     }
     if (yLabel) {
       g.append('text')
         .attr('transform', `rotate(-90)`)
-        .attr('x', -h / 2).attr('y', -36)
+        .attr('x', -h / 2)
+        .attr('y', -36)
         .attr('text-anchor', 'middle')
-        .attr('font-size', '10px').attr('fill', CHART_THEME.axisText)
+        .attr('font-size', '10px')
+        .attr('fill', CHART_THEME.axisText)
         .text(yLabel);
     }
   }, [points, model, xLabel, yLabel, height]);
 
   if (points.length === 0) {
     return (
-      <div className="flex items-center justify-center text-tertiary text-[12px]" style={{ height }}>
+      <div
+        className="flex items-center justify-center text-tertiary text-[12px]"
+        style={{ height }}
+      >
         ML 결과맵 데이터가 없습니다.
       </div>
     );

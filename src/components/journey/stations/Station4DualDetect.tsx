@@ -1,6 +1,4 @@
-// ④ 이중 탐지 — 이상 후보가 계량(Phase 7)·ML(Phase 7-ML) 두 갈래로 분기. 실제 판정 반영.
-// 계량: z/IQR 발광 + 정상/실제 시차 이중선(lag_deviation) + 비대칭 표시.
-// ML: 3구체 반경=percentile, 발광=anomaly, 중앙 ml_vote n/3.
+// ④ 이중 탐지 — 이상 후보가 계량(Phase 7)과 ML(Phase 7-ML) 두 갈래로 분기. 실제 판정 반영.
 import { Line, RoundedBox } from '@react-three/drei';
 import type { StationProps } from '../journeyContract';
 import type { AnomalyDetail } from '@/types/anomaly';
@@ -15,9 +13,24 @@ interface Props extends StationProps {
 }
 
 const MODELS = [
-  { key: 'if', label: 'Isolation Forest', color: ML_MODEL_COLORS.isolation_forest, note: '원리: 무작위 분기 트리로 고립도 측정\n특징: 소수 분기로 고립되면 이상' },
-  { key: 'lof', label: 'LOF', color: ML_MODEL_COLORS.lof, note: '원리: 국소 도달 밀도 비율\n특징: 점진적 이탈에 민감' },
-  { key: 'svm', label: 'One-Class SVM', color: ML_MODEL_COLORS.ocsvm, note: '원리: RBF 커널로 정상 분포 경계 학습\n특징: 경계 밖이면 이상' },
+  {
+    key: 'if',
+    label: 'Isolation Forest',
+    color: ML_MODEL_COLORS.isolation_forest,
+    note: '원리: 무작위 분기 트리로 고립도 측정\n특징: 소수 분기로 고립되면 이상',
+  },
+  {
+    key: 'lof',
+    label: 'LOF',
+    color: ML_MODEL_COLORS.lof,
+    note: '원리: 국소 도달 밀도 비율\n특징: 점진적 이탈에 민감',
+  },
+  {
+    key: 'svm',
+    label: 'One-Class SVM',
+    color: ML_MODEL_COLORS.ocsvm,
+    note: '원리: RBF 커널로 정상 분포 경계 학습\n특징: 경계 밖이면 이상',
+  },
 ];
 
 const CENTER: [number, number, number] = [0, 2.4, 0];
@@ -25,11 +38,12 @@ const ECON: [number, number, number] = [-3.8, 0, 0];
 
 export function Station4DualDetect({ active, detail, normalMode }: Props) {
   const bind = useHoverBinders();
-  // '이상 후보' 색 = 선택 이상의 신뢰도 등급색(고=빨강/중=머스터드/참=청록).
-  const gradeColor = detail?.confidence_grade ? JOURNEY_GRADE_COLORS[detail.confidence_grade] : '#a8a298';
+  const gradeColor = detail?.confidence_grade
+    ? JOURNEY_GRADE_COLORS[detail.confidence_grade]
+    : '#a8a298';
   const sm = detail?.stat_metrics;
   const ml = detail?.ml_summary;
-  // 계량 탐지(Phase 7)는 3유형 전체: 패턴1(방향역전·시차) + 패턴2(Z·IQR) + 패턴3(스프레드).
+  // 계량 탐지(Phase 7): 3유형 중 하나 이상이 해당하면 탐지.
   const econHit = !!(
     sm?.zscore_alert ||
     sm?.iqr_outlier ||
@@ -37,9 +51,10 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
     sm?.lag_deviation ||
     (sm?.spread_n3 != null && sm.spread_n3 > 0)
   );
-  // ML(Phase 7-ML)은 구간 A·B에만 수행(논문 3-3).
+  // ML은 구간 A·B에만 수행한다.
+  // TODO: C·D 구간 ML 피처 설계 시 mlApplies 조건 확장 필요
   const mlApplies = detail?.segment_id === 'A' || detail?.segment_id === 'B';
-  // 계량 탐지 사유(논문 §6-1: 방향역전형 88.6% 최다) — Z·IQR만 표시하면 실제 사유 왜곡.
+  // 계량 탐지 사유 목록. 방향역전형이 가장 많아 Z·IQR만 표시하면 사유가 왜곡된다.
   const econReasons = [
     sm?.direction_reversal && '방향역전',
     sm?.lag_deviation && '시차이탈',
@@ -78,7 +93,7 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
         </Label3D>
       )}
 
-      {/* 계량 lane */}
+      {/* 계량 탐지 */}
       <Line points={[CENTER, ECON]} color="#0d9488" lineWidth={2.5} />
       <RoundedBox
         position={ECON}
@@ -90,7 +105,10 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
           color: '#0d9488',
           rows: [
             { label: 'IQR', value: sm?.iqr_outlier ? '이탈' : '범위 내' },
-            { label: '탐지 사유', value: econReasons.length ? econReasons.join('·') : econHit ? 'Z/IQR' : '없음' },
+            {
+              label: '탐지 사유',
+              value: econReasons.length ? econReasons.join('·') : econHit ? 'Z/IQR' : '없음',
+            },
           ],
           note: '유형1: 방향 역전과 시차 이탈\n유형2: Z-score+IQR 동시 초과\n유형3: 스프레드 누적',
           diagram: 'term_zscore',
@@ -121,7 +139,7 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
         </Label3D>
       )}
 
-      {/* 계량 Z-score 이탈 게이지 — 입력 데이터에 반응(길이·색 변함). 주의 2.0 눈금. */}
+      {/* Z-score 게이지 — 2.0 주의 눈금 포함 */}
       {(() => {
         const z = sm?.zscore != null ? Math.abs(sm.zscore) : 0;
         const gw = 1.4;
@@ -137,7 +155,11 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
             {len > 0.01 && (
               <mesh position={[ECON[0] - gw / 2 + len / 2, gy, 0.03]}>
                 <boxGeometry args={[len, 0.16, 0.14]} />
-                <meshStandardMaterial color={col} emissive={col} emissiveIntensity={z > 2.0 ? 0.45 : 0.15} />
+                <meshStandardMaterial
+                  color={col}
+                  emissive={col}
+                  emissiveIntensity={z > 2.0 ? 0.45 : 0.15}
+                />
               </mesh>
             )}
             <mesh position={[ECON[0] - gw / 2 + gw * (2.0 / 2.5), gy, 0.05]}>
@@ -148,7 +170,7 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
         );
       })()}
 
-      {/* 정상/실제 시차 이중선 (lag_deviation) — ECON 기준 상대좌표 + 길이 캡 */}
+      {/* 시차 이중선 (lag_deviation) */}
       {(() => {
         if (normalLag === null || actualLag === null) return null;
         const lagBaseX = ECON[0] - 2.4;
@@ -174,7 +196,11 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
               lineWidth={3}
             />
             {active && (
-              <Label3D position={[lagBaseX, -2.95, 0]} size={10} color={lagDev ? '#d97706' : undefined}>
+              <Label3D
+                position={[lagBaseX, -2.95, 0]}
+                size={10}
+                color={lagDev ? '#d97706' : undefined}
+              >
                 {`시차 정상 ${normalLag} → 실제 ${actualLag}`}
               </Label3D>
             )}
@@ -182,7 +208,7 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
         );
       })()}
 
-      {/* ML lane: 3 모델 → 앙상블(2개 이상 합의) → 이상 후보 */}
+      {/* ML 탐지 */}
       {(() => {
         const vote = ml?.ml_vote ?? 0;
         const ensHit = vote >= 2;
@@ -192,11 +218,17 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
             {MODELS.map((m, i) => {
               const pos: [number, number, number] = [4.0, 1.2 - i * 1.5, 0];
               const hit = !!flags[m.key];
-              const p = pct[m.key]; // percentile은 0~100 스케일
+              const p = pct[m.key];
               const r = 0.3 + (typeof p === 'number' ? p / 100 : 0.5) * 0.38;
               return (
                 <group key={m.key}>
-                  <Line points={[pos, ENS]} color={m.color} lineWidth={1.6} transparent opacity={hit ? 0.7 : 0.3} />
+                  <Line
+                    points={[pos, ENS]}
+                    color={m.color}
+                    lineWidth={1.6}
+                    transparent
+                    opacity={hit ? 0.7 : 0.3}
+                  />
                   <mesh
                     position={pos}
                     {...bind({
@@ -206,7 +238,14 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
                       note: m.note,
                       viz:
                         typeof p === 'number'
-                          ? { kind: 'gauge', value: p, min: 70, max: 100, label: '이상점수 백분위(70~100)', color: m.color }
+                          ? {
+                              kind: 'gauge',
+                              value: p,
+                              min: 70,
+                              max: 100,
+                              label: '이상점수 백분위(70~100)',
+                              color: m.color,
+                            }
                           : undefined,
                     })}
                   >
@@ -228,8 +267,14 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
               );
             })}
 
-            {/* 앙상블 노드 — 2개 이상 합의 시 강조 */}
-            <Line points={[ENS, CENTER]} color="#0891b2" lineWidth={ensHit ? 3 : 1.8} transparent opacity={ensHit ? 0.9 : 0.4} />
+            {/* 앙상블 노드 */}
+            <Line
+              points={[ENS, CENTER]}
+              color="#0891b2"
+              lineWidth={ensHit ? 3 : 1.8}
+              transparent
+              opacity={ensHit ? 0.9 : 0.4}
+            />
             <RoundedBox
               position={ENS}
               args={[1.0, 0.8, 0.5]}
@@ -260,7 +305,12 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
               />
             </RoundedBox>
             {active && (
-              <Label3D position={[ENS[0], ENS[1] - 0.85, 0]} chip size={11} color={ensHit ? '#0891b2' : undefined}>
+              <Label3D
+                position={[ENS[0], ENS[1] - 0.85, 0]}
+                chip
+                size={11}
+                color={ensHit ? '#0891b2' : undefined}
+              >
                 {`앙상블 ${vote}/3 탐지`}
               </Label3D>
             )}

@@ -24,7 +24,7 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
     if (!svg || !container || data.length === 0) return;
 
     const width = container.getBoundingClientRect().width;
-    if (width === 0) return; // FE-D3-003
+    if (width === 0) return;
 
     const w = width - MARGIN.left - MARGIN.right;
     const h = height - MARGIN.top - MARGIN.bottom;
@@ -38,11 +38,10 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
       .append('g')
       .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
-    // filter valid points — PARSE-NUM-002
     const valid = data.filter(
       (d) => d.transmission_rate !== null && isFinite(d.transmission_rate as number),
     );
-    if (valid.length === 0) return; // FE-D3-001
+    if (valid.length === 0) return;
 
     const x = d3
       .scaleTime()
@@ -57,9 +56,11 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
     const yMin = Math.min(...allVals.filter(isFinite));
     const yMax = Math.max(...allVals.filter(isFinite));
     const pad = (yMax - yMin) * 0.1 || 0.1;
-    const y = d3.scaleLinear().domain([yMin - pad, yMax + pad]).range([h, 0]);
+    const y = d3
+      .scaleLinear()
+      .domain([yMin - pad, yMax + pad])
+      .range([h, 0]);
 
-    // Q1~Q3 band
     const bandData = valid.filter((d) => d.q1 !== null && d.q3 !== null);
     if (bandData.length > 1) {
       const area = d3
@@ -74,7 +75,6 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
         .attr('d', area);
     }
 
-    // rolling mean line
     const meanData = valid.filter((d) => d.rolling_mean !== null);
     if (meanData.length > 1) {
       const line = d3
@@ -90,7 +90,6 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
         .attr('d', line);
     }
 
-    // transmission rate line
     const line = d3
       .line<TransmissionRateDataPoint>()
       .defined((d) => d.transmission_rate !== null)
@@ -103,7 +102,6 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
       .attr('stroke-width', 1.5)
       .attr('d', line);
 
-    // highlight period vertical line
     if (highlightPeriod) {
       const hx = x(parseYearMonth(highlightPeriod));
       g.append('line')
@@ -116,11 +114,12 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
         .attr('stroke-dasharray', '3 2');
     }
 
-    // axes
-    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(4)).attr('color', CHART_THEME.axisText);
+    g.append('g')
+      .attr('transform', `translate(0,${h})`)
+      .call(d3.axisBottom(x).ticks(4))
+      .attr('color', CHART_THEME.axisText);
     g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', CHART_THEME.axisText);
 
-    // FX-5: hover overlay
     attachHoverOverlay({
       g,
       containerRef,
@@ -136,8 +135,16 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
         datum: d,
         date: parseYearMonth(d.period),
         values: [
-          { label: '전이율', value: d.transmission_rate, color: PANEL_CHART_COLORS.transmissionRateLine },
-          { label: 'Rolling Mean', value: d.rolling_mean, color: PANEL_CHART_COLORS.rollingMeanLine },
+          {
+            label: '전이율',
+            value: d.transmission_rate,
+            color: PANEL_CHART_COLORS.transmissionRateLine,
+          },
+          {
+            label: 'Rolling Mean',
+            value: d.rolling_mean,
+            color: PANEL_CHART_COLORS.rollingMeanLine,
+          },
           { label: 'Q1', value: d.q1 },
           { label: 'Q3', value: d.q3 },
         ],
@@ -149,7 +156,10 @@ export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: P
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center text-tertiary text-[12px]" style={{ height }}>
+      <div
+        className="flex items-center justify-center text-tertiary text-[12px]"
+        style={{ height }}
+      >
         해당 기간 데이터가 없습니다.
       </div>
     );

@@ -102,9 +102,7 @@
           "value": 380.0,
           "index_2020": 180.9,
           "has_anomaly": true,
-          "anomaly_ids": [
-            50
-          ]
+          "anomaly_ids": [50]
         },
         {
           "period": "2023-01",
@@ -118,18 +116,14 @@
           "value": 278.6,
           "index_2020": 132.7,
           "has_anomaly": true,
-          "anomaly_ids": [
-            1
-          ]
+          "anomaly_ids": [1]
         },
         {
           "period": "2025-01",
           "value": 265.3,
           "index_2020": 126.3,
           "has_anomaly": true,
-          "anomaly_ids": [
-            3
-          ]
+          "anomaly_ids": [3]
         }
       ]
     },
@@ -227,9 +221,7 @@
           "value": 621.7,
           "index_2020": 149.8,
           "has_anomaly": true,
-          "anomaly_ids": [
-            50
-          ]
+          "anomaly_ids": [50]
         },
         {
           "period": "2023-01",
@@ -243,18 +235,14 @@
           "value": 498.5,
           "index_2020": 120.1,
           "has_anomaly": true,
-          "anomaly_ids": [
-            1
-          ]
+          "anomaly_ids": [1]
         },
         {
           "period": "2025-01",
           "value": 484.3,
           "index_2020": 116.7,
           "has_anomaly": true,
-          "anomaly_ids": [
-            3
-          ]
+          "anomaly_ids": [3]
         }
       ]
     }

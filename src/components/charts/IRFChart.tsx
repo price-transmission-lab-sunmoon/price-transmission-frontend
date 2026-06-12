@@ -47,9 +47,11 @@ export function IRFChart({ irfs, height = 240 }: Props) {
     const yMin = Math.min(...allVals);
     const yMax = Math.max(...allVals);
     const pad = (yMax - yMin) * 0.1 || 0.1;
-    const y = d3.scaleLinear().domain([yMin - pad, yMax + pad]).range([h, 0]);
+    const y = d3
+      .scaleLinear()
+      .domain([yMin - pad, yMax + pad])
+      .range([h, 0]);
 
-    // subperiod curves (thin, gray)
     subCurves.forEach((curve) => {
       const line = d3
         .line<(typeof curve.data)[0]>()
@@ -63,7 +65,6 @@ export function IRFChart({ irfs, height = 240 }: Props) {
         .attr('d', line);
     });
 
-    // full curve CI band + line
     if (fullCurve) {
       const area = d3
         .area<(typeof fullCurve.data)[0]>()
@@ -87,7 +88,6 @@ export function IRFChart({ irfs, height = 240 }: Props) {
         .attr('stroke-width', 2)
         .attr('d', line);
 
-      // peak horizon dot
       const peakPoint = fullCurve.data.find((d) => d.horizon === fullCurve.peak_horizon);
       if (peakPoint) {
         g.append('circle')
@@ -108,32 +108,51 @@ export function IRFChart({ irfs, height = 240 }: Props) {
       .append('g')
       .attr('transform', `translate(0,${h})`)
       .call(d3.axisBottom(x).ticks(maxHorizon).tickSize(0).tickPadding(8));
-    xAxis.selectAll('text').attr('fill', CHART_THEME.axisText).attr('font-family', CHART_THEME.fontFamilyMono);
+    xAxis
+      .selectAll('text')
+      .attr('fill', CHART_THEME.axisText)
+      .attr('font-family', CHART_THEME.fontFamilyMono);
     xAxis.select('.domain').attr('stroke', CHART_THEME.axisLine);
-    const yAxis = g
-      .append('g')
-      .call(d3.axisLeft(y).ticks(4).tickSize(0).tickPadding(8));
-    yAxis.selectAll('text').attr('fill', CHART_THEME.axisText).attr('font-family', CHART_THEME.fontFamilyMono);
+    const yAxis = g.append('g').call(d3.axisLeft(y).ticks(4).tickSize(0).tickPadding(8));
+    yAxis
+      .selectAll('text')
+      .attr('fill', CHART_THEME.axisText)
+      .attr('font-family', CHART_THEME.fontFamilyMono);
     yAxis.select('.domain').remove();
 
-    // FX-5: hover overlay (horizon 기반)
+    // horizon 기반 hover
     if (fullCurve) {
       const guide = g.append('g').attr('class', 'hover-guide').style('display', 'none');
       guide
         .append('line')
-        .attr('y1', 0).attr('y2', h)
-        .attr('stroke', CHART_THEME.axisText).attr('stroke-width', 1)
-        .attr('stroke-dasharray', '3,3').attr('opacity', 0.5);
-      const dot = guide.append('circle').attr('r', 4)
-        .attr('fill', 'var(--bg-surface)').attr('stroke', 'var(--text-primary)').attr('stroke-width', 1.5);
+        .attr('y1', 0)
+        .attr('y2', h)
+        .attr('stroke', CHART_THEME.axisText)
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '3,3')
+        .attr('opacity', 0.5);
+      const dot = guide
+        .append('circle')
+        .attr('r', 4)
+        .attr('fill', 'var(--bg-surface)')
+        .attr('stroke', 'var(--text-primary)')
+        .attr('stroke-width', 1.5);
 
       const tip = createChartTooltip('irf-chart-tip');
 
       g.append('rect')
-        .attr('width', w).attr('height', h)
-        .attr('fill', 'transparent').style('cursor', 'crosshair')
-        .on('mouseenter', () => { guide.style('display', null); if (tip) tip.style.display = 'block'; })
-        .on('mouseleave', () => { guide.style('display', 'none'); if (tip) tip.style.display = 'none'; })
+        .attr('width', w)
+        .attr('height', h)
+        .attr('fill', 'transparent')
+        .style('cursor', 'crosshair')
+        .on('mouseenter', () => {
+          guide.style('display', null);
+          if (tip) tip.style.display = 'block';
+        })
+        .on('mouseleave', () => {
+          guide.style('display', 'none');
+          if (tip) tip.style.display = 'none';
+        })
         .on('mousemove', function (event: MouseEvent) {
           const [mx, my] = d3.pointer(event, this);
           const hz = Math.round(x.invert(mx));
@@ -155,7 +174,13 @@ export function IRFChart({ irfs, height = 240 }: Props) {
     }
   }, [irfs, height]);
 
-  useEffect(() => () => { const t = document.getElementById('irf-chart-tip'); if (t) t.remove(); }, []);
+  useEffect(
+    () => () => {
+      const t = document.getElementById('irf-chart-tip');
+      if (t) t.remove();
+    },
+    [],
+  );
 
   if (irfs.length === 0) {
     return (

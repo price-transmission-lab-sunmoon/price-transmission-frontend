@@ -1,5 +1,4 @@
-// 두 점을 잇는 연결선 + 방향으로 흐르는 입자(데이터가 한 방향으로 흐른다는 시각 은유).
-// 입자에는 라벨이 붙지 않으므로 애니메이션해도 Label3D desync 문제 없음.
+// 두 점을 잇는 연결선 + 흐르는 입자. 라벨이 없어 Label3D desync 문제가 없다.
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Line } from '@react-three/drei';

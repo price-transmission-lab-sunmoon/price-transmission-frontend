@@ -1,5 +1,4 @@
-// ② 가격 전달 경로 — 선택 품목의 구간(A~E) 3D 체인. 대표 이상이 속한 구간을 강조하고
-// 그 구간의 실제 수치(전이율·모형·공적분)를 배지로(대표 detail.stat_metrics 기반).
+// ② 가격 전달 경로 — 구간 A~E 3D 체인. 대표 이상 구간을 강조하고 stat_metrics 수치를 배지로 표시.
 import { Line } from '@react-three/drei';
 import type { StationProps } from '../journeyContract';
 import type { Commodity } from '@/types/commodity';
@@ -30,7 +29,7 @@ const SEG_NOTE: Record<string, string> = {
   D_prime: 'PPI → CPI (도매 미관측 품목)',
 };
 
-// 가격 단계별 노드 색(단색 → 구분). 국제가·수입단가·PPI·도매가·CPI.
+// 가격 단계별 노드 색.
 const LEVEL_COLOR: Record<string, string> = {
   국제가: '#7c3aed',
   수입단가: '#ea580c',
@@ -53,7 +52,7 @@ export function Station2Segments({ active, commodity, detail }: Props) {
 
   const sm = detail?.stat_metrics;
   const hotSeg = detail?.segment_id;
-  const hotIdx = hotSeg ? segOrder.indexOf(hotSeg) : -1; // hot 구간이 잇는 두 레벨 노드 인덱스
+  const hotIdx = hotSeg ? segOrder.indexOf(hotSeg) : -1;
   const hotColor = hotSeg
     ? SEGMENT_COLORS_PRIMARY[hotSeg as keyof typeof SEGMENT_COLORS_PRIMARY] ?? '#0d9488'
     : '#0d9488';
@@ -98,7 +97,13 @@ export function Station2Segments({ active, commodity, detail }: Props) {
                 <meshBasicMaterial color={color} transparent opacity={0.12} />
               </mesh>
             )}
-            <Line points={[a, b]} color={color} lineWidth={isHot ? 8 : 3} transparent opacity={isHot ? 1 : 0.28} />
+            <Line
+              points={[a, b]}
+              color={color}
+              lineWidth={isHot ? 8 : 3}
+              transparent
+              opacity={isHot ? 1 : 0.28}
+            />
             <mesh
               position={[mid[0], 0, 0]}
               {...bind({
@@ -114,7 +119,14 @@ export function Station2Segments({ active, commodity, detail }: Props) {
                 note: SEG_NOTE[seg] ?? '가격 전달 구간',
                 viz:
                   isHot && sm
-                    ? { kind: 'gauge', value: sm.transmission_rate ?? 0, max: 2, threshold: 1, label: '전이율(1=완전전달)', color }
+                    ? {
+                        kind: 'gauge',
+                        value: sm.transmission_rate ?? 0,
+                        max: 2,
+                        threshold: 1,
+                        label: '전이율(1=완전전달)',
+                        color,
+                      }
                     : undefined,
               })}
             >

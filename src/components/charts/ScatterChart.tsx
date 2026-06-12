@@ -12,7 +12,6 @@ import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
 import { StateView } from '@/components/ui/StateView';
 
-// ── Constants (light theme tokens) ────────────────────────────
 const BASELINE_COLOR = 'var(--brand)';
 const SLIDER_INTERVAL_MS = 200;
 const ZONE_LABEL_COLOR = CHART_THEME.axisLabel;
@@ -27,7 +26,6 @@ const PATTERN_LABELS: Record<string, string> = {
   pattern3: '깃털 패턴',
 };
 
-// 신뢰도 라벨은 services/anomaly.ts confidenceLabel() 단일 출처 사용 (중복 제거).
 const SEGMENT_DISPLAY: Record<SegmentId, string> = {
   A: 'A',
   B: 'B',
@@ -134,14 +132,11 @@ export function ScatterChart() {
     };
   }, [data]);
 
-  const handleMouseEnter = useCallback(
-    (event: MouseEvent, p: ScatterPoint) => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      setTooltip({ point: p, x: event.clientX - rect.left, y: event.clientY - rect.top });
-    },
-    [],
-  );
+  const handleMouseEnter = useCallback((event: MouseEvent, p: ScatterPoint) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setTooltip({ point: p, x: event.clientX - rect.left, y: event.clientY - rect.top });
+  }, []);
   const handleMouseLeave = useCallback(() => setTooltip(null), []);
 
   useEffect(() => {
@@ -155,7 +150,7 @@ export function ScatterChart() {
     const H = dimensions.height - MARGIN.top - MARGIN.bottom;
     if (W <= 0 || H <= 0) return;
 
-    // ── 유효 포인트 필터링 (PARSE-NUM-002, PARSE-ENUM-002) ─────────
+    // 유효 포인트 필터링
     const validPoints = data.points.filter((p) => {
       if (typeof p.upstream_pct !== 'number' || isNaN(p.upstream_pct)) return false;
       if (typeof p.downstream_pct !== 'number' || isNaN(p.downstream_pct)) return false;
@@ -170,8 +165,10 @@ export function ScatterChart() {
           console.warn(`[PARSE-ENUM-002] Invalid primary_pattern: ${p.primary_pattern}`);
         }
       }
-      if (p.is_anomaly && p.anomaly_id === null) {
-        console.warn('[PARSE-SCHEMA-001] is_anomaly=true but anomaly_id=null — point not clickable');
+      if (p.is_anomaly && p.anomaly_id == null) {
+        console.warn(
+          '[PARSE-SCHEMA-001] is_anomaly=true but anomaly_id=null — point not clickable',
+        );
       }
       return true;
     });
@@ -202,28 +199,35 @@ export function ScatterChart() {
 
     const g = svg.append('g').attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
-    // Grid (horizontal, solid Observable style)
+    // 수평 그리드
     g.append('g')
       .attr('class', 'y-grid')
-      .call(d3.axisLeft(yScale).ticks(6).tickSize(-W).tickFormat(() => ''))
+      .call(
+        d3
+          .axisLeft(yScale)
+          .ticks(6)
+          .tickSize(-W)
+          .tickFormat(() => ''),
+      )
       .call((ax) => ax.select('.domain').remove())
       .selectAll('line')
       .style('stroke', CHART_THEME.gridLine);
 
-    // Axes
     const xAxisG = g
       .append('g')
       .attr('transform', `translate(0,${H})`)
       .call(d3.axisBottom(xScale).ticks(6).tickSize(0).tickPadding(10));
     xAxisG.select('.domain').style('stroke', CHART_THEME.axisLine);
-    xAxisG.selectAll('text')
+    xAxisG
+      .selectAll('text')
       .style('fill', CHART_THEME.axisText)
       .style('font-size', '11px')
       .style('font-family', CHART_THEME.fontFamilyMono);
 
     const yAxisG = g.append('g').call(d3.axisLeft(yScale).ticks(6).tickSize(0).tickPadding(10));
     yAxisG.select('.domain').remove();
-    yAxisG.selectAll('text')
+    yAxisG
+      .selectAll('text')
       .style('fill', CHART_THEME.axisText)
       .style('font-size', '11px')
       .style('font-family', CHART_THEME.fontFamilyMono);
@@ -247,22 +251,32 @@ export function ScatterChart() {
 
     // 원점 강조선
     g.append('line')
-      .attr('x1', 0).attr('x2', W)
-      .attr('y1', yScale(0)).attr('y2', yScale(0))
-      .style('stroke', CHART_THEME.axisText).style('stroke-opacity', 0.4).style('stroke-width', 1);
+      .attr('x1', 0)
+      .attr('x2', W)
+      .attr('y1', yScale(0))
+      .attr('y2', yScale(0))
+      .style('stroke', CHART_THEME.axisText)
+      .style('stroke-opacity', 0.4)
+      .style('stroke-width', 1);
 
     g.append('line')
-      .attr('x1', xScale(0)).attr('x2', xScale(0))
-      .attr('y1', 0).attr('y2', H)
-      .style('stroke', CHART_THEME.axisText).style('stroke-opacity', 0.4).style('stroke-width', 1);
+      .attr('x1', xScale(0))
+      .attr('x2', xScale(0))
+      .attr('y1', 0)
+      .attr('y2', H)
+      .style('stroke', CHART_THEME.axisText)
+      .style('stroke-opacity', 0.4)
+      .style('stroke-width', 1);
 
-    // 대각선 기준선 y=x (brand teal)
+    // 대각선 기준선 y=x
     const diagMin = Math.max(xDomain[0], yDomain[0]);
     const diagMax = Math.min(xDomain[1], yDomain[1]);
     if (diagMin < diagMax) {
       g.append('line')
-        .attr('x1', xScale(diagMin)).attr('y1', yScale(diagMin))
-        .attr('x2', xScale(diagMax)).attr('y2', yScale(diagMax))
+        .attr('x1', xScale(diagMin))
+        .attr('y1', yScale(diagMin))
+        .attr('x2', xScale(diagMax))
+        .attr('y2', yScale(diagMax))
         .style('stroke', BASELINE_COLOR)
         .style('stroke-opacity', 0.5)
         .style('stroke-width', 1.5)
@@ -271,10 +285,30 @@ export function ScatterChart() {
 
     // 구역 레이블 (4사분면)
     const zones = [
-      { x: (xDomain[0] + 0) / 2, y: (0 + yDomain[1]) / 2, label: '깃털 패턴', desc: '상류 하락에도 하류 무반응 또는 상승' },
-      { x: (0 + xDomain[1]) / 2, y: (0 + yDomain[1]) / 2, label: '과대 전달', desc: '상류 상승이 하류에 더 크게 전달됨' },
-      { x: (xDomain[0] + 0) / 2, y: (yDomain[0] + 0) / 2, label: '과소 전달', desc: '상류 하락에 하류가 덜 반응' },
-      { x: (0 + xDomain[1]) / 2, y: (yDomain[0] + 0) / 2, label: '역전', desc: '상류 상승, 하류 하락' },
+      {
+        x: (xDomain[0] + 0) / 2,
+        y: (0 + yDomain[1]) / 2,
+        label: '깃털 패턴',
+        desc: '상류 하락에도 하류 무반응 또는 상승',
+      },
+      {
+        x: (0 + xDomain[1]) / 2,
+        y: (0 + yDomain[1]) / 2,
+        label: '과대 전달',
+        desc: '상류 상승이 하류에 더 크게 전달됨',
+      },
+      {
+        x: (xDomain[0] + 0) / 2,
+        y: (yDomain[0] + 0) / 2,
+        label: '과소 전달',
+        desc: '상류 하락에 하류가 덜 반응',
+      },
+      {
+        x: (0 + xDomain[1]) / 2,
+        y: (yDomain[0] + 0) / 2,
+        label: '역전',
+        desc: '상류 상승, 하류 하락',
+      },
     ];
 
     zones.forEach((z) => {
@@ -317,7 +351,7 @@ export function ScatterChart() {
         .style('stroke-width', 1);
     }
 
-    // 일반 관측치 (warm gray small dot)
+    // 일반 관측치
     g.selectAll<SVGCircleElement, ScatterPoint>('.normal-pt')
       .data(filteredPoints.filter((p) => !p.is_anomaly))
       .join('circle')
@@ -329,9 +363,12 @@ export function ScatterChart() {
       .style('fill', 'var(--text-muted)')
       .style('opacity', 0.7);
 
-    // 이상 관측치 — 3 layer pulse halo + white ring + dot (or reference outline)
+    // 이상 관측치 (pulse halo + white ring + dot, reference는 outline만)
     const anomalyPts = filteredPoints.filter(
-      (p) => p.is_anomaly && p.confidence_grade !== null && CONFIDENCE_GRADES.includes(p.confidence_grade),
+      (p) =>
+        p.is_anomaly &&
+        p.confidence_grade !== null &&
+        CONFIDENCE_GRADES.includes(p.confidence_grade),
     );
 
     const nodeG = g.append('g').attr('class', 'scatter-anomaly-nodes');
@@ -344,12 +381,14 @@ export function ScatterChart() {
       const color = ANOMALY_COLORS[grade];
       const isReference = grade === 'reference';
 
-      // Pulse halo — high only, CSS keyframes
+      // pulse halo (high 등급만, CSS keyframes)
       if (grade === 'high') {
-        nodeG.append('circle')
+        nodeG
+          .append('circle')
           .attr('class', 'anomaly-pulse-high')
           .attr('clip-path', 'url(#scatter-clip)')
-          .attr('cx', cx).attr('cy', cy)
+          .attr('cx', cx)
+          .attr('cy', cy)
           .attr('r', r + 3)
           .attr('fill', color)
           .style('pointer-events', 'none');
@@ -357,18 +396,21 @@ export function ScatterChart() {
 
       // White ring separator (non-reference only)
       if (!isReference) {
-        nodeG.append('circle')
+        nodeG
+          .append('circle')
           .attr('clip-path', 'url(#scatter-clip)')
-          .attr('cx', cx).attr('cy', cy)
+          .attr('cx', cx)
+          .attr('cy', cy)
           .attr('r', r + 2.5)
           .attr('fill', 'var(--bg-surface)')
           .style('pointer-events', 'none');
       }
 
-      // Main dot
-      nodeG.append('circle')
+      nodeG
+        .append('circle')
         .attr('clip-path', 'url(#scatter-clip)')
-        .attr('cx', cx).attr('cy', cy)
+        .attr('cx', cx)
+        .attr('cy', cy)
         .attr('r', r)
         .attr('fill', isReference ? 'var(--bg-surface)' : color)
         .attr('stroke', isReference ? color : 'transparent')
@@ -377,7 +419,7 @@ export function ScatterChart() {
         .on('mouseenter', (event: MouseEvent) => handleMouseEnter(event, p))
         .on('mouseleave', handleMouseLeave)
         .on('click', () => {
-          if (p.anomaly_id !== null) selectAnomaly(p.anomaly_id);
+          if (p.anomaly_id != null) selectAnomaly(p.anomaly_id);
         });
     });
   }, [data, dimensions, sliderPosition, handleMouseEnter, handleMouseLeave, selectAnomaly]);
@@ -413,15 +455,15 @@ export function ScatterChart() {
   const hasAnomalyPoints = data?.points.some((p) => p.is_anomaly) ?? false;
   const emptyPoints = data?.points.length === 0;
 
-  // CLAUDE.md §StreamChart 방어 패턴: 컨테이너 항상 mount. early return으로
-  // 컨테이너 자체를 조건부 마운트 금지. loading/error/empty은 overlay로.
+  // 컨테이너 div는 항상 마운트한다. early return으로 조건부 마운트하면
+  // ResizeObserver가 발화하지 않아 차트가 그려지지 않는다. 상태 표시는 overlay로 처리.
   const apiError = error as { code?: string; publicCode?: string; message?: string } | null;
   const errorCode = apiError?.publicCode ?? apiError?.code ?? '';
   const isCommodityNotFound = errorCode === 'COMMODITY_NOT_FOUND';
 
   return (
     <div className="flex flex-col h-full gap-3 min-h-0">
-      {/* 구간 탭 — brand teal active */}
+      {/* 구간 탭 */}
       <div className="flex gap-1 shrink-0">
         {tabs.map((tab) => {
           const isActive = scatterSegment === tab;
@@ -560,19 +602,23 @@ teal 점선(기준선)에 가까울수록 상류 변화가 그대로 전달된 �
               Y: {tooltip.point.downstream_pct >= 0 ? '+' : ''}
               {tooltip.point.downstream_pct.toFixed(1)}%
             </div>
-            <div className="mt-1.5 font-semibold" style={{ color: ANOMALY_COLORS[tooltip.point.confidence_grade] }}>
+            <div
+              className="mt-1.5 font-semibold"
+              style={{ color: ANOMALY_COLORS[tooltip.point.confidence_grade] }}
+            >
               {confidenceLabel(tooltip.point.confidence_grade)}
             </div>
             {tooltip.point.primary_pattern && (
               <div className="text-tertiary">
-                패턴: {PATTERN_LABELS[tooltip.point.primary_pattern] ?? tooltip.point.primary_pattern}
+                패턴:{' '}
+                {PATTERN_LABELS[tooltip.point.primary_pattern] ?? tooltip.point.primary_pattern}
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* 시점 슬라이더 — brand teal */}
+      {/* 시점 슬라이더 */}
       {data && months.length > 0 && (
         <div className="shrink-0 flex flex-col gap-1.5">
           <div className="flex items-center gap-2.5">
@@ -589,13 +635,7 @@ teal 점선(기준선)에 가까울수록 상류 변화가 그대로 전달된 �
                 onClick={handlePause}
                 variant="ghost"
                 size="sm"
-                icon={
-                  <Icon
-                    name="pause"
-                    size={14}
-                    style={{ color: 'var(--brand)' }}
-                  />
-                }
+                icon={<Icon name="pause" size={14} style={{ color: 'var(--brand)' }} />}
               />
             ) : (
               <IconButton
@@ -603,13 +643,7 @@ teal 점선(기준선)에 가까울수록 상류 변화가 그대로 전달된 �
                 onClick={handlePlay}
                 variant="ghost"
                 size="sm"
-                icon={
-                  <Icon
-                    name="play"
-                    size={14}
-                    style={{ color: 'var(--brand)' }}
-                  />
-                }
+                icon={<Icon name="play" size={14} style={{ color: 'var(--brand)' }} />}
               />
             )}
             <input

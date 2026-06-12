@@ -1,5 +1,4 @@
-// 3D 공간 한 점에 '3D로 부착'되는 한글 라벨(transform) — 모형과 같은 transform을 타서
-// 함께 움직인다(스크린-스페이스 Html의 desync 방지). troika 3D 텍스트는 한글 미지원.
+// 3D transform에 부착되는 한글 라벨. 모형과 같이 움직여 스크린-스페이스 desync를 막는다.
 import { Html } from '@react-three/drei';
 import type { ReactNode } from 'react';
 
