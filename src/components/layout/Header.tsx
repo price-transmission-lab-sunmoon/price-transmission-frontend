@@ -152,7 +152,7 @@ export function Header() {
             <circle cx="20" cy="3" r="2.5" fill="var(--brand)" />
           </svg>
           <span className="text-primary font-bold text-[15px] tracking-tight">
-            가격렌즈
+            SeePick
           </span>
         </div>
 
