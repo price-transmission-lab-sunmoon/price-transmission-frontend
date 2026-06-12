@@ -32,7 +32,6 @@ const BASE =
   'duration-fast ease-out ' +
   'disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none';
 
-// @guide:UI-02
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   function IconButton(
     {

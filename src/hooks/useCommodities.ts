@@ -10,7 +10,6 @@ interface CommoditiesResponse {
 
 // CLAUDE §16 자동 선택 정책: /commodities 응답 수신 + primaryCommodityId === null 일 때
 // setCommodities 호출 후 primary 자동 지정. 별도 트리거 컴포넌트 없이 본 훅에서만 수행.
-// @guide:HOOK-01
 export function useCommodities() {
   const query = useQuery<Commodity[]>({
     queryKey: ['commodities'],

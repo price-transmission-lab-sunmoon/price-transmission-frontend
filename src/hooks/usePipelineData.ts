@@ -3,7 +3,6 @@ import { client } from '@/api/client';
 import { ENDPOINTS } from '@/api/endpoints';
 import type { PipelineMetaResponse } from '@/types/meta';
 
-// @guide:HOOK-05
 export function usePipelineData() {
   return useQuery<PipelineMetaResponse>({
     queryKey: ['meta', 'pipeline'],

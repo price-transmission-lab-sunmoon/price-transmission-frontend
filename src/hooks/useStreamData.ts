@@ -4,7 +4,6 @@ import { ENDPOINTS } from '@/api/endpoints';
 import { useAppStore } from '@/stores/useAppStore';
 import type { StreamResponse } from '@/types/timeseries';
 
-// @guide:HOOK-07
 export function useStreamData() {
   const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
   const granularity = useAppStore((s) => s.granularity);

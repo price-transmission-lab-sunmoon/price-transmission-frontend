@@ -7,7 +7,6 @@ import type { ConfidenceGrade, MlModel, RawPriceSource, SegmentId } from '@/type
  */
 
 // Anomaly grades — WCAG-safe on warm-white canvas
-// @guide:UTIL-03
 export const ANOMALY_COLORS: Record<ConfidenceGrade, string> = {
   high: '#dc2626',      // red-600
   medium: '#d97706',    // amber-600

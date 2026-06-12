@@ -38,7 +38,6 @@ const ARIA_ROLE: Record<StateVariant, string | undefined> = {
   warning: undefined,
 };
 
-// @guide:UI-07
 export function StateView({
   variant,
   size = 'large',

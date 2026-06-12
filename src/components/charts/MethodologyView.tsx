@@ -595,7 +595,6 @@ function Section6DataSources() {
 // ============================================================
 // MethodologyView — 최상위 컨테이너
 // ============================================================
-// @guide:CHART-14
 export function MethodologyView() {
   const {
     data: pipelineData,

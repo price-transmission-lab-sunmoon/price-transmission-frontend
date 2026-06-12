@@ -24,7 +24,6 @@ import { formatErrorChainSummary, formatErrorChain } from '@/api/errorChain';
  * @example
  *   throw new FEError('FE-D3-001', '데이터 빈 배열', { cause: originalErr, chart_type: 'stream' });
  */
-// @guide:API-05
 export class FEError extends Error {
   code: string;
   context: Record<string, unknown>;
@@ -47,7 +46,6 @@ export class FEError extends Error {
  *
  * IS-7: cause는 body.context.cause 필드로 전달한다.
  */
-// @guide:API-06
 export class ApiError extends FEError {
   readonly httpStatus: number;
   readonly publicCode: string;
@@ -69,7 +67,6 @@ export class ApiError extends FEError {
  *
  * @param axiosError Axios 인터셉터가 throw한 에러 객체 전체
  */
-// @guide:API-07
 export function parseApiError(axiosError: unknown): ApiError | FEError {
   if (!(axiosError instanceof AxiosError)) {
     return new FEError('NETWORK_ERROR', '네트워크 오류 — AxiosError 아님', {
@@ -125,7 +122,6 @@ const CODES_404 = new Set([
 
 // 영구 실패 코드 — retry 무의미. P1-3에서 queryClient.retry 정책에 활용.
 // BE-3 (2026-05-20): 백엔드 신규 내부 코드(API-ANO-001 등) 및 public_code 양쪽 모두 등록.
-// @guide:API-08
 export const PERMANENT_FAILURE_CODES = new Set([
   // public_code
   'NOT_IMPLEMENTED',
@@ -157,7 +153,6 @@ export function isPermanentFailure(error: unknown): boolean {
   return false;
 }
 
-// @guide:API-09
 export function handleQueryError(
   error: unknown,
   query: Query<unknown, unknown>,

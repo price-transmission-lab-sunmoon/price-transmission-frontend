@@ -27,7 +27,6 @@ type InlineChartId = StatSeriesMetric | StatSnapshotMetric; // transmission_rate
 // CommodityState — 주·보조 품목
 // feature_spec_fe-layout-filter_vN §3.1 SoT
 // ============================================================
-// @guide:STORE-02
 interface CommodityState {
   commodities: Commodity[];
   primaryCommodityId: string | null;
@@ -43,7 +42,6 @@ interface CommodityState {
 // FilterState — 기간·구간·등급·패턴·사건 필터
 // feature_spec_fe-layout-filter_vN §3.1 SoT
 // ============================================================
-// @guide:STORE-03
 interface FilterState {
   filterFrom: string | null; // YYYY-MM
   filterTo: string | null; // YYYY-MM
@@ -72,7 +70,6 @@ interface FilterState {
 // ============================================================
 // ViewState — 현재 뷰 탭 + 선택된 이상 노드
 // ============================================================
-// @guide:STORE-04
 interface ViewState {
   activeTab: ViewTab;
   selectedAnomalyId: number | null;
@@ -89,7 +86,6 @@ interface ViewState {
 // ============================================================
 // OverlayState — 이벤트·신선도·원시 시계열 레이아웃·온보딩
 // ============================================================
-// @guide:STORE-05
 interface OverlayState {
   events: ExternalEvent[];
   freshness: Freshness | null;
@@ -109,7 +105,6 @@ interface OverlayState {
 // PanelState — 패널 너비·섹션 토글·인라인 차트 토글·결과맵 토글
 // web_plan_vN §6.6 (패널 너비 280~520px) + feature_dev_list_vN §feat/fe-panel 정의
 // ============================================================
-// @guide:STORE-06
 interface PanelState {
   panelWidth: number; // 280 ~ 520
   expandedSections: Set<PanelSectionId>;
@@ -123,7 +118,6 @@ interface PanelState {
 
 type AppStore = CommodityState & FilterState & ViewState & OverlayState & PanelState;
 
-// @guide:STORE-01
 export const useAppStore = create<AppStore>((set) => ({
   // ---------- CommodityState ----------
   commodities: [],

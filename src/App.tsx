@@ -27,7 +27,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// @guide:LAYOUT-10
 export function App() {
   return (
     <ErrorBoundary>

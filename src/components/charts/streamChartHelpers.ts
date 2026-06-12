@@ -13,7 +13,6 @@ export interface NodeBucketInfo {
 
 // segment별 시간 정렬 후 인접 cx 픽셀거리 >NODE_PROXIMITY_PX이면 bucket 끊음.
 // 반환: anomaly_id → {idx, size}
-// @guide:CHART-15
 export function computeNodeBuckets(
   anomalies: StreamChartAnomaly[],
   xScale: d3.ScaleTime<number, number>,

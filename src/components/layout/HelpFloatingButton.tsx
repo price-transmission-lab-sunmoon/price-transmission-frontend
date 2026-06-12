@@ -3,7 +3,6 @@ import { HelpModal } from './HelpModal';
 import { Icon } from '@/components/ui/Icon';
 import { Z_INDEX } from '@/utils/zIndex';
 
-// @guide:LAYOUT-08
 export function HelpFloatingButton() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 

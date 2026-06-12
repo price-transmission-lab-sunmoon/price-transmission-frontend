@@ -25,7 +25,6 @@ export interface HoverOverlayOptions<T> {
   tooltipId: string;
 }
 
-// @guide:UTIL-05
 export function attachHoverOverlay<T>(opts: HoverOverlayOptions<T>) {
   const { g, containerRef, data, x, y, width, height, margin, getDate, buildHover, tooltipId } = opts;
 

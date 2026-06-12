@@ -22,7 +22,6 @@ const SIZE_CLASS = {
   md: 'h-[26px] px-2.5 text-[12px]',
 };
 
-// @guide:UI-05
 export function ConfidenceBadge({
   grade,
   size = 'md',

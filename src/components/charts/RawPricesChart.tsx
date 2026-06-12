@@ -57,7 +57,6 @@ const SOURCE_LABEL: Record<RawPriceSource, string> = {
 const parseYM = d3.timeParse('%Y-%m');
 const fmtYM = d3.timeFormat('%Y-%m');
 
-// @guide:CHART-04
 export function RawPricesChart() {
   const { data, error, isLoading } = useRawPricesData();
   const layoutNumber = useAppStore((s) => s.layoutNumber);

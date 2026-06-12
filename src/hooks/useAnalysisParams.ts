@@ -3,7 +3,6 @@ import { client } from '@/api/client';
 import { ENDPOINTS } from '@/api/endpoints';
 import type { AnalysisParamsResponse } from '@/types/meta';
 
-// @guide:HOOK-04
 export function useAnalysisParams() {
   return useQuery<AnalysisParamsResponse>({
     queryKey: ['meta', 'analysis-params'],

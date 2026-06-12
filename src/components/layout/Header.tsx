@@ -41,7 +41,6 @@ const VIEW_TABS: ViewTabConfig[] = [
   { id: 'journey', label: '분석 여정', icon: 'sparkles' },
 ];
 
-// @guide:LAYOUT-02
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();

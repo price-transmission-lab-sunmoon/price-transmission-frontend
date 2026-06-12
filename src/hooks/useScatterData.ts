@@ -4,7 +4,6 @@ import { ENDPOINTS } from '@/api/endpoints';
 import { useAppStore } from '@/stores/useAppStore';
 import type { ScatterResponse } from '@/types/timeseries';
 
-// @guide:HOOK-09
 export function useScatterData() {
   const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
   const scatterSegment = useAppStore((s) => s.scatterSegment);

@@ -62,7 +62,6 @@ interface TooltipInfo {
   y: number;
 }
 
-// @guide:CHART-03
 export function ScatterChart() {
   const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
   const commodities = useAppStore((s) => s.commodities);

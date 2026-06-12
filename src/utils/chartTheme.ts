@@ -3,7 +3,6 @@
  * Shared by every D3 chart (StreamChart · Scatter · RawPrices · Minimap · 8 inline).
  * Reference: docs/re-design_specs/02-chart-palette.md §7.
  */
-// @guide:UTIL-02
 export const CHART_THEME = {
   background: 'transparent',
   axisLine: '#e7e2d8',     // border-default

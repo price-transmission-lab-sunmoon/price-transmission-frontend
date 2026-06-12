@@ -15,7 +15,6 @@ interface Props {
 
 const MARGIN = CHART_MARGINS.panelStandard;
 
-// @guide:CHART-08
 export function ZScoreChart({
   data,
   warningThreshold = 2.0,

@@ -13,7 +13,6 @@ interface UseStatSeriesParams {
   enabled?: boolean;
 }
 
-// @guide:HOOK-13
 export function useStatSeries({
   anomalyId,
   metric,

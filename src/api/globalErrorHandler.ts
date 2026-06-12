@@ -4,7 +4,6 @@
 import { formatErrorChain, formatErrorChainSummary } from '@/api/errorChain';
 import { showToast } from '@/components/ui/Toast';
 
-// @guide:API-12
 export function registerGlobalErrorHandler(): void {
   window.addEventListener('error', (event) => {
     const err = event.error ?? event.message;

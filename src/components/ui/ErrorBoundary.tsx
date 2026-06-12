@@ -19,7 +19,6 @@ interface State {
   errorStack?: string;
 }
 
-// @guide:UI-09
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 

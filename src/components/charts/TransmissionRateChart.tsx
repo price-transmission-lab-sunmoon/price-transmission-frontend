@@ -14,7 +14,6 @@ interface Props {
 
 const MARGIN = CHART_MARGINS.panelStandard;
 
-// @guide:CHART-07
 export function TransmissionRateChart({ data, highlightPeriod, height = 200 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

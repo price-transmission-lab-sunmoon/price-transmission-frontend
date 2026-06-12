@@ -11,7 +11,6 @@ const GRADE_COLORS: Record<string, string> = {
 
 // 신뢰도 라벨은 services/anomaly.ts confidenceLabel() 단일 출처 사용 (중복 제거).
 // Banner는 본 feat 단독 소유 — feature_spec_fe-layout-filter_vN §1.3 C1
-// @guide:LAYOUT-05
 export function Banner() {
   const { data, isLoading } = useAnomaliesSummary();
   const setPrimaryCommodity = useAppStore((s) => s.setPrimaryCommodity);

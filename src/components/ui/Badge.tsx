@@ -45,7 +45,6 @@ const TONE_CLASS: Record<BadgeTone, string> = {
     'border bg-[#ecfeff] text-[#155e75] border-[#a5f3fc]',
 };
 
-// @guide:UI-04
 export function Badge({
   tone = 'neutral',
   size = 'sm',

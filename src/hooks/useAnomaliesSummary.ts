@@ -22,7 +22,6 @@ export interface AnomaliesSummaryResponse {
   anomalies: AnomalySummaryItem[];
 }
 
-// @guide:HOOK-06
 export function useAnomaliesSummary() {
   return useQuery<AnomaliesSummaryResponse>({
     queryKey: ['anomalies', 'summary'],

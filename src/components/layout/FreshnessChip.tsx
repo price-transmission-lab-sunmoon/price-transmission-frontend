@@ -1,7 +1,6 @@
 import { useFreshness } from '@/hooks/useFreshness';
 import { formatYearMonthKr } from '@/utils/dateUtils';
 
-// @guide:LAYOUT-06
 export function FreshnessChip() {
   const { data, isLoading } = useFreshness();
 

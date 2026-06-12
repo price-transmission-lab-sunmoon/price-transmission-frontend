@@ -9,7 +9,6 @@ const JourneyPage = lazy(() =>
   import('@/pages/JourneyPage').then((m) => ({ default: m.JourneyPage })),
 );
 
-// @guide:LAYOUT-11
 export const router = createBrowserRouter([
   {
     path: '/',

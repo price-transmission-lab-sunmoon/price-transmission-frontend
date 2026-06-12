@@ -6,7 +6,6 @@ import type { StreamMinimapResponse, RawPricesMinimapResponse } from '@/types/ti
 
 export type MinimapVariant = 'stream' | 'raw-prices';
 
-// @guide:HOOK-11
 export function useMinimapData(variant: MinimapVariant) {
   const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
   const activeSegments = useAppStore((s) => s.activeSegments);

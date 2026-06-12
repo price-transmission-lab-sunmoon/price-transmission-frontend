@@ -11,7 +11,6 @@ interface Props {
 
 const MARGIN = { top: 20, right: 20, bottom: 20, left: 20 };
 
-// @guide:CHART-11
 export function IQRBoxplot({ data, height = 180 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

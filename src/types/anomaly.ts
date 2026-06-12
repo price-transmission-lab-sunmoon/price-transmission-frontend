@@ -18,7 +18,6 @@ import type {
 // /anomalies/summary — 이달 이상 요약 배너 (web_plan_vN §3.2)
 // ============================================================
 
-// @guide:TYPE-03
 export interface AnomalySummaryItem {
   anomaly_id: number;
   commodity_id: string;

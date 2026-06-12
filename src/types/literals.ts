@@ -1,7 +1,6 @@
 // Single source of truth for all enum-like string literals
 // frame_spec_frontend_vN §6.3
 
-// @guide:TYPE-01
 export const CONFIDENCE_GRADES = ['high', 'medium', 'reference'] as const;
 export type ConfidenceGrade = (typeof CONFIDENCE_GRADES)[number];
 
