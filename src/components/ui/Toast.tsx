@@ -1,6 +1,4 @@
-// feature_spec_fe-api-connect_vN §5 — Toast UI + 큐·중복 방지 (I7)
-// CustomEvent 버스 방식: showToast() → 'fe:toast' 이벤트 → Toast 컴포넌트 수신
-// 큐 정책: max 4 FIFO drop, onRetry 없는 toast 동일 code 5초 throttle
+// TODO: 같은 code의 toast가 빠르게 반복될 때 throttle 간격 조정 검토 필요
 
 import { useEffect, useReducer, useRef, useCallback } from 'react';
 import { Z_INDEX } from '@/utils/zIndex';
@@ -28,7 +26,6 @@ const TOAST_EVENT = 'fe:toast';
 
 let _counter = 0;
 
-// @guide:UI-08
 export function showToast(payload: ToastPayload): void {
   window.dispatchEvent(new CustomEvent<ToastPayload>(TOAST_EVENT, { detail: payload }));
 }
@@ -140,9 +137,7 @@ export function Toast() {
                 {toast.title}
               </p>
             )}
-            <p className="text-[13px] text-secondary leading-[1.5] m-0 mt-0.5">
-              {toast.message}
-            </p>
+            <p className="text-[13px] text-secondary leading-[1.5] m-0 mt-0.5">{toast.message}</p>
           </div>
           {toast.onRetry && (
             <Button variant="ghost" size="sm" onClick={toast.onRetry}>

@@ -23,10 +23,8 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
     'bg-brand text-on-brand shadow-e2 hover:bg-brand-hover hover:shadow-brand-cta active:bg-brand-active active:scale-[0.98]',
   secondary:
     'bg-surface text-secondary border border-border-default hover:bg-subtle hover:border-border-strong hover:text-primary active:bg-muted active:scale-[0.98]',
-  ghost:
-    'bg-transparent text-secondary hover:bg-subtle hover:text-primary active:bg-muted',
-  danger:
-    'bg-error text-on-brand hover:bg-error/90 active:scale-[0.98]',
+  ghost: 'bg-transparent text-secondary hover:bg-subtle hover:text-primary active:bg-muted',
+  danger: 'bg-error text-on-brand hover:bg-error/90 active:scale-[0.98]',
 };
 
 const BASE =
@@ -36,41 +34,38 @@ const BASE =
   'disabled:bg-muted disabled:text-disabled disabled:border-border-default ' +
   'disabled:cursor-not-allowed disabled:pointer-events-none disabled:shadow-none';
 
-// @guide:UI-01
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  function Button(
-    {
-      variant = 'secondary',
-      size = 'md',
-      leadingIcon,
-      trailingIcon,
-      fullWidth,
-      className = '',
-      children,
-      type = 'button',
-      ...rest
-    },
-    ref,
-  ) {
-    return (
-      <button
-        ref={ref}
-        type={type}
-        className={[
-          BASE,
-          SIZE_CLASS[size],
-          VARIANT_CLASS[variant],
-          fullWidth ? 'w-full' : '',
-          className,
-        ]
-          .filter(Boolean)
-          .join(' ')}
-        {...rest}
-      >
-        {leadingIcon}
-        {children}
-        {trailingIcon}
-      </button>
-    );
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  {
+    variant = 'secondary',
+    size = 'md',
+    leadingIcon,
+    trailingIcon,
+    fullWidth,
+    className = '',
+    children,
+    type = 'button',
+    ...rest
   },
-);
+  ref,
+) {
+  return (
+    <button
+      ref={ref}
+      type={type}
+      className={[
+        BASE,
+        SIZE_CLASS[size],
+        VARIANT_CLASS[variant],
+        fullWidth ? 'w-full' : '',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      {...rest}
+    >
+      {leadingIcon}
+      {children}
+      {trailingIcon}
+    </button>
+  );
+});

@@ -1,39 +1,15 @@
-// 예외처리 설계 문서(exception_design_vN) §2.1 + frame_spec_frontend_vN §6.4 정합
-// feature_spec_fe-api-connect_vN §4.1 §4.4 §4.5 SoT (v4 정정 반영)
-//
-// 변경 이력:
-//   IS-6: FEError constructor에서 cause 직접 파라미터 제거 → context.cause 보관 패턴으로 전환
-//   IS-7: ApiError constructor에서 cause 직접 파라미터 제거
-//   IS-9: parseApiError 시그니처 → (axiosError: unknown) 단일 인자
-//   IS-10: traceErrorChain / formatErrorChain / formatErrorChainSummary → errorChain.ts 이전
-//   IS-11: globalErrorHandler → globalErrorHandler.ts 이전 (registerGlobalErrorHandler)
-
 import { AxiosError } from 'axios';
 import type { Query, QueryClient } from '@tanstack/react-query';
 import type { ApiErrorBody, ApiErrorResponse } from '@/types/error';
 import { showToast } from '@/components/ui/Toast';
 import { formatErrorChainSummary, formatErrorChain } from '@/api/errorChain';
 
-/**
- * 프론트엔드 공통 에러 베이스 클래스 (exception_spec_vN §부록 A + frame_spec_frontend_vN §6.4).
- *
- * IS-6: `cause`는 ES2022 Error.cause로 전달하지 않는다.
- * 원인 에러를 보존해야 할 때 `context.cause` 필드로 명시 보관한다.
- * → traceErrorChain 이 FEError.context.cause 를 우선 탐색.
- *
- * @example
- *   throw new FEError('FE-D3-001', '데이터 빈 배열', { cause: originalErr, chart_type: 'stream' });
- */
-// @guide:API-05
+// 공통 에러 베이스. 원인 에러는 ES2022 Error.cause 대신 context.cause에 보관한다.
 export class FEError extends Error {
   code: string;
   context: Record<string, unknown>;
 
-  constructor(
-    code: string,
-    message: string,
-    context: Record<string, unknown> = {},
-  ) {
+  constructor(code: string, message: string, context: Record<string, unknown> = {}) {
     super(`[${code}] ${message}`);
     this.name = 'FEError';
     this.code = code;
@@ -41,19 +17,12 @@ export class FEError extends Error {
   }
 }
 
-/**
- * API 응답 에러 envelope을 wrapping하는 클래스 (frame_spec_frontend_vN §6.4).
- * FEError 계층 확장 — HTTP API 응답이 있는 경우에 한해 사용한다.
- *
- * IS-7: cause는 body.context.cause 필드로 전달한다.
- */
-// @guide:API-06
+// API 응답 에러 envelope을 wrapping한다. HTTP 응답이 있을 때만 사용.
 export class ApiError extends FEError {
   readonly httpStatus: number;
   readonly publicCode: string;
 
   constructor(body: ApiErrorBody, httpStatus: number) {
-    // BE-4: 내부 code 보존, public_code가 있으면 publicCode에 별도 보관.
     super(body.code, body.message, body.context ?? {});
     this.name = 'ApiError';
     this.httpStatus = httpStatus;
@@ -61,15 +30,7 @@ export class ApiError extends FEError {
   }
 }
 
-/**
- * Axios 에러 전체 객체를 받아 ApiError 또는 FEError로 파싱한다.
- * feature_spec_fe-api-connect_vN §4.4 SoT (v4 정정 — IS-9).
- *
- * 원본 axiosError는 context.cause 필드로 보존 (IS-6 context.cause 패턴 적용).
- *
- * @param axiosError Axios 인터셉터가 throw한 에러 객체 전체
- */
-// @guide:API-07
+// Axios 에러를 ApiError 또는 FEError로 파싱한다. 원본은 context.cause에 보존.
 export function parseApiError(axiosError: unknown): ApiError | FEError {
   if (!(axiosError instanceof AxiosError)) {
     return new FEError('NETWORK_ERROR', '네트워크 오류 — AxiosError 아님', {
@@ -87,8 +48,7 @@ export function parseApiError(axiosError: unknown): ApiError | FEError {
   const body = response.data as ApiErrorResponse | undefined;
 
   if (
-    body === null ||
-    body === undefined ||
+    body == null ||
     typeof body !== 'object' ||
     !('error' in body) ||
     typeof body.error?.code !== 'string'
@@ -111,11 +71,6 @@ export function parseApiError(axiosError: unknown): ApiError | FEError {
   );
 }
 
-// ============================================================
-// handleQueryError — feature_spec_fe-api-connect_vN §4.5
-// QueryCache.onError 콜백. 에러 코드 분기 후 Toast 발화.
-// ============================================================
-
 const CODES_404 = new Set([
   'COMMODITY_NOT_FOUND',
   'ANOMALY_NOT_FOUND',
@@ -123,9 +78,7 @@ const CODES_404 = new Set([
   'WARMUP_PERIOD_ONLY',
 ]);
 
-// 영구 실패 코드 — retry 무의미. P1-3에서 queryClient.retry 정책에 활용.
-// BE-3 (2026-05-20): 백엔드 신규 내부 코드(API-ANO-001 등) 및 public_code 양쪽 모두 등록.
-// @guide:API-08
+// retry해도 의미 없는 영구 실패 코드 목록
 export const PERMANENT_FAILURE_CODES = new Set([
   // public_code
   'NOT_IMPLEMENTED',
@@ -143,7 +96,7 @@ export const PERMANENT_FAILURE_CODES = new Set([
   'WHOLESALE_NOT_AVAILABLE',
   'UNTIL_EXCEEDS_TO',
   'PARSE-SCHEMA-001',
-  // 백엔드 내부 code
+  // 내부 code
   'API-VAL-001',
   'API-ANO-001',
   'API-MET-001',
@@ -157,7 +110,6 @@ export function isPermanentFailure(error: unknown): boolean {
   return false;
 }
 
-// @guide:API-09
 export function handleQueryError(
   error: unknown,
   query: Query<unknown, unknown>,
@@ -167,7 +119,6 @@ export function handleQueryError(
 
   const refetch = () => queryClient.refetchQueries({ queryKey: query.queryKey });
 
-  // 1. FEError 외 (예상치 못한 non-FEError)
   if (!(error instanceof FEError)) {
     showToast({
       code: 'FE-API-001',
@@ -178,7 +129,6 @@ export function handleQueryError(
     return;
   }
 
-  // 2. NETWORK_ERROR / TIMEOUT
   if (error.code === 'NETWORK_ERROR') {
     const causeCode = (error.context as { cause?: { code?: string } })?.cause?.code;
     const isTimeout = typeof causeCode === 'string' && causeCode === 'ECONNABORTED';
@@ -193,7 +143,6 @@ export function handleQueryError(
     return;
   }
 
-  // 3. PARSE 코드
   if (error.code === 'PARSE-SCHEMA-001') {
     showToast({
       code: 'PARSE-SCHEMA-001',
@@ -211,7 +160,6 @@ export function handleQueryError(
     return;
   }
 
-  // 4. ApiError 도메인 코드 — publicCode 기준 분기 (BE-3)
   if (error instanceof ApiError) {
     const pc = error.publicCode;
     if (pc === 'WHOLESALE_NOT_AVAILABLE') {
@@ -238,7 +186,6 @@ export function handleQueryError(
       });
       return;
     }
-    // BE-3: 신규 백엔드 코드 — Toast 발화. UI 컴포넌트가 자체 fallback 처리한 경우 조용히 처리.
     if (pc === 'SNAPSHOT_METRIC_ON_SERIES' || pc === 'INVALID_METRIC') {
       showToast({
         code: pc,
@@ -247,10 +194,8 @@ export function handleQueryError(
       });
       return;
     }
-    // 404 계열 — FE_FALLBACK (Toast 없이 조용히 처리)
+    // 404 계열과 NOT_IMPLEMENTED는 컴포넌트 fallback에 맡기고 Toast 없음
     if (CODES_404.has(pc)) return;
-
-    // NOT_IMPLEMENTED — 백엔드 패널 엔드포인트 미구현 (Phase 7 이후). Toast 없이 컴포넌트 fallback.
     if (pc === 'NOT_IMPLEMENTED') return;
 
     if (pc === 'PIPELINE_DATA_MISSING' || error.httpStatus >= 500) {
@@ -273,6 +218,5 @@ export function handleQueryError(
     }
   }
 
-  // 5. 기타 FEError
   showToast({ code: error.code, variant: 'error', message: formatErrorChainSummary(error) });
 }

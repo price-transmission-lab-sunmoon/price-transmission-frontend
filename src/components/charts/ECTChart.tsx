@@ -12,10 +12,9 @@ interface Props {
   height?: number;
 }
 
-// 패널 표준 margin과 left만 다름(52) — ECT y축 라벨이 더 넓어 자체 유지.
+// 패널 표준 margin과 left만 다름(52). ECT y축 라벨이 더 넓어 자체 유지.
 const MARGIN = { top: 12, right: 12, bottom: 24, left: 52 };
 
-// @guide:CHART-09
 export function ECTChart({ data, ectType, height = 200 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,7 +39,9 @@ export function ECTChart({ data, ectType, height = 200 }: Props) {
       .append('g')
       .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
-    const valid = data.filter((d) => d.ect_or_spread !== null && isFinite(d.ect_or_spread as number));
+    const valid = data.filter(
+      (d) => d.ect_or_spread !== null && isFinite(d.ect_or_spread as number),
+    );
     if (valid.length === 0) return;
 
     const x = d3
@@ -52,20 +53,23 @@ export function ECTChart({ data, ectType, height = 200 }: Props) {
     const yMin = Math.min(...vals);
     const yMax = Math.max(...vals);
     const pad = (yMax - yMin) * 0.15 || 0.05;
-    const y = d3.scaleLinear().domain([yMin - pad, yMax + pad]).range([h, 0]);
+    const y = d3
+      .scaleLinear()
+      .domain([yMin - pad, yMax + pad])
+      .range([h, 0]);
 
-    // y=0 baseline
     const zero = y(0);
     if (zero >= 0 && zero <= h) {
       g.append('line')
-        .attr('x1', 0).attr('x2', w)
-        .attr('y1', zero).attr('y2', zero)
+        .attr('x1', 0)
+        .attr('x2', w)
+        .attr('y1', zero)
+        .attr('y2', zero)
         .attr('stroke', PANEL_CHART_COLORS.ectZeroLine)
         .attr('stroke-width', 0.5)
         .attr('opacity', 0.4);
     }
 
-    // ECT line
     const line = d3
       .line<EctDataPoint>()
       .defined((d) => d.ect_or_spread !== null)
@@ -78,7 +82,6 @@ export function ECTChart({ data, ectType, height = 200 }: Props) {
       .attr('stroke-width', 1.5)
       .attr('d', line);
 
-    // chart header label from ect_type
     if (ectType) {
       g.append('text')
         .attr('x', w)
@@ -89,10 +92,12 @@ export function ECTChart({ data, ectType, height = 200 }: Props) {
         .text(ectType);
     }
 
-    g.append('g').attr('transform', `translate(0,${h})`).call(d3.axisBottom(x).ticks(4)).attr('color', CHART_THEME.axisText);
+    g.append('g')
+      .attr('transform', `translate(0,${h})`)
+      .call(d3.axisBottom(x).ticks(4))
+      .attr('color', CHART_THEME.axisText);
     g.append('g').call(d3.axisLeft(y).ticks(4)).attr('color', CHART_THEME.axisText);
 
-    // FX-5: hover overlay
     attachHoverOverlay({
       g,
       containerRef,
@@ -118,7 +123,10 @@ export function ECTChart({ data, ectType, height = 200 }: Props) {
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center text-tertiary text-[12px]" style={{ height }}>
+      <div
+        className="flex items-center justify-center text-tertiary text-[12px]"
+        style={{ height }}
+      >
         해당 기간 데이터가 없습니다.
       </div>
     );

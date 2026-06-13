@@ -1,5 +1,4 @@
-// 현재 스테이션(stage)의 고정 좌표로 카메라를 부드럽게 이동(이산 이동 + 정지점 정렬).
-// 스테이션 X폭에 맞춘 동적 거리(줌) + 좌측 안내패널을 피하는 우측 편향.
+// 현재 스테이션으로 카메라를 부드럽게 이동. X폭 기반 동적 거리 + 좌측 패널을 피하는 우측 편향.
 import { useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { MathUtils, type PerspectiveCamera } from 'three';
@@ -20,7 +19,7 @@ export function JourneyRig() {
   const cameraZoom = useJourneyProgress((s) => s.cameraZoom);
   const setCameraZoom = useJourneyProgress((s) => s.setCameraZoom);
 
-  // 캔버스 휠 → 카메라 dolly 줌(전 스테이지). <1=확대. stage 이동 시 1로 리셋(store).
+  // 휠로 카메라 dolly 줌. stage 이동 시 1로 리셋.
   useEffect(() => {
     const el = gl.domElement;
     const onWheel = (e: WheelEvent) => {

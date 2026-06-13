@@ -9,7 +9,6 @@ interface UseIRFParams {
   enabled?: boolean;
 }
 
-// @guide:HOOK-15
 export function useIRF({ anomalyId, includeSubperiods = true, enabled = true }: UseIRFParams) {
   return useQuery<IrfResponse>({
     queryKey: ['panel', 'irf', anomalyId, includeSubperiods],
@@ -19,7 +18,7 @@ export function useIRF({ anomalyId, includeSubperiods = true, enabled = true }: 
       });
       return res.data;
     },
-    enabled: anomalyId !== null && enabled,
+    enabled: anomalyId != null && enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

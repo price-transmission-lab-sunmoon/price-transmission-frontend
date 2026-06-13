@@ -55,7 +55,7 @@ describe('test_literal_types_consistency', () => {
     expect([...PRIMARY_PATTERNS]).toEqual(['pattern1', 'pattern2', 'pattern3']);
     expect([...CLUSTERS]).toEqual(['grain', 'oil_sugar', 'tropical', 'livestock', 'independent']);
     expect([...ROUTE_TYPES]).toEqual(['3seg', '4seg']);
-    expect([...MODEL_TYPES]).toEqual(['VAR', 'VECM']);
+    expect([...MODEL_TYPES]).toEqual(['VAR', 'VECM', 'TECM', 'asymmetric_VAR']);
     expect([...ECT_TYPES]).toEqual(['ECT', 'log_spread']);
     expect([...GRANULARITIES]).toEqual(['monthly', 'quarterly', 'yearly']);
   });

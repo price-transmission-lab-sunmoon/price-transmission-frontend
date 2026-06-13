@@ -78,7 +78,6 @@ interface HelpModalProps {
   onClose: () => void;
 }
 
-// @guide:LAYOUT-07
 export function HelpModal({ isOpen, onClose }: HelpModalProps) {
   const { setHasSeenOnboardingThisSession } = useAppStore();
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
@@ -175,10 +174,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             {HELP_ITEMS.map((item, index) => {
               const isExpanded = expandedItems.has(index);
               return (
-                <div
-                  key={index}
-                  className="border-b border-border-subtle last:border-0"
-                >
+                <div key={index} className="border-b border-border-subtle last:border-0">
                   <button
                     onClick={() => toggleItem(index)}
                     aria-expanded={isExpanded}
@@ -187,9 +183,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                       'transition-colors duration-fast ease-out hover:bg-subtle',
                     ].join(' ')}
                   >
-                    <span className="text-primary text-[14px] font-medium">
-                      {item.title}
-                    </span>
+                    <span className="text-primary text-[14px] font-medium">{item.title}</span>
                     <Icon
                       name="chevron-down"
                       size={18}
@@ -211,12 +205,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
 
           {/* 하단: 온보딩 다시 보기 */}
           <div className="px-6 py-4 border-t border-border-default shrink-0">
-            <Button
-              variant="secondary"
-              size="md"
-              fullWidth
-              onClick={handleReplayOnboarding}
-            >
+            <Button variant="secondary" size="md" fullWidth onClick={handleReplayOnboarding}>
               온보딩 가이드 다시 보기
             </Button>
           </div>

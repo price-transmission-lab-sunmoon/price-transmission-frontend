@@ -32,7 +32,6 @@ function getSelector(step: number, anomalyId: number | null): string {
   }
 }
 
-// @guide:LAYOUT-09
 export function OnboardingGuide() {
   const {
     isOnboardingVisible,
@@ -48,19 +47,14 @@ export function OnboardingGuide() {
   const [step, setStep] = useState(1);
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
 
-  // 온보딩 시작 조건 (feature_spec_fe-onboarding_vN §3.2 ④)
+  // 온보딩 시작 조건: stream 탭에서 anomaly가 선택됐고 아직 온보딩을 보지 않은 경우
   useEffect(() => {
     if (hasSeenOnboardingThisSession) return;
     if (activeTab !== 'stream') return;
     if (selectedAnomalyId === null) return;
     setStep(1);
     setOnboardingVisible(true);
-  }, [
-    selectedAnomalyId,
-    activeTab,
-    hasSeenOnboardingThisSession,
-    setOnboardingVisible,
-  ]);
+  }, [selectedAnomalyId, activeTab, hasSeenOnboardingThisSession, setOnboardingVisible]);
 
   // 각 단계 타겟 요소 위치 계산
   useEffect(() => {
@@ -116,7 +110,7 @@ export function OnboardingGuide() {
     setStep(1);
   }, [setOnboardingVisible, setHasSeenOnboardingThisSession]);
 
-  // Esc → close
+  // Esc 누르면 닫기
   useEffect(() => {
     if (!isOnboardingVisible) return;
     const handler = (e: KeyboardEvent) => {
@@ -147,24 +141,20 @@ export function OnboardingGuide() {
 
   // 툴팁 위치: 타겟 아래 우선, 화면 밖 시 위로 전환
   const tooltipWidth = 360;
-  const tooltipLeft = Math.max(
-    16,
-    Math.min(targetRect.x, window.innerWidth - tooltipWidth - 16),
-  );
+  const tooltipLeft = Math.max(16, Math.min(targetRect.x, window.innerWidth - tooltipWidth - 16));
   const tooltipBelow = targetRect.y + targetRect.height + 16;
   const tooltipAbove = targetRect.y - 168;
   const tooltipTop = tooltipBelow + 160 > window.innerHeight ? tooltipAbove : tooltipBelow;
 
   return (
     <>
-      {/* 배경 클릭 → 온보딩 종료 (스포트라이트 영역 클릭은 통과) */}
+      {/* 배경 클릭 시 온보딩 종료 (스포트라이트 영역 클릭은 통과) */}
       <div
         style={{ position: 'fixed', inset: 0, zIndex: Z_INDEX.ONBOARDING_OVERLAY }}
         onClick={(e) => {
           const x = e.clientX;
           const y = e.clientY;
-          const insideSpot =
-            x >= spotX && x <= spotX + spotW && y >= spotY && y <= spotY + spotH;
+          const insideSpot = x >= spotX && x <= spotX + spotW && y >= spotY && y <= spotY + spotH;
           if (!insideSpot) completeOnboarding();
         }}
       />
@@ -214,8 +204,7 @@ export function OnboardingGuide() {
                 key={n}
                 className="block h-[3px] w-6 rounded-pill"
                 style={{
-                  background:
-                    n <= step ? 'var(--brand)' : 'var(--bg-muted)',
+                  background: n <= step ? 'var(--brand)' : 'var(--bg-muted)',
                 }}
               />
             ))}

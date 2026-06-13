@@ -1,10 +1,6 @@
-// exception_design_vN §2.4 + feature_spec_fe-api-connect_vN §4.3 SoT
-// window.onerror / window.onunhandledrejection 전역 리스너 등록
-
 import { formatErrorChain, formatErrorChainSummary } from '@/api/errorChain';
 import { showToast } from '@/components/ui/Toast';
 
-// @guide:API-12
 export function registerGlobalErrorHandler(): void {
   window.addEventListener('error', (event) => {
     const err = event.error ?? event.message;

@@ -1,5 +1,4 @@
-// 3D 평면에 기존 2D D3 차트를 카드로 임베드(2.5D). 고정 px 컨테이너로
-// 임베드 차트의 ResizeObserver width=0 문제를 피한다.
+// 3D 공간에 HTML 카드를 임베드(2.5D). 고정 px 크기로 ResizeObserver width=0 문제를 피한다.
 import { Html } from '@react-three/drei';
 import type { ReactNode } from 'react';
 

@@ -10,7 +10,6 @@ interface UseStatSnapshotParams {
   enabled?: boolean;
 }
 
-// @guide:HOOK-14
 export function useStatSnapshot({ anomalyId, metric, enabled = true }: UseStatSnapshotParams) {
   return useQuery<StatSnapshotResponse>({
     queryKey: ['panel', 'stat-snapshot', anomalyId, metric],
@@ -21,7 +20,7 @@ export function useStatSnapshot({ anomalyId, metric, enabled = true }: UseStatSn
       );
       return res.data;
     },
-    enabled: anomalyId !== null && enabled,
+    enabled: anomalyId != null && enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

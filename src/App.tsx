@@ -1,4 +1,3 @@
-// feature_spec_fe-api-connect_vN §3.1 — QueryClient 전역 설정 + ErrorBoundary 최상위 마운트
 import { QueryClient, QueryClientProvider, QueryCache } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router-dom';
 import { router } from '@/router';
@@ -13,8 +12,7 @@ const queryClient = new QueryClient({
   }),
   defaultOptions: {
     queries: {
-      // P1-3: 영구 실패 코드(NOT_IMPLEMENTED, 4xx 등)는 retry 안 함.
-      // 네트워크/일시 오류만 최대 2회 재시도.
+      // 영구 실패 코드(4xx 등)는 재시도하지 않는다. 네트워크 오류만 최대 2회.
       retry: (failureCount, error) => {
         if (isPermanentFailure(error)) return false;
         return failureCount < 2;
@@ -27,7 +25,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// @guide:LAYOUT-10
 export function App() {
   return (
     <ErrorBoundary>

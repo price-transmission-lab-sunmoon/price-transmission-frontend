@@ -26,26 +26,17 @@ const SIZE_CLASS: Record<BadgeSize, string> = {
 };
 
 const TONE_CLASS: Record<BadgeTone, string> = {
-  neutral:
-    'bg-muted text-secondary border border-border-default',
-  brand:
-    'bg-brand-subtle text-brand-active border border-brand-border',
-  success:
-    'bg-success-subtle text-success border border-success-border',
-  warning:
-    'bg-warning-subtle text-warning border border-warning-border',
-  error:
-    'bg-error-subtle text-error border border-error-border',
-  info:
-    'bg-info-subtle text-brand-active border border-info-border',
+  neutral: 'bg-muted text-secondary border border-border-default',
+  brand: 'bg-brand-subtle text-brand-active border border-brand-border',
+  success: 'bg-success-subtle text-success border border-success-border',
+  warning: 'bg-warning-subtle text-warning border border-warning-border',
+  error: 'bg-error-subtle text-error border border-error-border',
+  info: 'bg-info-subtle text-brand-active border border-info-border',
   // Methodology pattern card chip variants
-  violet:
-    'border bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe]',
-  'teal-light':
-    'border bg-[#ecfeff] text-[#155e75] border-[#a5f3fc]',
+  violet: 'border bg-[#f5f3ff] text-[#6d28d9] border-[#ddd6fe]',
+  'teal-light': 'border bg-[#ecfeff] text-[#155e75] border-[#a5f3fc]',
 };
 
-// @guide:UI-04
 export function Badge({
   tone = 'neutral',
   size = 'sm',

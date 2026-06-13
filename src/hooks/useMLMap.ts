@@ -11,7 +11,6 @@ interface UseMLMapParams {
   enabled?: boolean;
 }
 
-// @guide:HOOK-16
 export function useMLMap({
   anomalyId,
   model,
@@ -26,7 +25,7 @@ export function useMLMap({
       });
       return res.data;
     },
-    enabled: anomalyId !== null && enabled,
+    enabled: anomalyId != null && enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

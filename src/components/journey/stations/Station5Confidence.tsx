@@ -1,4 +1,4 @@
-// ⑤ 신뢰도 등급화 — H/M/R 분포 빈 + 5단계 판정 경로(통계 탐지→패턴→ML→일치→최종).
+// ⑤ 신뢰도 등급화. H/M/R 분포 막대와 5단계 판정 경로를 표시한다.
 import type { StationProps } from '../journeyContract';
 import type { AnomalyDetail } from '@/types/anomaly';
 import type { StreamResponse } from '@/types/timeseries';
@@ -32,9 +32,12 @@ const PATTERN_KR: Record<string, string> = {
   pattern3: '스프레드 누적',
 };
 const PATTERN_NOTE: Record<string, string> = {
-  pattern1: '정의: 상류와 하류가 반대로 움직이거나 시차 이탈\n판정: IRF 피크+버퍼 이후에도 하류 무반응',
-  pattern2: '정의: 월별 전이율의 분포 이탈\n판정: Z-score(경보 2.5)와 IQR 상한 동시 초과\n비고: 상·하방 비대칭은 TECM',
-  pattern3: '정의: 안정기 마진 괴리의 누적\n판정: 국제가 ±3% 안정기에 수입단가와 PPI 괴리가 연속(2·3·6개월) 확대',
+  pattern1:
+    '정의: 상류와 하류가 반대로 움직이거나 시차 이탈\n판정: IRF 피크+버퍼 이후에도 하류 무반응',
+  pattern2:
+    '정의: 월별 전이율의 분포 이탈\n판정: Z-score(경보 2.5)와 IQR 상한 동시 초과\n비고: 상·하방 비대칭은 TECM',
+  pattern3:
+    '정의: 안정기 마진 괴리의 누적\n판정: 국제가 ±3% 안정기에 수입단가와 PPI 괴리가 연속(2·3·6개월) 확대',
 };
 
 export function Station5Confidence({ active, detail, stream, normalMode }: Props) {
@@ -51,7 +54,7 @@ export function Station5Confidence({ active, detail, stream, normalMode }: Props
   const selList = grade ? nodes.filter((n) => n.confidence_grade === grade) : [];
   const rank = detail ? selList.findIndex((n) => n.anomaly_id === detail.anomaly_id) + 1 : 0;
 
-  // 계량 탐지 사유(이 이상의 근거)
+  // 계량 탐지 사유
   const econReasons = [
     sm?.direction_reversal && '방향역전',
     sm?.lag_deviation && '시차이탈',
@@ -61,7 +64,7 @@ export function Station5Confidence({ active, detail, stream, normalMode }: Props
   const econDet = econReasons.length > 0;
   const mlDet = !!ml?.ml_detected;
 
-  // 고정 5단계 판정 경로
+  // 5단계 판정 경로
   const FIVE: { key: string; label: string; on: boolean; info: HoverInfo }[] = [
     {
       key: 'stat',
@@ -108,18 +111,48 @@ export function Station5Confidence({ active, detail, stream, normalMode }: Props
         title: '③ ML 합의',
         color: STEP_ON,
         rows: [
-          { label: 'IF', value: ml?.if_percentile != null ? `${ml.if_percentile.toFixed(1)}%` : '—' },
-          { label: 'LOF', value: ml?.lof_percentile != null ? `${ml.lof_percentile.toFixed(1)}%` : '—' },
-          { label: 'SVM', value: ml?.svm_percentile != null ? `${ml.svm_percentile.toFixed(1)}%` : '—' },
+          {
+            label: 'IF',
+            value: ml?.if_percentile != null ? `${ml.if_percentile.toFixed(1)}%` : '—',
+          },
+          {
+            label: 'LOF',
+            value: ml?.lof_percentile != null ? `${ml.lof_percentile.toFixed(1)}%` : '—',
+          },
+          {
+            label: 'SVM',
+            value: ml?.svm_percentile != null ? `${ml.svm_percentile.toFixed(1)}%` : '—',
+          },
           { label: '합의', value: `${ml?.ml_vote ?? 0}/3` },
         ],
         viz: ml
           ? {
               kind: 'bars',
               items: [
-                { label: 'IF', value: ml.if_percentile ?? 0, min: 70, max: 100, on: !!ml.if_anomaly, color: STEP_ON },
-                { label: 'LOF', value: ml.lof_percentile ?? 0, min: 70, max: 100, on: !!ml.lof_anomaly, color: STEP_ON },
-                { label: 'SVM', value: ml.svm_percentile ?? 0, min: 70, max: 100, on: !!ml.svm_anomaly, color: STEP_ON },
+                {
+                  label: 'IF',
+                  value: ml.if_percentile ?? 0,
+                  min: 70,
+                  max: 100,
+                  on: !!ml.if_anomaly,
+                  color: STEP_ON,
+                },
+                {
+                  label: 'LOF',
+                  value: ml.lof_percentile ?? 0,
+                  min: 70,
+                  max: 100,
+                  on: !!ml.lof_anomaly,
+                  color: STEP_ON,
+                },
+                {
+                  label: 'SVM',
+                  value: ml.svm_percentile ?? 0,
+                  min: 70,
+                  max: 100,
+                  on: !!ml.svm_anomaly,
+                  color: STEP_ON,
+                },
               ],
             }
           : undefined,
@@ -205,7 +238,7 @@ export function Station5Confidence({ active, detail, stream, normalMode }: Props
         );
       })}
 
-      {/* 5단계 판정 경로 (FlowLine 흐름) */}
+      {/* 5단계 판정 경로 */}
       {FIVE.map((st, i) => {
         const y = 2.0 - i * 0.95;
         const pos: [number, number, number] = [2.5, y, 0];
@@ -225,7 +258,13 @@ export function Station5Confidence({ active, detail, stream, normalMode }: Props
               />
             </mesh>
             {i < FIVE.length - 1 && (
-              <FlowLine from={pos} to={[2.5, y - 0.95, 0]} color="#0d9488" particles={2} opacity={0.4} />
+              <FlowLine
+                from={pos}
+                to={[2.5, y - 0.95, 0]}
+                color="#0d9488"
+                particles={2}
+                opacity={0.4}
+              />
             )}
             {active && (
               <Label3D

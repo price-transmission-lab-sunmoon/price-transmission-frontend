@@ -22,8 +22,7 @@ const VARIANT_CLASS: Record<IconButtonVariant, string> = {
     'bg-brand text-on-brand shadow-e2 hover:bg-brand-hover active:bg-brand-active active:scale-[0.96]',
   outline:
     'bg-surface text-secondary border border-border-default hover:bg-subtle hover:border-border-strong hover:text-primary active:bg-muted',
-  ghost:
-    'bg-transparent text-tertiary hover:bg-subtle hover:text-primary active:bg-muted',
+  ghost: 'bg-transparent text-tertiary hover:bg-subtle hover:text-primary active:bg-muted',
 };
 
 const BASE =
@@ -32,30 +31,20 @@ const BASE =
   'duration-fast ease-out ' +
   'disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none';
 
-// @guide:UI-02
-export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  function IconButton(
-    {
-      icon,
-      variant = 'ghost',
-      size = 'md',
-      className = '',
-      type = 'button',
-      ...rest
-    },
-    ref,
-  ) {
-    return (
-      <button
-        ref={ref}
-        type={type}
-        className={[BASE, SIZE_CLASS[size], VARIANT_CLASS[variant], className]
-          .filter(Boolean)
-          .join(' ')}
-        {...rest}
-      >
-        {icon}
-      </button>
-    );
-  },
-);
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
+  { icon, variant = 'ghost', size = 'md', className = '', type = 'button', ...rest },
+  ref,
+) {
+  return (
+    <button
+      ref={ref}
+      type={type}
+      className={[BASE, SIZE_CLASS[size], VARIANT_CLASS[variant], className]
+        .filter(Boolean)
+        .join(' ')}
+      {...rest}
+    >
+      {icon}
+    </button>
+  );
+});

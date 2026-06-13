@@ -4,7 +4,6 @@ import { ENDPOINTS } from '@/api/endpoints';
 import { useAppStore } from '@/stores/useAppStore';
 import type { RawPricesResponse } from '@/types/timeseries';
 
-// @guide:HOOK-10
 export function useRawPricesData() {
   const primaryCommodityId = useAppStore((s) => s.primaryCommodityId);
   const filterFrom = useAppStore((s) => s.filterFrom);
@@ -28,7 +27,7 @@ export function useRawPricesData() {
       );
       return res.data;
     },
-    enabled: primaryCommodityId !== null,
+    enabled: primaryCommodityId != null,
     retry: 3,
   });
 }

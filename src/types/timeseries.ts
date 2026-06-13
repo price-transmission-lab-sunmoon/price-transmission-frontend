@@ -6,8 +6,7 @@ import type {
   SegmentId,
 } from './literals';
 
-// 시계열 공통 envelope — api_spec_vN §시계열 공통 envelope
-// @guide:TYPE-02
+// 시계열 공통 envelope
 export interface TimeseriesEnvelope {
   commodity_id: string;
   requested_from: string; // YYYY-MM
@@ -18,9 +17,7 @@ export interface TimeseriesEnvelope {
   total_points: number;
 }
 
-// ============================================================
-// /commodities/{id}/stream — 스트림 그래프
-// ============================================================
+// /commodities/{id}/stream (스트림 그래프)
 
 export interface StreamDataPoint {
   period: string; // YYYY-MM (granularity=yearly 시 YYYY)
@@ -37,7 +34,7 @@ export interface StreamSeriesItem {
   data: StreamDataPoint[];
 }
 
-// 스트림 차트용 이상 노드 — granularity 무관, 항상 원본 월 단위
+// 스트림 차트용 이상 노드. granularity와 무관하게 항상 월 단위
 export interface StreamAnomalyNode {
   anomaly_id: number;
   segment_id: SegmentId;
@@ -45,7 +42,7 @@ export interface StreamAnomalyNode {
   primary_pattern: PrimaryPattern;
   pattern_types: PrimaryPattern[];
   confidence_grade: ConfidenceGrade;
-  transmission_rate: number | null; // 백엔드 SoT: Optional
+  transmission_rate: number | null; // 백엔드에서 null로 올 수 있음
   is_new: boolean;
 }
 
@@ -54,9 +51,7 @@ export interface StreamResponse extends TimeseriesEnvelope {
   anomaly_nodes: StreamAnomalyNode[];
 }
 
-// ============================================================
-// /commodities/{id}/stream/minimap — 미니맵
-// ============================================================
+// /commodities/{id}/stream/minimap (미니맵)
 
 export interface AnomalyDensityItem {
   period: string; // YYYY (yearly)
@@ -71,9 +66,7 @@ export interface StreamMinimapResponse extends TimeseriesEnvelope {
   anomaly_density: AnomalyDensityItem[];
 }
 
-// ============================================================
-// /commodities/{id}/scatter — 전달 구조 산점도
-// ============================================================
+// /commodities/{id}/scatter (전달 구조 산점도)
 
 export interface ScatterBaseline {
   transmission_elasticity: number;
@@ -99,9 +92,7 @@ export interface ScatterResponse extends TimeseriesEnvelope {
   points: ScatterPoint[];
 }
 
-// ============================================================
-// /commodities/{id}/raw-prices — 원시 시계열
-// ============================================================
+// /commodities/{id}/raw-prices (원시 시계열)
 
 export interface RawPriceDataPoint {
   period: string; // YYYY-MM
@@ -130,7 +121,7 @@ export interface RawPriceTransmissionOverlayItem {
   data: RawPriceTransmissionDataPoint[];
 }
 
-// raw-prices anomaly_node — stream과 일부 필드 동일하나 transmission_rate·pattern_types 미포함
+// raw-prices anomaly_node. stream의 StreamAnomalyNode와 달리 transmission_rate, pattern_types 없음
 export interface RawPriceAnomalyNode {
   anomaly_id: number;
   segment_id: SegmentId;
@@ -147,9 +138,7 @@ export interface RawPricesResponse extends TimeseriesEnvelope {
   anomaly_nodes: RawPriceAnomalyNode[];
 }
 
-// ============================================================
-// /commodities/{id}/raw-prices/minimap — 원시 시계열 미니맵
-// ============================================================
+// /commodities/{id}/raw-prices/minimap (원시 시계열 미니맵)
 
 export interface RawPricesMinimapResponse extends TimeseriesEnvelope {
   // granularity 항상 'yearly'

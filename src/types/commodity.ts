@@ -1,6 +1,5 @@
 import type { Cluster, RouteType, ConfidenceGrade, ModelType } from './literals';
 
-// @guide:TYPE-04
 export interface Commodity {
   commodity_id: string;
   name_kr: string;

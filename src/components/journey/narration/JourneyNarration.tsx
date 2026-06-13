@@ -1,5 +1,4 @@
-// 좌측 해설 — Canvas 밖(Tailwind). 현재 스테이션(stage)에 따라 해설 교체.
-// 품목은 상단 드롭다운(전역 primaryCommodityId)을 따르며, 현재 품목명만 표시한다.
+// 좌측 해설 패널. 현재 stage에 따라 해설이 교체되며, 품목명은 전역 primaryCommodityId를 따른다.
 import { useAppStore } from '@/stores/useAppStore';
 import { useJourneyProgress, JOURNEY_STAGE_COUNT } from '../journeyContract';
 import { STATION_COPY } from './stationCopy';
@@ -42,7 +41,7 @@ export function JourneyNarration({
           ))}
         </ul>
 
-        {/* 단계 점 — 클릭 시 해당 스테이션으로 이동 */}
+        {/* 단계 점 */}
         <div className="flex gap-1.5 mt-6 items-center">
           {Array.from({ length: JOURNEY_STAGE_COUNT }).map((_, i) => (
             <button

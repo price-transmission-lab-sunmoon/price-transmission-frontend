@@ -8,25 +8,165 @@
   "y_label": "PC2",
   "total_points": 20,
   "points": [
-    { "period": "2024-08", "x_value": -1.21, "y_value":  0.34, "anomaly_score": -0.041, "is_anomaly": false, "is_highlight": false },
-    { "period": "2024-09", "x_value": -0.98, "y_value":  0.12, "anomaly_score": -0.038, "is_anomaly": false, "is_highlight": false },
-    { "period": "2024-10", "x_value": -0.72, "y_value": -0.21, "anomaly_score": -0.029, "is_anomaly": false, "is_highlight": false },
-    { "period": "2024-11", "x_value": -0.45, "y_value": -0.08, "anomaly_score": -0.022, "is_anomaly": false, "is_highlight": false },
-    { "period": "2024-12", "x_value": -0.18, "y_value":  0.15, "anomaly_score": -0.017, "is_anomaly": false, "is_highlight": false },
-    { "period": "2025-01", "x_value":  0.09, "y_value":  0.28, "anomaly_score": -0.014, "is_anomaly": false, "is_highlight": false },
-    { "period": "2025-02", "x_value":  0.31, "y_value":  0.43, "anomaly_score": -0.019, "is_anomaly": false, "is_highlight": false },
-    { "period": "2025-03", "x_value":  0.52, "y_value":  0.67, "anomaly_score": -0.031, "is_anomaly": false, "is_highlight": false },
-    { "period": "2025-04", "x_value":  0.74, "y_value":  0.82, "anomaly_score": -0.048, "is_anomaly": false, "is_highlight": false },
-    { "period": "2025-05", "x_value":  0.95, "y_value":  0.91, "anomaly_score": -0.067, "is_anomaly": false, "is_highlight": false },
-    { "period": "2025-06", "x_value":  1.12, "y_value":  1.03, "anomaly_score": -0.089, "is_anomaly": false, "is_highlight": false },
-    { "period": "2025-07", "x_value":  1.28, "y_value":  1.14, "anomaly_score": -0.101, "is_anomaly": true,  "is_highlight": false },
-    { "period": "2025-08", "x_value":  1.41, "y_value":  1.23, "anomaly_score": -0.112, "is_anomaly": true,  "is_highlight": false },
-    { "period": "2025-09", "x_value":  1.52, "y_value":  1.31, "anomaly_score": -0.118, "is_anomaly": true,  "is_highlight": false },
-    { "period": "2025-10", "x_value":  1.61, "y_value":  1.38, "anomaly_score": -0.124, "is_anomaly": true,  "is_highlight": false },
-    { "period": "2025-11", "x_value":  1.69, "y_value":  1.44, "anomaly_score": -0.128, "is_anomaly": true,  "is_highlight": false },
-    { "period": "2025-12", "x_value":  1.75, "y_value":  1.49, "anomaly_score": -0.133, "is_anomaly": true,  "is_highlight": false },
-    { "period": "2026-01", "x_value":  1.82, "y_value":  1.55, "anomaly_score": -0.137, "is_anomaly": true,  "is_highlight": false },
-    { "period": "2026-02", "x_value":  1.91, "y_value":  1.61, "anomaly_score": -0.140, "is_anomaly": true,  "is_highlight": false },
-    { "period": "2026-03", "x_value":  1.23, "y_value": -0.45, "anomaly_score": -0.142, "is_anomaly": true,  "is_highlight": true  }
+    {
+      "period": "2024-08",
+      "x_value": -1.21,
+      "y_value": 0.34,
+      "anomaly_score": -0.041,
+      "is_anomaly": false,
+      "is_highlight": false
+    },
+    {
+      "period": "2024-09",
+      "x_value": -0.98,
+      "y_value": 0.12,
+      "anomaly_score": -0.038,
+      "is_anomaly": false,
+      "is_highlight": false
+    },
+    {
+      "period": "2024-10",
+      "x_value": -0.72,
+      "y_value": -0.21,
+      "anomaly_score": -0.029,
+      "is_anomaly": false,
+      "is_highlight": false
+    },
+    {
+      "period": "2024-11",
+      "x_value": -0.45,
+      "y_value": -0.08,
+      "anomaly_score": -0.022,
+      "is_anomaly": false,
+      "is_highlight": false
+    },
+    {
+      "period": "2024-12",
+      "x_value": -0.18,
+      "y_value": 0.15,
+      "anomaly_score": -0.017,
+      "is_anomaly": false,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-01",
+      "x_value": 0.09,
+      "y_value": 0.28,
+      "anomaly_score": -0.014,
+      "is_anomaly": false,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-02",
+      "x_value": 0.31,
+      "y_value": 0.43,
+      "anomaly_score": -0.019,
+      "is_anomaly": false,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-03",
+      "x_value": 0.52,
+      "y_value": 0.67,
+      "anomaly_score": -0.031,
+      "is_anomaly": false,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-04",
+      "x_value": 0.74,
+      "y_value": 0.82,
+      "anomaly_score": -0.048,
+      "is_anomaly": false,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-05",
+      "x_value": 0.95,
+      "y_value": 0.91,
+      "anomaly_score": -0.067,
+      "is_anomaly": false,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-06",
+      "x_value": 1.12,
+      "y_value": 1.03,
+      "anomaly_score": -0.089,
+      "is_anomaly": false,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-07",
+      "x_value": 1.28,
+      "y_value": 1.14,
+      "anomaly_score": -0.101,
+      "is_anomaly": true,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-08",
+      "x_value": 1.41,
+      "y_value": 1.23,
+      "anomaly_score": -0.112,
+      "is_anomaly": true,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-09",
+      "x_value": 1.52,
+      "y_value": 1.31,
+      "anomaly_score": -0.118,
+      "is_anomaly": true,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-10",
+      "x_value": 1.61,
+      "y_value": 1.38,
+      "anomaly_score": -0.124,
+      "is_anomaly": true,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-11",
+      "x_value": 1.69,
+      "y_value": 1.44,
+      "anomaly_score": -0.128,
+      "is_anomaly": true,
+      "is_highlight": false
+    },
+    {
+      "period": "2025-12",
+      "x_value": 1.75,
+      "y_value": 1.49,
+      "anomaly_score": -0.133,
+      "is_anomaly": true,
+      "is_highlight": false
+    },
+    {
+      "period": "2026-01",
+      "x_value": 1.82,
+      "y_value": 1.55,
+      "anomaly_score": -0.137,
+      "is_anomaly": true,
+      "is_highlight": false
+    },
+    {
+      "period": "2026-02",
+      "x_value": 1.91,
+      "y_value": 1.61,
+      "anomaly_score": -0.14,
+      "is_anomaly": true,
+      "is_highlight": false
+    },
+    {
+      "period": "2026-03",
+      "x_value": 1.23,
+      "y_value": -0.45,
+      "anomaly_score": -0.142,
+      "is_anomaly": true,
+      "is_highlight": true
+    }
   ]
 }

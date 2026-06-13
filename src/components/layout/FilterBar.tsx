@@ -6,12 +6,7 @@ import { presetToFrom, resolveEffectiveDataEnd } from '@/utils/dateUtils';
 import { Z_INDEX } from '@/utils/zIndex';
 import { Icon } from '@/components/ui/Icon';
 import { Switch } from '@/components/ui/Switch';
-import type {
-  PeriodPreset,
-  ConfidenceGrade,
-  PrimaryPattern,
-  SegmentId,
-} from '@/types/literals';
+import type { PeriodPreset, ConfidenceGrade, PrimaryPattern, SegmentId } from '@/types/literals';
 
 interface PeriodPresetConfig {
   id: PeriodPreset;
@@ -50,9 +45,8 @@ const PATTERN_OPTIONS: PatternOption[] = [
   { patterns: ['pattern3'], label: '패턴 3' },
 ];
 
-// Filter label + segmented-control wrapper — neutral active (no brand)
-const LABEL_CLASS =
-  'text-tertiary text-[10px] font-semibold uppercase tracking-widest mr-1';
+// Filter label + segmented-control wrapper (neutral active, 브랜드 색 없음)
+const LABEL_CLASS = 'text-tertiary text-[10px] font-semibold uppercase tracking-widest mr-1';
 const GROUP_CLASS =
   'inline-flex items-center bg-subtle border border-border-default rounded-md p-0.5 gap-0.5';
 const ITEM_BASE =
@@ -62,7 +56,6 @@ const ITEM_IDLE = 'text-tertiary hover:text-secondary';
 
 const DIVIDER = 'w-px h-5 bg-border-default shrink-0';
 
-// @guide:LAYOUT-03
 export function FilterBar() {
   const { data: events, isLoading: eventsLoading } = useEvents();
   const { data: freshness } = useFreshness();
@@ -90,8 +83,7 @@ export function FilterBar() {
   const eventRef = useRef<HTMLDivElement>(null);
   const eventDropdownRef = useRef<HTMLDivElement>(null);
 
-  // 사건 드롭다운: FilterBar overflow-x-auto에 의해 clipping되는 문제 회피용 position:fixed.
-  // trigger button의 bottom-left를 기준으로 dropdown 위치 계산.
+  // FilterBar의 overflow-x-auto에 의한 클리핑을 피하기 위해 position:fixed로 렌더링한다.
   const openEventDropdown = () => {
     if (eventRef.current) {
       const rect = eventRef.current.getBoundingClientRect();
@@ -124,7 +116,8 @@ export function FilterBar() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // 스크롤·resize 시 드롭다운 위치 재계산
+  // TODO: 스크롤 중 드롭다운이 떨리는 경우 rAF throttle 적용 고려
+  // 스크롤, 리사이즈 시 드롭다운 위치 재계산
   useEffect(() => {
     if (!eventOpen) return;
     const reposition = () => {
@@ -150,7 +143,7 @@ export function FilterBar() {
   function handlePresetClick(preset: PeriodPreset) {
     setPeriodPreset(preset);
     if (primaryCommodity) {
-      // P1-1: freshness.data_up_to가 stale할 수 있으므로 analysis_end와 비교 후 최신값 사용
+      // freshness.data_up_to가 stale할 수 있으므로 analysis_end와 비교해 최신값을 사용한다.
       const effectiveEnd = resolveEffectiveDataEnd(
         freshness?.data_up_to,
         primaryCommodity.analysis_end,
@@ -199,10 +192,7 @@ export function FilterBar() {
               aria-label={`기간 ${p.label}`}
               aria-pressed={periodPreset === p.id}
               onClick={() => handlePresetClick(p.id)}
-              className={[
-                ITEM_BASE,
-                periodPreset === p.id ? ITEM_ACTIVE : ITEM_IDLE,
-              ].join(' ')}
+              className={[ITEM_BASE, periodPreset === p.id ? ITEM_ACTIVE : ITEM_IDLE].join(' ')}
             >
               {p.label}
             </button>
@@ -212,7 +202,7 @@ export function FilterBar() {
 
       <div className={DIVIDER} aria-hidden />
 
-      {/* 사건 필터 드롭다운 — position:fixed (FilterBar overflow clipping 회피) */}
+      {/* 사건 필터 */}
       <div ref={eventRef} className="shrink-0">
         <button
           aria-label="사건 필터"
@@ -231,9 +221,7 @@ export function FilterBar() {
           <span>
             사건
             {selectedEventCount > 0 && (
-              <span className="text-[var(--text-muted)] ml-1">
-                ({selectedEventCount})
-              </span>
+              <span className="text-[var(--text-muted)] ml-1">({selectedEventCount})</span>
             )}
           </span>
           <Icon
@@ -289,12 +277,7 @@ export function FilterBar() {
                       ].join(' ')}
                     >
                       {checked && (
-                        <Icon
-                          name="check"
-                          size={10}
-                          strokeWidth={3}
-                          className="text-on-brand"
-                        />
+                        <Icon name="check" size={10} strokeWidth={3} className="text-on-brand" />
                       )}
                     </span>
                     <span
@@ -379,14 +362,12 @@ export function FilterBar() {
         </>
       )}
 
-      {/* 구간 on/off 토글 — brand teal switch */}
+      {/* 구간 토글 */}
       <div className="flex items-center gap-2.5 ml-auto shrink-0">
         <span className={LABEL_CLASS}>구간</span>
         {segmentsDisabled
           ? availableSegments.length === 0 &&
-            primaryCommodityId === null && (
-              <span className="text-tertiary text-[12px]">—</span>
-            )
+            primaryCommodityId === null && <span className="text-tertiary text-[12px]">—</span>
           : availableSegments.map((seg) => {
               const isOn = activeSegments.includes(seg);
               const label = seg === 'D_prime' ? 'E' : seg;
@@ -396,11 +377,7 @@ export function FilterBar() {
                   checked={isOn}
                   onChange={() => toggleSegment(seg)}
                   size="sm"
-                  label={
-                    <span className="text-[12px] font-mono text-tertiary">
-                      {label}
-                    </span>
-                  }
+                  label={<span className="text-[12px] font-mono text-tertiary">{label}</span>}
                   labelPosition="before"
                   aria-label={`구간 ${label} ${isOn ? '끄기' : '켜기'}`}
                 />

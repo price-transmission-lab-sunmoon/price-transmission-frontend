@@ -11,26 +11,19 @@ import { SEGMENT_IDS, type SegmentId } from '@/types/literals';
 
 const KNOWN_SEGMENT_IDS = new Set<string>(SEGMENT_IDS);
 
-// ============================================================
-// 공통 UI 유틸
-// ============================================================
-
 function SectionHeader({ num, title }: { num: number; title: string }) {
   return (
     <div className="flex items-center gap-3.5 mb-5">
       <span
         className="flex items-center justify-center w-9 h-9 rounded-lg shrink-0 text-on-brand text-[14px] font-bold font-mono"
         style={{
-          background:
-            'linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%)',
+          background: 'linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%)',
           boxShadow: '0 4px 12px rgba(13, 148, 136, 0.24)',
         }}
       >
         {num}
       </span>
-      <h2 className="text-primary text-[18px] font-bold tracking-tight m-0">
-        {title}
-      </h2>
+      <h2 className="text-primary text-[18px] font-bold tracking-tight m-0">{title}</h2>
     </div>
   );
 }
@@ -47,11 +40,7 @@ function LoadingSkeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className="flex flex-col gap-3" role="status" aria-busy="true">
       {Array.from({ length: rows }).map((_, i) => (
-        <div
-          key={i}
-          className="skeleton-bar"
-          style={{ width: `${60 + (i % 3) * 12}%` }}
-        />
+        <div key={i} className="skeleton-bar" style={{ width: `${60 + (i % 3) * 12}%` }} />
       ))}
     </div>
   );
@@ -85,9 +74,7 @@ const PATTERN_TONE: Record<string, 'info' | 'violet' | 'teal-light'> = {
 
 const KNOWN_PATTERN_IDS = new Set(['pattern1', 'pattern2', 'pattern3']);
 
-// ============================================================
-// 섹션 1 — 분석 파이프라인 개요
-// ============================================================
+// 섹션 1
 function Section1Pipeline({
   isLoading,
   isError,
@@ -105,27 +92,19 @@ function Section1Pipeline({
     <SectionCard>
       <SectionHeader num={1} title="분석 파이프라인 개요" />
       <p className="text-tertiary text-[13px] mb-4 leading-[1.5] m-0">
-        가격 전달 체계(국제가 → 수입단가 → PPI → 도매가 → CPI)와 Phase 0~8
-        파이프라인 흐름. 노드를 클릭하면 각 단계의 상세 설명을 확인할 수 있습니다.
+        가격 전달 체계(국제가 → 수입단가 → PPI → 도매가 → CPI)와 Phase 0~8 파이프라인 흐름. 노드를
+        클릭하면 각 단계의 상세 설명을 확인할 수 있습니다.
       </p>
       {isLoading && <LoadingSkeleton rows={5} />}
       {isError && (
         <ErrorBanner message="/meta/pipeline 데이터를 불러오지 못했습니다. 새로고침하거나 잠시 후 다시 시도하세요." />
       )}
-      {data && (
-        <PipelineFlowDiagram
-          nodes={data.nodes}
-          edges={data.edges}
-          version={data.version}
-        />
-      )}
+      {data && <PipelineFlowDiagram nodes={data.nodes} edges={data.edges} version={data.version} />}
     </SectionCard>
   );
 }
 
-// ============================================================
-// 섹션 2 — 이상 탐지 패턴 3종
-// ============================================================
+// 섹션 2
 function PatternCard({
   pattern,
   params,
@@ -137,9 +116,7 @@ function PatternCard({
   if (pattern.pattern_id === 'pattern3' && params) {
     const pct = (params.stability_threshold * 100).toFixed(0);
     const nVals = params.pattern3_n_values.join('·');
-    description = description
-      .replace(/±[\d.]+%/, `±${pct}%`)
-      .replace(/N개월/, `${nVals}개월`);
+    description = description.replace(/±[\d.]+%/, `±${pct}%`).replace(/N개월/, `${nVals}개월`);
   }
 
   return (
@@ -157,12 +134,8 @@ function PatternCard({
             ? '패턴 2'
             : '패턴 3'}
       </Badge>
-      <h3 className="text-primary text-[16px] font-semibold mt-3 mb-2 m-0">
-        {pattern.label_kr}
-      </h3>
-      <p className="text-secondary text-[14px] leading-[1.625] m-0">
-        {description}
-      </p>
+      <h3 className="text-primary text-[16px] font-semibold mt-3 mb-2 m-0">{pattern.label_kr}</h3>
+      <p className="text-secondary text-[14px] leading-[1.625] m-0">{description}</p>
       <div className="mt-4 pt-3 border-t border-border-subtle flex items-center gap-1.5 flex-wrap">
         <span className="text-tertiary text-[10px] font-semibold uppercase tracking-widest mr-1">
           적용 구간
@@ -207,9 +180,7 @@ function Section2Patterns({
               });
               return false;
             }
-            const badSegment = p.applicable_segments.find(
-              (s) => !KNOWN_SEGMENT_IDS.has(s),
-            );
+            const badSegment = p.applicable_segments.find((s) => !KNOWN_SEGMENT_IDS.has(s));
             if (badSegment !== undefined) {
               console.warn(
                 `[MethodologyView] PARSE-ENUM-002: unknown segment="${badSegment}" in pattern="${p.pattern_id}" — skipping card`,
@@ -235,9 +206,7 @@ function Section2Patterns({
   );
 }
 
-// ============================================================
-// 섹션 3 — 계량경제학 기법 (accordion)
-// ============================================================
+// TODO: 파라미터 값이 없을 때 표시하는 '—' 대신 로딩 상태를 구분해 보여주는 방법 검토
 interface Method {
   id: string;
   title: string;
@@ -326,12 +295,8 @@ function AccordionItem({
         ].join(' ')}
       >
         <div className="flex items-center gap-3">
-          <span className="text-primary text-[14px] font-semibold">
-            {method.title}
-          </span>
-          <span className="text-tertiary text-[13px] hidden sm:inline">
-            {method.summary}
-          </span>
+          <span className="text-primary text-[14px] font-semibold">{method.title}</span>
+          <span className="text-tertiary text-[13px] hidden sm:inline">{method.summary}</span>
         </div>
         <Icon
           name="chevron-down"
@@ -341,9 +306,7 @@ function AccordionItem({
       </button>
       {isOpen && (
         <div className="px-5 py-4 bg-subtle border-t border-border-subtle">
-          <p className="text-secondary text-[14px] leading-[1.625] m-0">
-            {method.detail(params)}
-          </p>
+          <p className="text-secondary text-[14px] leading-[1.625] m-0">{method.detail(params)}</p>
         </div>
       )}
     </div>
@@ -380,9 +343,6 @@ function Section3Econometrics({ params }: { params?: AnalysisParams }) {
   );
 }
 
-// ============================================================
-// 섹션 4 — ML 모델
-// ============================================================
 const ML_MODELS = [
   {
     name: 'Isolation Forest',
@@ -392,14 +352,12 @@ const ML_MODELS = [
   },
   {
     name: 'LOF (Local Outlier Factor)',
-    principle:
-      '주변 이웃의 밀도와 자신의 밀도를 비교해 밀도가 낮은 점을 이상으로 판정',
+    principle: '주변 이웃의 밀도와 자신의 밀도를 비교해 밀도가 낮은 점을 이상으로 판정',
     role: '전이율 (SHAP 21.8%)',
   },
   {
     name: 'One-Class SVM',
-    principle:
-      '정상 관측치가 모인 영역의 경계를 학습하고, 경계 밖 점을 이상으로 판정',
+    principle: '정상 관측치가 모인 영역의 경계를 학습하고, 경계 밖 점을 이상으로 판정',
     role: '오차수정항 ECT (SHAP 19.6%)',
   },
 ];
@@ -418,9 +376,8 @@ function Section4MLModels() {
     <SectionCard>
       <SectionHeader num={4} title="ML 모델" />
       <p className="text-tertiary text-[13px] mb-4 leading-[1.5] m-0">
-        3개 비지도 학습 모델이 계량경제학 분석과 독립적으로 6종 피처(F1~F6)를
-        입력받아, 데이터가 가장 길고 두 경로 유형에 공통인 구간 A·B(20개 분석
-        유닛)에 한정하여 교차 검증을 수행한다.
+        3개 비지도 학습 모델이 계량경제학 분석과 독립적으로 6종 피처(F1~F6)를 입력받아, 데이터가
+        가장 길고 두 경로 유형에 공통인 구간 A·B(20개 분석 유닛)에 한정하여 교차 검증을 수행한다.
       </p>
       <div className="overflow-x-auto -mx-2">
         <table className="w-full border-collapse text-[14px]">
@@ -446,12 +403,8 @@ function Section4MLModels() {
                 <td className="px-4 py-3.5 text-primary font-semibold whitespace-nowrap">
                   {m.name}
                 </td>
-                <td className="px-4 py-3.5 text-secondary leading-[1.5]">
-                  {m.principle}
-                </td>
-                <td className="px-4 py-3.5 text-secondary leading-[1.5]">
-                  {m.role}
-                </td>
+                <td className="px-4 py-3.5 text-secondary leading-[1.5]">{m.principle}</td>
+                <td className="px-4 py-3.5 text-secondary leading-[1.5]">{m.role}</td>
               </tr>
             ))}
           </tbody>
@@ -473,9 +426,6 @@ function Section4MLModels() {
   );
 }
 
-// ============================================================
-// 섹션 5 — 신뢰도 등급 체계
-// ============================================================
 const GRADE_ROWS = [
   {
     grade: '고신뢰 이상',
@@ -505,8 +455,8 @@ function Section5ConfidenceGrade() {
     <SectionCard>
       <SectionHeader num={5} title="신뢰도 등급 체계" />
       <p className="text-tertiary text-[13px] mb-4 leading-[1.5] m-0">
-        통계 기반 이상 탐지(Phase 7)와 ML 교차검증(Phase 7-ML)의 결합 결과에
-        따라 이상 노드에 3단계 신뢰도 등급을 부여한다.
+        통계 기반 이상 탐지(Phase 7)와 ML 교차검증(Phase 7-ML)의 결합 결과에 따라 이상 노드에 3단계
+        신뢰도 등급을 부여한다.
       </p>
       <div className="flex flex-col gap-2">
         {GRADE_ROWS.map((r) => (
@@ -523,9 +473,7 @@ function Section5ConfidenceGrade() {
               aria-label={r.grade}
             />
             <div className="flex-1 min-w-0 flex items-baseline gap-3 flex-wrap">
-              <span className="text-primary text-[16px] font-semibold">
-                {r.grade}
-              </span>
+              <span className="text-primary text-[16px] font-semibold">{r.grade}</span>
               <span className="text-secondary text-[14px]">{r.condition}</span>
             </div>
             <Badge tone="neutral" size="sm" className="hidden sm:inline-flex">
@@ -538,9 +486,6 @@ function Section5ConfidenceGrade() {
   );
 }
 
-// ============================================================
-// 섹션 6 — 데이터 소스
-// ============================================================
 const DATA_SOURCES = [
   { num: 1, source: 'World Bank Pink Sheet', org: '세계은행', usage: '국제 원자재가' },
   { num: 2, source: 'FAO FFPI', org: 'FAO', usage: '국제 원자재가 보조' },
@@ -592,10 +537,6 @@ function Section6DataSources() {
   );
 }
 
-// ============================================================
-// MethodologyView — 최상위 컨테이너
-// ============================================================
-// @guide:CHART-14
 export function MethodologyView() {
   const {
     data: pipelineData,
@@ -603,11 +544,7 @@ export function MethodologyView() {
     isError: pipelineError,
   } = usePipelineData();
 
-  const {
-    data: paramsData,
-    isLoading: paramsLoading,
-    isError: paramsError,
-  } = useAnalysisParams();
+  const { data: paramsData, isLoading: paramsLoading, isError: paramsError } = useAnalysisParams();
 
   return (
     <div className="max-w-[1024px] mx-auto py-8 px-6 space-y-6">
@@ -620,11 +557,7 @@ export function MethodologyView() {
         </p>
       </header>
 
-      <Section1Pipeline
-        isLoading={pipelineLoading}
-        isError={pipelineError}
-        data={pipelineData}
-      />
+      <Section1Pipeline isLoading={pipelineLoading} isError={pipelineError} data={pipelineData} />
 
       <Section2Patterns
         isLoading={paramsLoading}

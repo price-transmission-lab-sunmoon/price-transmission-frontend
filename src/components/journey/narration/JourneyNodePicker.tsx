@@ -1,6 +1,4 @@
-// 좌측 패널 하단 노드 선택기 — 전달구조 '전이 산점도'의 축소판.
-// x=국제가(상류, upstream_pct) · y=수입단가(하류, downstream_pct), 사분면(깃털/과대/과소/역전) + y=x 대각선.
-// 회색=정상, 색=이상(등급색). 이상점 클릭 → '기준 이상' 선택(상세 기반 ②④⑤만 변경). 구간별.
+// 노드 선택기. 전이 산점도 축소판으로, x=상류, y=하류 기준이다. 이상점 클릭으로 기준 이상을 선택한다.
 import { useEffect, useRef, useState } from 'react';
 import type { ScatterResponse } from '@/types/timeseries';
 import { useJourneySelection, JOURNEY_GRADE_COLORS } from '../journeyContract';
@@ -9,8 +7,8 @@ const GRADE_KR: Record<string, string> = { high: '고신뢰', medium: '중신뢰
 const GRADE_SHORT: Record<string, string> = { high: '고', medium: '중', reference: '참' };
 const SEG_LABEL: Record<string, string> = { A: 'A', B: 'B', C: 'C', D: 'D', D_prime: 'E' };
 const GRADES = ['high', 'medium', 'reference'] as const;
-const NODE_COLORS = JOURNEY_GRADE_COLORS;
 
+const NODE_COLORS = JOURNEY_GRADE_COLORS;
 const clamp = (v: number) => Math.max(3, Math.min(97, v));
 
 export function JourneyNodePicker({
@@ -29,7 +27,7 @@ export function JourneyNodePicker({
 
   const [zoom, setZoom] = useState(1);
   const svgRef = useRef<SVGSVGElement>(null);
-  // 미니맵 위 휠 → 산점도만 확대(페이지 스크롤·카메라 영향 차단).
+  // 미니맵 위 휠 이벤트. 페이지 스크롤과 카메라 줌을 막고 산점도만 확대한다.
   useEffect(() => {
     const el = svgRef.current;
     if (!el) return;
@@ -82,7 +80,7 @@ export function JourneyNodePicker({
         </div>
       </div>
 
-      {/* 구간 선택(산점도는 구간별) */}
+      {/* 구간 선택 */}
       <div className="flex flex-wrap items-center gap-1 mb-2">
         <span className="text-tertiary text-[11px] mr-0.5">구간</span>
         {segments.map((s) => (
@@ -101,25 +99,56 @@ export function JourneyNodePicker({
         ))}
       </div>
 
-      {/* 산점도 미니맵 — 정사각 유지(meet), 고정 높이 */}
+      {/* 산점도 미니맵 */}
       <svg
         ref={svgRef}
         viewBox="0 0 100 100"
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-[168px] overflow-hidden"
       >
-        {/* 사분면 라벨(연하게) */}
-        <text x="6" y="9" fontSize="4.5" fill="var(--text-tertiary)" opacity="0.7">깃털</text>
-        <text x="94" y="9" fontSize="4.5" fill="var(--text-tertiary)" opacity="0.7" textAnchor="end">과대전달</text>
-        <text x="6" y="97" fontSize="4.5" fill="var(--text-tertiary)" opacity="0.7">과소전달</text>
-        <text x="94" y="97" fontSize="4.5" fill="var(--text-tertiary)" opacity="0.7" textAnchor="end">역전</text>
-        {/* 축 십자 */}
+        {/* 사분면 라벨 */}
+        <text x="6" y="9" fontSize="4.5" fill="var(--text-tertiary)" opacity="0.7">
+          깃털
+        </text>
+        <text
+          x="94"
+          y="9"
+          fontSize="4.5"
+          fill="var(--text-tertiary)"
+          opacity="0.7"
+          textAnchor="end"
+        >
+          과대전달
+        </text>
+        <text x="6" y="97" fontSize="4.5" fill="var(--text-tertiary)" opacity="0.7">
+          과소전달
+        </text>
+        <text
+          x="94"
+          y="97"
+          fontSize="4.5"
+          fill="var(--text-tertiary)"
+          opacity="0.7"
+          textAnchor="end"
+        >
+          역전
+        </text>
+        {/* 축 */}
         <line x1="50" y1="2" x2="50" y2="98" stroke="var(--border-default)" strokeWidth="0.4" />
         <line x1="2" y1="50" x2="98" y2="50" stroke="var(--border-default)" strokeWidth="0.4" />
-        {/* y=x 대각선(완전 전달 기준) */}
-        <line x1="5" y1="95" x2="95" y2="5" stroke="#0d9488" strokeWidth="0.5" strokeDasharray="2 2" opacity="0.6" />
+        {/* y=x 대각선 (완전 전달 기준) */}
+        <line
+          x1="5"
+          y1="95"
+          x2="95"
+          y2="5"
+          stroke="#0d9488"
+          strokeWidth="0.5"
+          strokeDasharray="2 2"
+          opacity="0.6"
+        />
         <g transform={zt}>
-          {/* 모든 점 클릭 선택 — 크기 균일, 고/중/참은 얇은 테두리로 구분, 선택만 강조 */}
+          {/* 모든 점 클릭 선택 */}
           {pts.map((p, i) => {
             const isAnom = p.is_anomaly && p.anomaly_id != null;
             const isSel = isAnom
@@ -175,16 +204,19 @@ export function JourneyNodePicker({
         ))}
       </div>
 
-      {/* 기준 명시 */}
+      {/* 기준 표시 */}
       <div className="mt-2 text-[12px]">
         {cur ? (
           <span className="text-secondary">
             기준 이상:{' '}
             <span
               className="font-medium"
-              style={{ color: cur.confidence_grade ? NODE_COLORS[cur.confidence_grade] : undefined }}
+              style={{
+                color: cur.confidence_grade ? NODE_COLORS[cur.confidence_grade] : undefined,
+              }}
             >
-              {cur.period} · {cur.confidence_grade ? GRADE_KR[cur.confidence_grade] : ''} · 구간 {SEG_LABEL[seg] ?? seg}
+              {cur.period} · {cur.confidence_grade ? GRADE_KR[cur.confidence_grade] : ''} · 구간{' '}
+              {SEG_LABEL[seg] ?? seg}
             </span>
           </span>
         ) : selectedNormal ? (
@@ -192,7 +224,8 @@ export function JourneyNodePicker({
             기준:{' '}
             <span className="font-medium">
               정상 시점 {selectedNormal.period} · 구간 {SEG_LABEL[seg] ?? seg} · 상류{' '}
-              {selectedNormal.upstream_pct.toFixed(1)}% · 하류 {selectedNormal.downstream_pct.toFixed(1)}%
+              {selectedNormal.upstream_pct.toFixed(1)}% · 하류{' '}
+              {selectedNormal.downstream_pct.toFixed(1)}%
             </span>
           </span>
         ) : (

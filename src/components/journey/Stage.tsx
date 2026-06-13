@@ -1,5 +1,4 @@
-// 스테이션 1개를 3D 공간의 제 위치(-Y로 하강)에 배치하고, 현재 활성 여부만 내린다.
-// 부드러운 연출은 각 스테이션이 useJourneyProgress.offset을 구독해 useFrame에서 처리.
+// 스테이션을 -Y 방향 월드 좌표에 배치하고 활성 여부를 내린다.
 import type { ReactNode } from 'react';
 import { STAGE_GAP, useJourneyProgress } from './journeyContract';
 

@@ -1,4 +1,4 @@
-# 가격렌즈 — 소비자 물가 이상 탐지 프론트엔드
+# SeePick — 소비자 물가 이상 탐지 프론트엔드
 
 2026-1 선문대학교 종합프로젝트 11분반 1팀  
 계량경제학 + 머신러닝 기반 국내 소비자 물가 이상 탐지 웹 서비스 — **프론트엔드 repo**
@@ -530,8 +530,6 @@ price-transmission-frontend/
 │   ├── setup.ts
 │   └── frame_smoke.test.ts        # smoke test 3건
 ├── docs/                          # 명세서 사본 (읽기 전용)
-├── CLAUDE.md                      # AI 컨텍스트 기준 파일
-├── BUGFIX_LOG.md                  # 버그 수정 이력
 └── README.md                      # 이 파일
 ```
 
@@ -589,4 +587,3 @@ price-transmission-frontend/
 | `exception_spec_v6.md` | 예외 코드 명세 |
 | `pipeline_output_spec_v7.md` | 파이프라인 출력 명세 |
 | `docs_manifest_v2.md` | 버전 해석 SoT |
-| `CLAUDE.md` | AI 컨텍스트 기준 파일 사본 |

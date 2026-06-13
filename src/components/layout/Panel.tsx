@@ -34,8 +34,6 @@ import type { StatSeriesMetric, StatSnapshotMetric, MlModel } from '@/types/lite
 
 type PanelSectionId = 'stat' | 'ml' | 'path' | 'irf';
 
-// ── sub-components ──────────────────────────────────────────────────────────
-
 const SECTION_ACCENT: Record<PanelSectionId, string> = {
   stat: 'var(--brand)',
   ml: '#7c3aed',
@@ -166,20 +164,14 @@ function InlineChartWrapper({
           className="w-[3px] h-[12px] rounded-[1.5px] shrink-0"
           style={{ background: INLINE_CHART_ACCENT[metricKey] ?? 'var(--brand)' }}
         />
-        <span className="text-secondary text-[12px] font-medium flex-1">
-          {label}
-        </span>
+        <span className="text-secondary text-[12px] font-medium flex-1">{label}</span>
         <Icon
           name="chevron-down"
           size={12}
           className={`text-tertiary transition-transform duration-default ease-out ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
-      {isOpen && (
-        <div className="px-2.5 pb-2.5 pt-1 border-t border-border-subtle">
-          {children}
-        </div>
-      )}
+      {isOpen && <div className="px-2.5 pb-2.5 pt-1 border-t border-border-subtle">{children}</div>}
     </div>
   );
 }
@@ -214,9 +206,7 @@ function InlineChartSection({
       {data && metric === 'transmission_rate' && data.metric === 'transmission_rate' && (
         <TransmissionRateChart data={data.data} highlightPeriod={data.highlight_period} />
       )}
-      {data && metric === 'zscore' && data.metric === 'zscore' && (
-        <ZScoreChart data={data.data} />
-      )}
+      {data && metric === 'zscore' && data.metric === 'zscore' && <ZScoreChart data={data.data} />}
       {data && metric === 'ect' && data.metric === 'ect' && (
         <ECTChart data={data.data} ectType={data.data[0]?.ect_type ?? null} />
       )}
@@ -275,7 +265,7 @@ function MlBarRow({
   percentile: number | null;
   isAnomaly: boolean;
 }) {
-  // BE-5: score/percentile은 null 가능. UI는 빈 바 + '—' 표시로 폴백.
+  // score/percentile이 null이면 빈 바와 '—'로 표시한다.
   const barWidth = percentile == null ? 0 : Math.max(0, Math.min(100, percentile));
   const expandedMLMaps = useAppStore((s) => s.expandedMLMaps);
   const toggleMLMap = useAppStore((s) => s.toggleMLMap);
@@ -304,10 +294,7 @@ function MlBarRow({
             style={{
               width: `${barWidth}%`,
               backgroundColor: barColor,
-              boxShadow:
-                isAnomaly && (score ?? 0) >= 0.8
-                  ? `0 0 8px ${barColor}66`
-                  : undefined,
+              boxShadow: isAnomaly && (score ?? 0) >= 0.8 ? `0 0 8px ${barColor}66` : undefined,
             }}
           />
         </div>
@@ -368,9 +355,7 @@ function NotImplementedNotice({
       <p className="text-[12px] text-secondary leading-[1.5] m-0">
         {section}은 백엔드 Phase 7 작업 이후 표시됩니다.
       </p>
-      {extra && (
-        <p className="text-[11px] text-tertiary leading-snug m-0">{extra}</p>
-      )}
+      {extra && <p className="text-[11px] text-tertiary leading-snug m-0">{extra}</p>}
       {causeSummary && (
         <p className="text-[10px] text-tertiary font-mono leading-snug break-words m-0">
           {causeSummary}
@@ -424,8 +409,6 @@ function DragHandle({ onDrag }: { onDrag: (dx: number) => void }) {
   );
 }
 
-// ── Judgment path stepper ───────────────────────────────────────────────────
-
 function JudgmentStep({
   step,
   label,
@@ -456,16 +439,12 @@ function JudgmentStep({
           aria-hidden
           className="absolute left-[11px] top-8 bottom-0 w-[1.5px]"
           style={{
-            background: passed
-              ? 'var(--success-border)'
-              : 'var(--error-border)',
+            background: passed ? 'var(--success-border)' : 'var(--error-border)',
           }}
         />
       )}
       <div className="flex-1 min-w-0">
-        <div className="text-primary text-[13px] font-medium leading-snug">
-          {label}
-        </div>
+        <div className="text-primary text-[13px] font-medium leading-snug">{label}</div>
         <div className="text-tertiary text-[11px] font-mono mt-0.5">{value}</div>
       </div>
       <Icon
@@ -478,9 +457,7 @@ function JudgmentStep({
   );
 }
 
-// ── main Panel ───────────────────────────────────────────────────────────────
-
-// @guide:LAYOUT-04
+// 메인 컴포넌트
 export function Panel() {
   const isPanelOpen = useAppStore((s) => s.isPanelOpen);
   const selectedAnomalyId = useAppStore((s) => s.selectedAnomalyId);
@@ -491,7 +468,8 @@ export function Panel() {
 
   const { data: detail, isLoading, error: detailError } = usePanelDetail(selectedAnomalyId);
 
-  // detail 미구현(NOT_IMPLEMENTED) 시 stream anomaly_nodes에서 메타 폴백 추출.
+  // NOT_IMPLEMENTED 응답 시 stream anomaly_nodes에서 노드 메타를 폴백으로 쓴다.
+  // TODO: detail API 구현 후 폴백 로직 제거 필요
   const { data: streamData } = useStreamData();
   const fallbackNode = useMemo(() => {
     if (detail || selectedAnomalyId == null || !streamData) return null;
@@ -502,7 +480,11 @@ export function Panel() {
     detailError instanceof ApiError && detailError.publicCode === 'NOT_IMPLEMENTED';
 
   const irfEnabled = expandedSections.has('irf');
-  const { data: irfData, isLoading: irfLoading, error: irfError } = useIRF({
+  const {
+    data: irfData,
+    isLoading: irfLoading,
+    error: irfError,
+  } = useIRF({
     anomalyId: selectedAnomalyId,
     enabled: irfEnabled,
   });
@@ -523,8 +505,7 @@ export function Panel() {
     const recommended = commodities
       .filter(
         (c) =>
-          c.has_anomaly_this_month &&
-          c.commodity_id !== useAppStore.getState().primaryCommodityId,
+          c.has_anomaly_this_month && c.commodity_id !== useAppStore.getState().primaryCommodityId,
       )
       .slice(0, 3);
 
@@ -553,9 +534,7 @@ export function Panel() {
                     key={c.commodity_id}
                     variant="secondary"
                     size="sm"
-                    onClick={() =>
-                      useAppStore.getState().setPrimaryCommodity(c.commodity_id)
-                    }
+                    onClick={() => useAppStore.getState().setPrimaryCommodity(c.commodity_id)}
                   >
                     {c.name_kr}
                   </Button>
@@ -605,13 +584,10 @@ export function Panel() {
     >
       <DragHandle onDrag={handleDrag} />
 
-      {/* Header */}
       <div className="px-5 py-4 border-b border-border-default">
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
-            {isLoading && (
-              <span className="text-tertiary italic text-[12px]">로딩 중…</span>
-            )}
+            {isLoading && <span className="text-tertiary italic text-[12px]">로딩 중…</span>}
             {detail && (
               <>
                 <h2 className="text-primary text-[16px] font-bold tracking-tight m-0">
@@ -648,22 +624,25 @@ export function Panel() {
           />
         </div>
 
-        {/* line 2: segment · period · pattern */}
         {detail && (
           <div className="flex items-center gap-2 mt-1.5 text-[12px] text-tertiary">
             <span>{detail.segment_label_kr}</span>
-            <span aria-hidden className="text-border-strong">·</span>
-            <span className="font-mono">{detail.period}</span>
-            <span aria-hidden className="text-border-strong">·</span>
-            <span className="text-brand font-medium">
-              {patternLabel(detail.primary_pattern)}
+            <span aria-hidden className="text-border-strong">
+              ·
             </span>
+            <span className="font-mono">{detail.period}</span>
+            <span aria-hidden className="text-border-strong">
+              ·
+            </span>
+            <span className="text-brand font-medium">{patternLabel(detail.primary_pattern)}</span>
           </div>
         )}
         {!detail && fallbackNode && (
           <div className="flex items-center gap-2 mt-1.5 text-[12px] text-tertiary">
             <span className="font-mono">{fallbackNode.period}</span>
-            <span aria-hidden className="text-border-strong">·</span>
+            <span aria-hidden className="text-border-strong">
+              ·
+            </span>
             <span className="text-brand font-medium">
               {patternLabel(fallbackNode.primary_pattern)}
             </span>
@@ -677,9 +656,8 @@ export function Panel() {
         )}
       </div>
 
-      {/* Sections */}
       <div className="flex-1 overflow-y-auto px-3.5 py-3 space-y-2.5">
-        {/* ── 분석 수치 ── */}
+        {/* 분석 수치 */}
         <div
           data-testid="stat-section"
           className="bg-surface border border-border-default rounded-lg shadow-e1 overflow-hidden"
@@ -702,8 +680,7 @@ export function Panel() {
                           return reg ? `${formatRatio(r)} (${reg})` : formatRatio(r);
                         })(),
                         highlight:
-                          detail.stat_metrics.iqr_outlier ||
-                          detail.stat_metrics.zscore_alert,
+                          detail.stat_metrics.iqr_outlier || detail.stat_metrics.zscore_alert,
                       },
                       {
                         label: 'Z-Score',
@@ -772,7 +749,7 @@ export function Panel() {
           )}
         </div>
 
-        {/* ── ML 모델 점수 ── */}
+        {/* ML 모델 점수 */}
         <div
           data-testid="ml-section"
           className="bg-surface border border-border-default rounded-lg shadow-e1 overflow-hidden"
@@ -811,24 +788,22 @@ export function Panel() {
                     isAnomaly={row.isAnomaly}
                   />
                 ))}
-              {detail &&
-                detail.ml_summary.ml_vote >= 3 &&
-                detail.ml_summary.ml_detected && (
-                  <div className="flex items-center gap-2 mt-2 px-2.5 py-2 bg-subtle rounded-sm text-[11px]">
-                    <Icon name="sparkles" size={12} className="text-brand" />
-                    <span>
-                      <span className="text-primary font-semibold">
-                        {detail.ml_summary.ml_vote}/3 모델 합의
-                      </span>
-                      <span className="text-tertiary"> — 통계 + ML 동시 탐지</span>
+              {detail && detail.ml_summary.ml_vote >= 3 && detail.ml_summary.ml_detected && (
+                <div className="flex items-center gap-2 mt-2 px-2.5 py-2 bg-subtle rounded-sm text-[11px]">
+                  <Icon name="sparkles" size={12} className="text-brand" />
+                  <span>
+                    <span className="text-primary font-semibold">
+                      {detail.ml_summary.ml_vote}/3 모델 합의
                     </span>
-                  </div>
-                )}
+                    <span className="text-tertiary"> — 통계 + ML 동시 탐지</span>
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* ── 패턴 판정 경로 ── */}
+        {/* 패턴 판정 경로 */}
         <div className="bg-surface border border-border-default rounded-lg shadow-e1 overflow-hidden">
           <SectionHeader title="패턴 판정 경로" sectionKey="path" />
           {expandedSections.has('path') && (
@@ -850,7 +825,7 @@ export function Panel() {
           )}
         </div>
 
-        {/* ── IRF 차트 ── */}
+        {/* IRF 차트 */}
         <div className="bg-surface border border-border-default rounded-lg shadow-e1 overflow-hidden">
           <SectionHeader title="IRF 차트" sectionKey="irf" />
           {expandedSections.has('irf') && (
@@ -860,22 +835,15 @@ export function Panel() {
                   로딩 중…
                 </div>
               )}
-              {irfNotImplemented && (
-                <NotImplementedNotice section="IRF 차트" error={irfError} />
-              )}
+              {irfNotImplemented && <NotImplementedNotice section="IRF 차트" error={irfError} />}
               {irfData && <IRFChart irfs={irfData.irfs} />}
             </div>
           )}
         </div>
 
-        {/* IRF peak callout */}
         {detail && irfData && irfData.irfs.length > 0 && (
           <div className="flex items-start gap-2.5 px-3.5 py-3 bg-brand-subtle border border-brand-border rounded-md">
-            <Icon
-              name="bolt"
-              size={16}
-              className="text-brand mt-0.5 shrink-0"
-            />
+            <Icon name="bolt" size={16} className="text-brand mt-0.5 shrink-0" />
             <p className="text-[12px] text-brand-active leading-[1.5] m-0">
               IRF peak는 상류 가격 충격이 최대 반영되는 시점입니다.
             </p>

@@ -3,13 +3,11 @@ import { HelpModal } from './HelpModal';
 import { Icon } from '@/components/ui/Icon';
 import { Z_INDEX } from '@/utils/zIndex';
 
-// @guide:LAYOUT-08
 export function HelpFloatingButton() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   return (
     <>
-      {/* 우하단 고정 floating help 버튼 (web_plan_vN §9.2) */}
       <button
         onClick={() => setIsHelpOpen(true)}
         aria-label="도움말 열기"

@@ -30,8 +30,6 @@ export interface StreamChartAnomaly {
 
 export interface StreamChartData {
   series: StreamChartSeries[];
-  // 시간 기반 클러스터링 폐기. 클러스터링은 렌더 레이어 픽셀 bucket이 단일 책임.
-  // → 줌인 시 자연 해체. 줌아웃 시 자연 묶음. 일관됨.
   anomalies: StreamChartAnomaly[];
   domainFrom: Date;
   domainTo: Date;
@@ -42,7 +40,6 @@ function parseYYYYMM(period: string): Date {
   return new Date(year, month - 1, 1);
 }
 
-// @guide:SVC-01
 export function buildStreamChartData(
   response: StreamResponse,
   activeSegments: SegmentId[],
@@ -81,7 +78,7 @@ export function buildStreamChartData(
       (n: StreamAnomalyNode) =>
         segmentSet.has(n.segment_id as SegmentId) &&
         gradeSet.has(n.confidence_grade as ConfidenceGrade) &&
-        n.transmission_rate !== null, // null rate는 rate 축에 배치 불가 → 차트 제외
+        n.transmission_rate !== null, // null rate는 rate 축에 배치 불가, 차트 제외
     )
     .map((n: StreamAnomalyNode) => ({
       anomaly_id: n.anomaly_id,

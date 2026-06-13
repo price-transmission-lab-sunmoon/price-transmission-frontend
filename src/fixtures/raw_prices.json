@@ -116,9 +116,7 @@
           "value": 295.8,
           "index_2020": 140.5,
           "has_anomaly": true,
-          "anomaly_ids": [
-            1
-          ]
+          "anomaly_ids": [1]
         },
         {
           "period": "2024-07",
@@ -153,9 +151,7 @@
           "value": 282.6,
           "index_2020": 134.2,
           "has_anomaly": true,
-          "anomaly_ids": [
-            2
-          ]
+          "anomaly_ids": [2]
         },
         {
           "period": "2024-12",
@@ -183,9 +179,7 @@
           "value": 269.2,
           "index_2020": 127.8,
           "has_anomaly": true,
-          "anomaly_ids": [
-            3
-          ]
+          "anomaly_ids": [3]
         },
         {
           "period": "2025-04",
@@ -381,9 +375,7 @@
           "value": 528.4,
           "index_2020": 127.3,
           "has_anomaly": true,
-          "anomaly_ids": [
-            1
-          ]
+          "anomaly_ids": [1]
         },
         {
           "period": "2024-07",
@@ -418,9 +410,7 @@
           "value": 513.2,
           "index_2020": 123.6,
           "has_anomaly": true,
-          "anomaly_ids": [
-            2
-          ]
+          "anomaly_ids": [2]
         },
         {
           "period": "2024-12",
@@ -448,9 +438,7 @@
           "value": 499.7,
           "index_2020": 120.4,
           "has_anomaly": true,
-          "anomaly_ids": [
-            3
-          ]
+          "anomaly_ids": [3]
         },
         {
           "period": "2025-04",
@@ -631,9 +619,7 @@
           "period": "2024-06",
           "transmission_rate": 1.21,
           "has_anomaly": true,
-          "anomaly_ids": [
-            1
-          ]
+          "anomaly_ids": [1]
         },
         {
           "period": "2024-07",
@@ -663,9 +649,7 @@
           "period": "2024-11",
           "transmission_rate": 1.08,
           "has_anomaly": true,
-          "anomaly_ids": [
-            2
-          ]
+          "anomaly_ids": [2]
         },
         {
           "period": "2024-12",
@@ -689,9 +673,7 @@
           "period": "2025-03",
           "transmission_rate": 0.96,
           "has_anomaly": true,
-          "anomaly_ids": [
-            3
-          ]
+          "anomaly_ids": [3]
         },
         {
           "period": "2025-04",

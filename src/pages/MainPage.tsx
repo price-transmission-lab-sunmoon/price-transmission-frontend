@@ -4,7 +4,6 @@ import { ScatterChart } from '@/components/charts/ScatterChart';
 import { RawPricesChart } from '@/components/charts/RawPricesChart';
 import { Minimap } from '@/components/charts/Minimap';
 
-// @guide:LAYOUT-13
 export function MainPage() {
   const activeTab = useAppStore((s) => s.activeTab);
 
@@ -20,7 +19,7 @@ export function MainPage() {
   }
 
   if (activeTab === 'scatter') {
-    // FX-4: 산점도는 X·Y 변화율(%) 동일 단위. Y축이 픽셀상 충분히 길도록 정사각형 컨테이너.
+    // 산점도는 X축과 Y축 모두 변화율(%) 동일 단위이므로 정사각형 컨테이너로 Y축을 충분히 확보한다.
     return (
       <div className="flex flex-col h-full items-center justify-center gap-2 overflow-hidden">
         <div className="w-full h-full max-w-[min(100%,calc(100vh-260px))] aspect-square">

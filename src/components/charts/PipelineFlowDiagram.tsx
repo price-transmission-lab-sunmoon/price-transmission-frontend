@@ -63,7 +63,6 @@ function buildLayout(nodes: PipelineNode[], containerWidth: number): NodePos[] {
   return positions;
 }
 
-// @guide:CHART-13
 export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -96,7 +95,6 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
     svg.attr('width', containerWidth).attr('height', svgHeight);
     setTooltip(null);
 
-    // 화살표 마커 (warm border color)
     svg
       .append('defs')
       .append('marker')
@@ -110,7 +108,6 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
       .attr('points', '0 0, 7 3, 0 6')
       .attr('fill', 'var(--border-strong)');
 
-    // 엣지
     const edgeG = svg.append('g');
     for (const edge of edges) {
       const src = nodeMap.get(edge.source);
@@ -139,7 +136,6 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
         .attr('stroke-linecap', 'round')
         .attr('marker-end', 'url(#arrow-pipeline)');
 
-      // 엣지 라벨 — pill style on canvas bg
       if (edge.label) {
         const lx = (x1 + x2) / 2;
         const ly = my;
@@ -156,8 +152,7 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
           .text(edge.label);
 
         const bbox = (text.node() as SVGTextElement).getBBox();
-        bg
-          .insert('rect', 'text')
+        bg.insert('rect', 'text')
           .attr('x', bbox.x - 5)
           .attr('y', bbox.y - 2)
           .attr('width', bbox.width + 10)
@@ -169,7 +164,6 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
       }
     }
 
-    // 노드 — surface bg with hover brand-tint
     const nodeG = svg.append('g');
     for (const { node, x, y } of layout) {
       const g = nodeG
@@ -232,7 +226,7 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
 
   return (
     <div ref={containerRef} className="relative w-full select-none">
-      {/* 버전 표시 — pill */}
+      {/* 버전 표시(pill) */}
       <div
         className="absolute top-3 right-3 px-2.5 py-1 bg-canvas border border-border-default rounded-sm text-[10px] font-semibold uppercase tracking-widest font-mono text-tertiary pointer-events-none"
         style={{ zIndex: 10 }}
@@ -243,32 +237,33 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
       <svg ref={svgRef} className="w-full" />
 
       {/* 노드 클릭 툴팁 팝오버 */}
-      {tooltip && (() => {
-        const pos = layout.find((p) => p.node.label === tooltip.label);
-        if (!pos) return null;
-        const tipLeft = Math.max(8, Math.min(pos.x, containerWidth - 268));
-        const tipTop = pos.y > 120 ? pos.y - 104 : pos.y + NODE_H + 12;
-        return (
-          <div
-            className="absolute w-[260px] bg-surface border border-border-default rounded-lg p-4 shadow-e4 pointer-events-auto"
-            style={{ left: tipLeft, top: tipTop, zIndex: Z_INDEX.DROPDOWN }}
-          >
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <span className="text-primary text-[14px] font-semibold">{tooltip.label}</span>
-              <IconButton
-                aria-label="툴팁 닫기"
-                onClick={() => setTooltip(null)}
-                variant="ghost"
-                size="sm"
-                icon={<Icon name="x" size={14} />}
-              />
+      {tooltip &&
+        (() => {
+          const pos = layout.find((p) => p.node.label === tooltip.label);
+          if (!pos) return null;
+          const tipLeft = Math.max(8, Math.min(pos.x, containerWidth - 268));
+          const tipTop = pos.y > 120 ? pos.y - 104 : pos.y + NODE_H + 12;
+          return (
+            <div
+              className="absolute w-[260px] bg-surface border border-border-default rounded-lg p-4 shadow-e4 pointer-events-auto"
+              style={{ left: tipLeft, top: tipTop, zIndex: Z_INDEX.DROPDOWN }}
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <span className="text-primary text-[14px] font-semibold">{tooltip.label}</span>
+                <IconButton
+                  aria-label="툴팁 닫기"
+                  onClick={() => setTooltip(null)}
+                  variant="ghost"
+                  size="sm"
+                  icon={<Icon name="x" size={14} />}
+                />
+              </div>
+              <p className="text-secondary text-[13px] leading-[1.625] m-0">
+                {tooltip.description}
+              </p>
             </div>
-            <p className="text-secondary text-[13px] leading-[1.625] m-0">
-              {tooltip.description}
-            </p>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </div>
   );
 }

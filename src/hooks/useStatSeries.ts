@@ -13,7 +13,6 @@ interface UseStatSeriesParams {
   enabled?: boolean;
 }
 
-// @guide:HOOK-13
 export function useStatSeries({
   anomalyId,
   metric,
@@ -33,7 +32,7 @@ export function useStatSeries({
       });
       return res.data;
     },
-    enabled: anomalyId !== null && enabled,
+    enabled: anomalyId != null && enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

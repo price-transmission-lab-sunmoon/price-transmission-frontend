@@ -8,9 +8,7 @@ interface CommoditiesResponse {
   commodities: Commodity[];
 }
 
-// CLAUDE §16 자동 선택 정책: /commodities 응답 수신 + primaryCommodityId === null 일 때
-// setCommodities 호출 후 primary 자동 지정. 별도 트리거 컴포넌트 없이 본 훅에서만 수행.
-// @guide:HOOK-01
+// /commodities 응답 수신 시 primary 자동 지정. 이 훅에서만 수행.
 export function useCommodities() {
   const query = useQuery<Commodity[]>({
     queryKey: ['commodities'],
@@ -30,14 +28,11 @@ export function useCommodities() {
     if (!query.data) return;
     setCommodities(query.data);
     const { primaryCommodityId, filterFrom, filterTo } = useAppStore.getState();
-    if (primaryCommodityId === null && query.data.length > 0) {
+    if (primaryCommodityId == null && query.data.length > 0) {
       const first = query.data[0];
       setPrimaryCommodity(first.commodity_id);
-      // 초기 viewport = 최근 3년 (analysis_end 기준).
-      // 전체 분석 기간 (10~17년) 을 첫 화면에 압축 표시하면 라인이 빽빽한 지그재그가 되어
-      // 변동성이 시각적으로 과장됨. 사용자는 5년·전체 프리셋 또는 미니맵으로 확장 가능.
-      // periodPreset='3y'로 명시 → FilterBar UI 와 실 상태 일치.
-      if (filterFrom === null && filterTo === null) {
+      // 초기 viewport = 최근 3년. periodPreset='3y'로 명시해 FilterBar 상태와 일치시킨다.
+      if (filterFrom == null && filterTo == null) {
         const from = subYearsClamped(first.analysis_end, 3, first.analysis_start);
         setFilterRange(from, first.analysis_end);
         setPeriodPreset('3y');
