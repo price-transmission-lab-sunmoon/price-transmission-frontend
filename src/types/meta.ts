@@ -1,13 +1,13 @@
 import type { SegmentId } from './literals';
 
-// /freshness — 데이터 기준 시점
+// /freshness (데이터 기준 시점)
 export interface Freshness {
   data_up_to: string; // YYYY-MM
   next_run_date: string; // YYYY-MM-DD
   last_updated: string; // ISO 8601 UTC
 }
 
-// /meta/pipeline — 파이프라인 플로우 다이어그램
+// /meta/pipeline (파이프라인 플로우 다이어그램)
 export interface PipelineNode {
   id: string;
   label: string;
@@ -27,7 +27,7 @@ export interface PipelineMetaResponse {
   edges: PipelineEdge[];
 }
 
-// /meta/analysis-params — 파이프라인 파라미터 기준값 (정적)
+// /meta/analysis-params (파이프라인 파라미터 기준값, 정적)
 export interface AnalysisParams {
   rolling_window: number; // 48
   zscore_warning: number; // 2.0

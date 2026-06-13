@@ -1,4 +1,4 @@
-// Phase별 개념 도식 — 호버 패널 안 작은 SVG. teal=주선, gray=보조, red=이상, dashed=기준선.
+// Phase별 개념 도식. 호버 패널 안 작은 SVG로 표시한다. teal=주선, gray=보조, red=이상, dashed=기준선.
 const T = '#0d9488';
 const G = '#a8a298';
 const R = '#dc2626';
@@ -16,7 +16,7 @@ function Body({ phase }: { phase: string }) {
           <circle cx="60" cy="20" r="2.6" fill={T} />
         </>
       );
-    case 'phase1': // STL: 원본·추세·계절 3단
+    case 'phase1': // STL: 원본, 추세, 계절 3단
       return (
         <>
           <polyline

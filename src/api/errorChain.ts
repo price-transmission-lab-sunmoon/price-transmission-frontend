@@ -1,6 +1,6 @@
 import { FEError } from '@/api/error';
 
-// FEError.context.cause → ES2022 Error.cause 순으로 체인을 따라가며 배열로 반환한다.
+// FEError.context.cause, ES2022 Error.cause 순으로 체인을 따라가며 배열로 반환한다.
 export function traceErrorChain(error: unknown): unknown[] {
   const chain: unknown[] = [];
   let current: unknown = error;

@@ -226,7 +226,7 @@ export function PipelineFlowDiagram({ nodes, edges, version }: Props) {
 
   return (
     <div ref={containerRef} className="relative w-full select-none">
-      {/* 버전 표시 — pill */}
+      {/* 버전 표시(pill) */}
       <div
         className="absolute top-3 right-3 px-2.5 py-1 bg-canvas border border-border-default rounded-sm text-[10px] font-semibold uppercase tracking-widest font-mono text-tertiary pointer-events-none"
         style={{ zIndex: 10 }}

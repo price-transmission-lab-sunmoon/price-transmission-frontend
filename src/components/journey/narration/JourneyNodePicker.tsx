@@ -1,4 +1,4 @@
-// 노드 선택기 — 전이 산점도 축소판. x=상류, y=하류. 이상점 클릭으로 기준 이상을 선택한다.
+// 노드 선택기. 전이 산점도 축소판으로, x=상류, y=하류 기준이다. 이상점 클릭으로 기준 이상을 선택한다.
 import { useEffect, useRef, useState } from 'react';
 import type { ScatterResponse } from '@/types/timeseries';
 import { useJourneySelection, JOURNEY_GRADE_COLORS } from '../journeyContract';
@@ -27,7 +27,7 @@ export function JourneyNodePicker({
 
   const [zoom, setZoom] = useState(1);
   const svgRef = useRef<SVGSVGElement>(null);
-  // 미니맵 위 휠 이벤트 — 페이지 스크롤과 카메라 줌을 막고 산점도만 확대한다.
+  // 미니맵 위 휠 이벤트. 페이지 스크롤과 카메라 줌을 막고 산점도만 확대한다.
   useEffect(() => {
     const el = svgRef.current;
     if (!el) return;

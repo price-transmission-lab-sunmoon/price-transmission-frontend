@@ -327,7 +327,7 @@ export function RawPricesChart() {
           .style('pointer-events', 'none');
       }
 
-      // Main dot — reference = outline-only
+      // Main dot. reference 등급은 외곽선만
       const circle = nodeG
         .append('circle')
         .attr('cx', px)

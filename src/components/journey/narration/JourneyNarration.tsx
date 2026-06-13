@@ -1,4 +1,4 @@
-// 좌측 해설 패널 — 현재 stage에 따라 해설 교체. 품목명은 전역 primaryCommodityId를 따른다.
+// 좌측 해설 패널. 현재 stage에 따라 해설이 교체되며, 품목명은 전역 primaryCommodityId를 따른다.
 import { useAppStore } from '@/stores/useAppStore';
 import { useJourneyProgress, JOURNEY_STAGE_COUNT } from '../journeyContract';
 import { STATION_COPY } from './stationCopy';

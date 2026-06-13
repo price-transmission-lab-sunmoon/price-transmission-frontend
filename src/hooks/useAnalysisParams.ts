@@ -10,7 +10,7 @@ export function useAnalysisParams() {
       const res = await client.get<AnalysisParamsResponse>(ENDPOINTS.META_ANALYSIS_PARAMS);
       return res.data;
     },
-    staleTime: 3_600_000, // 1시간 — 파라미터 기준값은 분석 버전이 바뀔 때만 변경
+    staleTime: 3_600_000, // 1시간. 파라미터 기준값은 분석 버전이 바뀔 때만 변경
     retry: 2,
     refetchOnWindowFocus: false,
   });

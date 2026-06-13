@@ -1,4 +1,4 @@
-// ② 가격 전달 경로 — 구간 A~E 3D 체인. 대표 이상 구간을 강조하고 stat_metrics 수치를 배지로 표시.
+// ② 가격 전달 경로. 구간 A~E 3D 체인으로 표시하며, 대표 이상 구간을 강조하고 stat_metrics 수치를 배지로 표시한다.
 import { Line } from '@react-three/drei';
 import type { StationProps } from '../journeyContract';
 import type { Commodity } from '@/types/commodity';

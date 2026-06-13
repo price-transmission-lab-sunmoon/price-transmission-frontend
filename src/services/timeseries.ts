@@ -78,7 +78,7 @@ export function buildStreamChartData(
       (n: StreamAnomalyNode) =>
         segmentSet.has(n.segment_id as SegmentId) &&
         gradeSet.has(n.confidence_grade as ConfidenceGrade) &&
-        n.transmission_rate !== null, // null rate는 rate 축에 배치 불가 → 차트 제외
+        n.transmission_rate !== null, // null rate는 rate 축에 배치 불가, 차트 제외
     )
     .map((n: StreamAnomalyNode) => ({
       anomaly_id: n.anomaly_id,

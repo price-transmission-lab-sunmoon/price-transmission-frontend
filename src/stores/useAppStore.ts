@@ -14,7 +14,7 @@ import type {
   StatSnapshotMetric,
 } from '@/types/literals';
 
-// 패널 섹션·인라인 차트·결과맵 토글 키
+// 패널 섹션, 인라인 차트, 결과맵 토글 키
 type PanelSectionId = 'stat' | 'ml' | 'path' | 'irf';
 type InlineChartId = StatSeriesMetric | StatSnapshotMetric;
 
@@ -107,7 +107,7 @@ export const useAppStore = create<AppStore>((set) => ({
   filterTo: null,
   granularity: 'monthly',
   periodPreset: null,
-  // reference 등급도 첫 화면에 표시 — high가 0건일 때 "이상 거의 없음"으로 오인 방지
+  // reference 등급도 첫 화면에 표시. high가 0건일 때 "이상 거의 없음"으로 오인 방지
   confidenceFilter: ['high', 'medium', 'reference'],
   patternFilter: [], // 빈 배열 = 전체
   eventFilter: [], // 초기값 전체 해제
@@ -139,7 +139,7 @@ export const useAppStore = create<AppStore>((set) => ({
   selectedAnomalyId: null,
   isPanelOpen: false,
   scatterSegment: 'A',
-  // methodology·journey 탭 진입 시 패널 자동 닫힘
+  // methodology, journey 탭 진입 시 패널 자동 닫힘
   setActiveTab: (tab) =>
     set(
       tab === 'methodology' || tab === 'journey'
@@ -151,7 +151,7 @@ export const useAppStore = create<AppStore>((set) => ({
     set(() => ({
       selectedAnomalyId: null,
       isPanelOpen: false,
-      // 패널 닫을 때 인라인·결과맵 펼침 상태 초기화
+      // 패널 닫을 때 인라인 차트와 결과맵 펼침 상태 초기화
       expandedInlineCharts: new Set(),
       expandedMLMaps: new Set(),
     })),

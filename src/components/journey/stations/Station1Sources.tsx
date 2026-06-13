@@ -1,4 +1,4 @@
-// ① 원천 데이터 — 가격 시리즈가 중앙 병합 데이터셋으로 흘러듦. 반경=커버리지, 이상 포함 시 라벨 표시.
+// ① 원천 데이터. 가격 시리즈가 중앙 병합 데이터셋으로 흘러들며, 반경은 커버리지를 나타내고 이상 포함 시 라벨을 표시한다.
 import { RoundedBox } from '@react-three/drei';
 import type { StationProps } from '../journeyContract';
 import type { RawPricesResponse } from '@/types/timeseries';

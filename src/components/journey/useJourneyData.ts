@@ -1,4 +1,4 @@
-// 여정 데이터 producer — Canvas 밖에서 호출(Canvas 안은 QueryClient 컨텍스트 미도달).
+// 여정 데이터 producer. Canvas 밖에서 호출한다(Canvas 안은 QueryClient 컨텍스트 미도달).
 // 전역 store 훅 대신 commodityId로 직접 쿼리해 전역 상태 오염을 피한다.
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -27,7 +27,7 @@ export interface JourneyData {
   commodity?: Commodity;
   summary?: AnomaliesSummaryResponse;
   detail?: AnomalyDetail;
-  normalMode: boolean; // 정상 점 선택 상태(합성 detail — 전이율만, 나머지 —)
+  normalMode: boolean; // 정상 점 선택 상태(합성 detail: 전이율만 채우고 나머지는 미정의)
   stream?: StreamResponse;
   rawPrices?: RawPricesResponse;
   scatter?: ScatterResponse;
@@ -45,7 +45,7 @@ export function useJourneyData(): JourneyData {
 
   const commodity = commodities.data?.find((c) => c.commodity_id === commodityId);
 
-  // 선택 품목 stream — 전역 store 무관 직접 조회.
+  // 선택 품목 stream. 전역 store와 무관하게 직접 조회한다.
   const stream = useQuery<StreamResponse>({
     queryKey: ['journey', 'stream', commodityId],
     queryFn: async () => {
@@ -58,7 +58,7 @@ export function useJourneyData(): JourneyData {
     staleTime: 5 * 60 * 1000,
   });
 
-  // 대표 이상 선택: 사용자가 고른 노드(현 품목 유효) → summary → stream 순 폴백.
+  // 대표 이상 선택: 사용자가 고른 노드(현 품목 유효), summary, stream 순으로 폴백.
   const selectedId = useJourneySelection((s) => s.selectedAnomalyId);
   const selectedNormal = useJourneySelection((s) => s.selectedNormal);
   const anomalyId = useMemo(() => {
@@ -78,7 +78,7 @@ export function useJourneyData(): JourneyData {
 
   const detail = usePanelDetail(anomalyId);
 
-  // 정상 점 선택 시 합성 detail — 전이율만 stream에서 채우고 나머지는 undefined.
+  // 정상 점 선택 시 합성 detail. 전이율만 stream에서 채우고 나머지는 undefined.
   const normalDetail = useMemo<AnomalyDetail | undefined>(() => {
     if (!selectedNormal) return undefined;
     const series = stream.data?.series?.find((s) => s.segment_id === selectedNormal.segment);
@@ -100,7 +100,7 @@ export function useJourneyData(): JourneyData {
     } as unknown as AnomalyDetail;
   }, [selectedNormal, stream.data, commodityId]);
 
-  // 원천데이터용 raw-prices — 직접 조회.
+  // 원천데이터용 raw-prices. 직접 조회한다.
   const rawPrices = useQuery<RawPricesResponse>({
     queryKey: ['journey', 'raw-prices', commodityId],
     queryFn: async () => {
@@ -113,7 +113,7 @@ export function useJourneyData(): JourneyData {
     staleTime: 5 * 60 * 1000,
   });
 
-  // 노드 선택기용 scatter — 구간별. 구간은 store 없으면 품목 첫 구간.
+  // 노드 선택기용 scatter. 구간별로 조회하며, store가 없으면 품목 첫 구간을 사용한다.
   const pickerSegment = useJourneySelection((s) => s.pickerSegment);
   const scatterSegment = pickerSegment ?? commodity?.segments?.[0] ?? '';
   const scatter = useQuery<ScatterResponse>({

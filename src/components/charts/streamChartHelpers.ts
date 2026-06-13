@@ -10,7 +10,7 @@ export interface NodeBucketInfo {
   size: number;
 }
 
-// 반환: anomaly_id → {idx, size}
+// 반환: anomaly_id를 키로 {idx, size}를 값으로 갖는 맵
 export function computeNodeBuckets(
   anomalies: StreamChartAnomaly[],
   xScale: d3.ScaleTime<number, number>,
@@ -70,7 +70,7 @@ export function computeYDomain(
     }
   }
 
-  // warmup 포함 — Y 도메인에서 빠지면 라인이 잘린다
+  // warmup 포함. Y 도메인에서 빠지면 라인이 잘린다
   for (const s of chartData.series) {
     for (const p of s.data) {
       if (p.transmission_rate !== null && inWindow(p.period)) {

@@ -7,7 +7,7 @@ export const Z_INDEX = {
   OVERLAY: 7000, // FAB / floating buttons
   MODAL_OVERLAY: 8000,
   MODAL_CONTENT: 8001,
-  MODAL: 8000, // legacy alias — retained for existing imports during migration
+  MODAL: 8000, // legacy alias, retained for existing imports during migration
   ONBOARDING_OVERLAY: 8500,
   ONBOARDING_SPOTLIGHT: 8501,
   ONBOARDING_TOOLTIP: 8502,

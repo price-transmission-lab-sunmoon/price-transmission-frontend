@@ -1,4 +1,4 @@
-// 분석 여정 공유 계약 — 모든 스테이션·리그·해설의 공통 상수·타입·스토어.
+// 분석 여정 공유 계약. 모든 스테이션, 리그, 해설의 공통 상수, 타입, 스토어를 정의한다.
 import { create } from 'zustand';
 
 export const JOURNEY_STAGE_COUNT = 6;
@@ -6,7 +6,7 @@ export const JOURNEY_STAGE_COUNT = 6;
 // 카메라가 스테이션마다 -Y로 내려가는 월드 간격.
 export const STAGE_GAP = 14;
 
-// 스테이션별 콘텐츠 가로 반폭(half-width, 월드 단위) — 카메라 동적 줌 기준.
+// 스테이션별 콘텐츠 가로 반폭(half-width, 월드 단위). 카메라 동적 줌 기준으로 사용한다.
 // 인덱스 0~5 = ①원천 ②구간 ③파이프라인 ④이중탐지 ⑤신뢰도 ⑥결과.
 export const STAGE_HALF_WIDTH = [7.5, 5.5, 9.5, 7, 8.5, 8.5];
 export const STAGE_HALF_HEIGHT = 3.4;
@@ -21,10 +21,10 @@ export interface StationProps {
   anomalyId: number | null;
 }
 
-// 여정 전용 등급 배색 — 빨강·머스터드·청록으로 hue 분리.
+// 여정 전용 등급 배색. 빨강, 머스터드, 청록으로 hue를 분리한다.
 export const JOURNEY_GRADE_COLORS: Record<string, string> = {
   high: '#dc2626', // 빨강
-  medium: '#ca8a04', // 머스터드(노랑끼) — 빨강과 분리
+  medium: '#ca8a04', // 머스터드(노랑끼). 빨강과 hue 분리
   reference: '#0891b2', // 청록
 };
 
@@ -35,7 +35,7 @@ export const JOURNEY_THEME = {
   dir: 0.5,
 };
 
-// 버튼·방향키로 스테이션 간 이산 이동. 정지점에서 라벨과 모델이 정렬된다.
+// 버튼과 방향키로 스테이션 간 이산 이동. 정지점에서 라벨과 모델이 정렬된다.
 interface JourneyNavState {
   stage: number; // 현재 스테이션 0~N-1
   cameraZoom: number; // 휠 줌 배율. stage 이동 시 1로 리셋.
@@ -55,7 +55,7 @@ export const useJourneyProgress = create<JourneyNavState>((set) => ({
   setCameraZoom: (z) => set({ cameraZoom: z }),
 }));
 
-// 노드 선택기 — 사용자가 고른 기준 이상. null=자동. 상세 기반 스테이션(②④⑤)이 따른다.
+// 노드 선택기. 사용자가 고른 기준 이상(null이면 자동). 상세 기반 스테이션(②④⑤)이 이를 따른다.
 export interface JourneyNormal {
   period: string;
   segment: string;
@@ -64,7 +64,7 @@ export interface JourneyNormal {
 }
 interface JourneySelectionState {
   selectedAnomalyId: number | null;
-  selectedNormal: JourneyNormal | null; // 정상(비이상) 점 선택 — 이상과 배타
+  selectedNormal: JourneyNormal | null; // 정상(비이상) 점 선택. 이상 선택과 배타적
   setSelected: (id: number | null) => void;
   setSelectedNormal: (n: JourneyNormal | null) => void;
   pickerSegment: string | null; // 산점도 미니맵의 표시 구간(null=품목 첫 구간)

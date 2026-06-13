@@ -1,4 +1,4 @@
-// ⑥ 결과 · 외부충격 검증 — 시간축에 탐지 이상(등급색) × 외부충격 음영.
+// ⑥ 결과 및 외부충격 검증. 시간축에 탐지 이상(등급색)과 외부충격 음영을 겹쳐 표시한다.
 import { Line } from '@react-three/drei';
 import type { StationProps } from '../journeyContract';
 import type { StreamResponse, StreamAnomalyNode } from '@/types/timeseries';

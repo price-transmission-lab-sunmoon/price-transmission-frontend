@@ -60,7 +60,7 @@ export function MLMapChart({ points, model, xLabel, yLabel, height = 240 }: Prop
     const anomalyScores = valid.filter((p) => p.is_anomaly).map((p) => p.anomaly_score);
     const scoreExt =
       anomalyScores.length > 0 ? (d3.extent(anomalyScores) as [number, number]) : [0, 1];
-    // score가 낮을수록 이상 → 도메인 반전해서 낮은 값이 더 진한 모델 색
+    // score가 낮을수록 이상이므로 도메인 반전해서 낮은 값이 더 진한 모델 색
     const colorScale = d3
       .scaleSequential()
       .domain([scoreExt[1], scoreExt[0]])

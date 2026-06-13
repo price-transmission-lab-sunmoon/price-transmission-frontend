@@ -53,13 +53,13 @@ export function resolveEffectiveDataEnd(
   return f ?? a ?? null;
 }
 
-// YYYY-MM → 한국어 표시 (예: "2026년 3월")
+// YYYY-MM을 한국어로 표시 (예: "2026년 3월")
 export function formatYearMonthKr(ym: string): string {
   const d = parseYearMonth(ym);
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월`;
 }
 
-// YYYY-MM-DD → 한국어 표시 (예: "4월 15일")
+// YYYY-MM-DD를 한국어로 표시 (예: "4월 15일")
 export function formatDateKr(dateStr: string): string {
   const d = parse(dateStr, 'yyyy-MM-dd', new Date());
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;

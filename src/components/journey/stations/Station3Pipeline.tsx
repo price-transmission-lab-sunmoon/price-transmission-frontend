@@ -1,4 +1,4 @@
-// ③ 분석 파이프라인 — Phase 0~8 노드를 3D 가로 플로우로 표시. 실제 nodes/edges + params 칩.
+// ③ 분석 파이프라인. Phase 0~8 노드를 3D 가로 플로우로 표시하며, 실제 nodes/edges와 params 칩을 포함한다.
 import { RoundedBox } from '@react-three/drei';
 import type { StationProps } from '../journeyContract';
 import type { PipelineMetaResponse, AnalysisParamsResponse } from '@/types/meta';
@@ -31,7 +31,7 @@ const PHASE_DETAIL: Record<string, string> = {
   phase8: '역할: 신뢰도 등급화\n방법: 계량×ML 교차 대조\n등급: H(둘 다) / M(계량만) / R(ML만)',
 };
 
-// Phase 진행(초록→주황) 그라데이션. 분기 노드는 같은 열이면 같은 색.
+// Phase 진행(초록에서 주황으로) 그라데이션. 분기 노드는 같은 열이면 같은 색.
 function lerpColor(a: string, b: string, t: number): string {
   const ca = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
   const cb = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
@@ -73,7 +73,7 @@ export function Station3Pipeline({ active, pipeline, params }: Props) {
       </group>
     );
   }
-  // 열 = phase 정수부. phase 4(VAR/VECM)·7(계량/ML)이 같은 열에서 분기된다.
+  // 열 = phase 정수부. phase 4(VAR/VECM)와 7(계량/ML)이 같은 열에서 분기된다.
   const colKey = (n: { phase_number: number }) => Math.floor(n.phase_number);
   const cols = Array.from(new Set(nodes.map(colKey))).sort((a, b) => a - b);
   const xFor = (ci: number) => (cols.length > 1 ? -9 + (ci / (cols.length - 1)) * 18 : 0);

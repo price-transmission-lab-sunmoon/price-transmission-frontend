@@ -1,4 +1,4 @@
-// ⑤ 신뢰도 등급화 — H/M/R 분포 막대 + 5단계 판정 경로.
+// ⑤ 신뢰도 등급화. H/M/R 분포 막대와 5단계 판정 경로를 표시한다.
 import type { StationProps } from '../journeyContract';
 import type { AnomalyDetail } from '@/types/anomaly';
 import type { StreamResponse } from '@/types/timeseries';

@@ -45,7 +45,7 @@ const PATTERN_OPTIONS: PatternOption[] = [
   { patterns: ['pattern3'], label: '패턴 3' },
 ];
 
-// Filter label + segmented-control wrapper — neutral active (no brand)
+// Filter label + segmented-control wrapper (neutral active, 브랜드 색 없음)
 const LABEL_CLASS = 'text-tertiary text-[10px] font-semibold uppercase tracking-widest mr-1';
 const GROUP_CLASS =
   'inline-flex items-center bg-subtle border border-border-default rounded-md p-0.5 gap-0.5';

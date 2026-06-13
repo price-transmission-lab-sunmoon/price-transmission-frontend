@@ -1,4 +1,4 @@
-// ④ 이중 탐지 — 이상 후보가 계량(Phase 7)과 ML(Phase 7-ML) 두 갈래로 분기. 실제 판정 반영.
+// ④ 이중 탐지. 이상 후보가 계량(Phase 7)과 ML(Phase 7-ML) 두 갈래로 분기하며, 실제 판정을 반영한다.
 import { Line, RoundedBox } from '@react-three/drei';
 import type { StationProps } from '../journeyContract';
 import type { AnomalyDetail } from '@/types/anomaly';
@@ -51,10 +51,10 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
     sm?.lag_deviation ||
     (sm?.spread_n3 != null && sm.spread_n3 > 0)
   );
-  // ML은 구간 A·B에만 수행한다.
-  // TODO: C·D 구간 ML 피처 설계 시 mlApplies 조건 확장 필요
+  // ML은 구간 A, B에만 수행한다.
+  // TODO: C, D 구간 ML 피처 설계 시 mlApplies 조건 확장 필요
   const mlApplies = detail?.segment_id === 'A' || detail?.segment_id === 'B';
-  // 계량 탐지 사유 목록. 방향역전형이 가장 많아 Z·IQR만 표시하면 사유가 왜곡된다.
+  // 계량 탐지 사유 목록. 방향역전형이 가장 많아 Z와 IQR만 표시하면 사유가 왜곡된다.
   const econReasons = [
     sm?.direction_reversal && '방향역전',
     sm?.lag_deviation && '시차이탈',
@@ -139,7 +139,7 @@ export function Station4DualDetect({ active, detail, normalMode }: Props) {
         </Label3D>
       )}
 
-      {/* Z-score 게이지 — 2.0 주의 눈금 포함 */}
+      {/* Z-score 게이지. 2.0 주의 눈금 포함 */}
       {(() => {
         const z = sm?.zscore != null ? Math.abs(sm.zscore) : 0;
         const gw = 1.4;

@@ -110,7 +110,7 @@ export function OnboardingGuide() {
     setStep(1);
   }, [setOnboardingVisible, setHasSeenOnboardingThisSession]);
 
-  // Esc → close
+  // Esc 누르면 닫기
   useEffect(() => {
     if (!isOnboardingVisible) return;
     const handler = (e: KeyboardEvent) => {
@@ -148,7 +148,7 @@ export function OnboardingGuide() {
 
   return (
     <>
-      {/* 배경 클릭 → 온보딩 종료 (스포트라이트 영역 클릭은 통과) */}
+      {/* 배경 클릭 시 온보딩 종료 (스포트라이트 영역 클릭은 통과) */}
       <div
         style={{ position: 'fixed', inset: 0, zIndex: Z_INDEX.ONBOARDING_OVERLAY }}
         onClick={(e) => {

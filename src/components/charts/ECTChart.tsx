@@ -12,7 +12,7 @@ interface Props {
   height?: number;
 }
 
-// 패널 표준 margin과 left만 다름(52) — ECT y축 라벨이 더 넓어 자체 유지.
+// 패널 표준 margin과 left만 다름(52). ECT y축 라벨이 더 넓어 자체 유지.
 const MARGIN = { top: 12, right: 12, bottom: 24, left: 52 };
 
 export function ECTChart({ data, ectType, height = 200 }: Props) {

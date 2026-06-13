@@ -51,7 +51,7 @@ interface MockRoute {
   handle: (config: InternalAxiosRequestConfig) => MockResult;
 }
 
-// 도매 데이터 없는 3구간 품목 — layout=4 요청 시 WHOLESALE_NOT_AVAILABLE 반환
+// 도매 데이터 없는 3구간 품목. layout=4 요청 시 WHOLESALE_NOT_AVAILABLE 반환
 // TODO: 품목 목록이 늘어나면 fixtures/commodities.json과 이 Set을 함께 갱신해야 함
 const THREE_SEG_COMMODITIES = new Set([
   'wheat',

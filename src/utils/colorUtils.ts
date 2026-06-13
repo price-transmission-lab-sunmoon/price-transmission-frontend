@@ -2,11 +2,11 @@ import type { ConfidenceGrade, MlModel, RawPriceSource, SegmentId } from '@/type
 
 // 차트 색상 팔레트 단일 출처. src/index.css :root CSS 변수와 대응된다.
 
-// 이상 등급별 색 — 웜화이트 캔버스에서 WCAG 대비 충족
+// 이상 등급별 색. 웜화이트 캔버스에서 WCAG 대비 충족
 export const ANOMALY_COLORS: Record<ConfidenceGrade, string> = {
   high: '#dc2626', // red-600
   medium: '#d97706', // amber-600
-  reference: '#0891b2', // cyan-600 (was lime — failed contrast + clashed with success)
+  reference: '#0891b2', // cyan-600 (was lime: failed contrast + clashed with success)
 } as const;
 
 export const ANOMALY_BG_COLORS: Record<ConfidenceGrade, string> = {
@@ -28,16 +28,16 @@ export const ANOMALY_RADII: Record<ConfidenceGrade, number> = {
   reference: 4,
 } as const;
 
-// Segment colors — primary commodity (solid lines)
+// Segment colors: primary commodity (solid lines)
 export const SEGMENT_COLORS_PRIMARY: Record<SegmentId, string> = {
-  A: '#0d9488', // teal-600 — brand-aligned
+  A: '#0d9488', // teal-600, brand-aligned
   B: '#059669', // emerald-600
   C: '#7c3aed', // violet-600
   D: '#db2777', // pink-600
   D_prime: '#ea580c', // orange-600
 } as const;
 
-// Segment colors — secondary commodity (dashed + lighter)
+// Segment colors: secondary commodity (dashed + lighter)
 export const SEGMENT_COLORS_SECONDARY: Record<SegmentId, string> = {
   A: '#5eead4', // teal-300
   B: '#6ee7b7', // emerald-300
@@ -46,7 +46,7 @@ export const SEGMENT_COLORS_SECONDARY: Record<SegmentId, string> = {
   D_prime: '#fdba74', // orange-300
 } as const;
 
-// ML 모델별 색 — PCA 좌표가 동일하므로 색으로 모델을 구분한다.
+// ML 모델별 색. PCA 좌표가 동일하므로 색으로 모델을 구분한다.
 export const ML_MODEL_COLORS: Record<MlModel, string> = {
   isolation_forest: '#db2777', // pink-600
   lof: '#16a34a', // green-600
@@ -56,7 +56,7 @@ export const ML_MODEL_COLORS: Record<MlModel, string> = {
 // StreamChart y=1 기준선 색
 export const REFERENCE_LINE_COLOR = '#0d9488';
 
-// 원시 가격 소스별 색 — 탭 간 색 혼동 방지를 위해 SEGMENT_COLORS와 분리
+// 원시 가격 소스별 색. 탭 간 색 혼동 방지를 위해 SEGMENT_COLORS와 분리
 export const RAW_PRICE_COLORS: Record<RawPriceSource, string> = {
   intl_price_krw: '#7c3aed', // violet-600
   import_price_usd: '#0891b2', // cyan-600
@@ -68,7 +68,7 @@ export const RAW_PRICE_COLORS: Record<RawPriceSource, string> = {
 // 패널 인라인 차트 8종 색상 (d3 기본값 미사용, 이상 지점은 ANOMALY_COLORS.high 재사용)
 export const PANEL_CHART_COLORS = {
   // TransmissionRateChart
-  transmissionRateLine: '#0d9488', // brand teal — primary metric
+  transmissionRateLine: '#0d9488', // brand teal, primary metric
   rollingMeanLine: '#78736a', // warm gray
   q1q3Band: '#a8a298', // warm gray
   detectionMarker: ANOMALY_COLORS.high,

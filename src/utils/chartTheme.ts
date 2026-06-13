@@ -1,4 +1,4 @@
-// 모든 D3 차트가 공유하는 시각 테마 (축·그리드·warmup band·이벤트 마커·폰트).
+// 모든 D3 차트가 공유하는 시각 테마 (축, 그리드, warmup band, 이벤트 마커, 폰트).
 export const CHART_THEME = {
   background: 'transparent',
   axisLine: '#e7e2d8', // border-default
@@ -18,8 +18,8 @@ export const CHART_THEME = {
 } as const;
 
 // 패널 인라인 시계열 차트 공통 margin (top/right/bottom/left).
-// TransmissionRate · ZScore · Breakpoints 가 동일 값을 공유 → 중복 제거.
-// 그 외 차트(ECT·MLMap·Asymmetry·IQR 등)는 축 라벨 폭이 달라 각자 자체 margin을 유지한다.
+// TransmissionRate, ZScore, Breakpoints 가 동일 값을 공유하여 중복 제거.
+// 그 외 차트(ECT, MLMap, Asymmetry, IQR 등)는 축 라벨 폭이 달라 각자 자체 margin을 유지한다.
 export const CHART_MARGINS = {
   panelStandard: { top: 12, right: 12, bottom: 24, left: 44 },
 } as const;

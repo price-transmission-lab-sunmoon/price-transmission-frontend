@@ -243,7 +243,7 @@ export function StreamChart() {
     drawRefLine(0, '역전 경계 (0)');
     drawRefLine(1, '완전 전달 (1.0)');
 
-    // warmup 구간 회색 band — 이벤트보다 먼저 그려 이벤트가 위에 오도록
+    // warmup 구간 회색 band. 이벤트보다 먼저 그려 이벤트가 위에 오도록
     const warmupGroup = chartGroup.append('g').attr('class', 'warmup-bands');
     const warmupBands = computeWarmupBands(chartData.series);
     for (let i = 0; i < warmupBands.length; i++) {
@@ -358,7 +358,7 @@ export function StreamChart() {
       ySc: d3.ScaleLinear<number, number>,
     ) => {
       anomalyGroup.selectAll('*').remove();
-      // reference → medium → high 순 정렬, 높은 등급이 위에 쌓임
+      // reference, medium, high 순 정렬. 높은 등급이 위에 쌓임
       const gradeOrder = { reference: 0, medium: 1, high: 2 } as const;
       const list = [...chartData.anomalies].sort(
         (a, b) => gradeOrder[a.confidence_grade] - gradeOrder[b.confidence_grade],
@@ -372,7 +372,7 @@ export function StreamChart() {
         const isSelected = an.anomaly_id === selectedAnomalyId;
         const isReference = an.confidence_grade === 'reference';
 
-        // Layer 1: pulse halo (high only — CSS @keyframes, never SVG <animate>)
+        // Layer 1: pulse halo (high 등급 한정. CSS @keyframes 사용, SVG <animate> 미사용)
         if (an.confidence_grade === 'high') {
           anomalyGroup
             .append('circle')
@@ -397,7 +397,7 @@ export function StreamChart() {
             .style('pointer-events', 'none');
         }
 
-        // Layer 3: main dot — reference = outline-only ring
+        // Layer 3: main dot. reference 등급은 외곽선만 있는 링
         const circle = anomalyGroup
           .append('circle')
           .attr('data-anomaly-id', an.anomaly_id)
@@ -725,7 +725,7 @@ export function StreamChart() {
     >
       <svg ref={svgRef} className="w-full h-full overflow-visible" />
 
-      {/* 상태 오버레이 — 컨테이너 mount에 영향 없음 */}
+      {/* 상태 오버레이. 컨테이너 mount에 영향 없음 */}
       {!primaryCommodityId && (
         <div className="absolute inset-0 flex items-center justify-center">
           <StateView variant="empty" size="inline" icon="list" title="품목을 선택하세요" />

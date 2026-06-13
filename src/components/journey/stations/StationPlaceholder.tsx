@@ -1,4 +1,4 @@
-// 임시 스테이션 — 박스 + 번호. 한글 라벨은 좌측 해설 패널이 담당한다.
+// 임시 스테이션. 박스와 번호만 표시하며, 한글 라벨은 좌측 해설 패널이 담당한다.
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';

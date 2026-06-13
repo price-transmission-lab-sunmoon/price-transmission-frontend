@@ -14,7 +14,7 @@ import type {
   StatSnapshotMetric,
 } from './literals';
 
-// /anomalies/summary — 이달 이상 요약 배너
+// /anomalies/summary (이달 이상 요약 배너)
 
 export interface AnomalySummaryItem {
   anomaly_id: number;
@@ -36,11 +36,11 @@ export interface AnomalySummaryResponse {
   anomalies: AnomalySummaryItem[];
 }
 
-// /anomalies/{id}/detail — 패널 통합 응답
+// /anomalies/{id}/detail (패널 통합 응답)
 
-// stat_metrics — 30개 필드, 구간별 적용 여부는 백엔드 스펙 참조
+// stat_metrics: 30개 필드, 구간별 적용 여부는 백엔드 스펙 참조
 export interface StatMetrics {
-  // 패턴 2 — A·B 구간
+  // 패턴 2 (A, B 구간)
   transmission_rate: number | null;
   rolling_mean: number | null;
   zscore: number | null;
@@ -56,37 +56,37 @@ export interface StatMetrics {
   over_transmission: boolean;
   under_transmission: boolean;
 
-  // 패턴 1 — 전 구간
+  // 패턴 1 (전 구간)
   normal_lag: number | null;
   actual_lag: number | null;
   direction_reversal: boolean;
   lag_deviation: boolean;
   pattern1_flag_type: Pattern1FlagType;
 
-  // ECT — 전 구간
+  // ECT (전 구간)
   ect_or_spread: number | null;
   ect_type: EctType;
 
-  // 패턴 3 — B 구간
+  // 패턴 3 (B 구간)
   spread_n3: number | null;
 
-  // TECM 비대칭 — A·B
+  // TECM 비대칭 (A, B 구간)
   alpha_plus: number | null;
   alpha_minus: number | null;
   wald_pvalue: number | null;
   asymmetry_significant: boolean;
   rocket_feather_direction: RocketFeatherDirection;
 
-  // 모형 유형 — 전 구간
+  // 모형 유형 (전 구간)
   model_type: ModelType;
   cointegrated: boolean;
 
-  // 구조 변화 — 전 구간
+  // 구조 변화 (전 구간)
   subperiod_index: number | null;
   bp_dates: string[]; // YYYY-MM[]
 }
 
-// ml_summary — 11개 필드. percentile·score는 데이터 결손 시 null 가능
+// ml_summary: 11개 필드. percentile, score는 데이터 결손 시 null 가능
 export interface MlSummary {
   ml_vote: number; // 0~3
   ml_detected: boolean;
@@ -124,7 +124,7 @@ export interface AnomalyDetail {
   judgment_path: JudgmentPathStep[];
 }
 
-// /anomalies/{id}/stat-series — 지표별 인라인 시계열
+// /anomalies/{id}/stat-series (지표별 인라인 시계열)
 
 interface StatSeriesEnvelope {
   anomaly_id: number;
@@ -192,7 +192,7 @@ export type StatSeriesResponse =
   | StatSeriesZscoreResponse
   | StatSeriesEctResponse;
 
-// /anomalies/{id}/stat-snapshot — 비시계열 스냅샷
+// /anomalies/{id}/stat-snapshot (비시계열 스냅샷)
 
 export interface StatSnapshotIqrResponse {
   anomaly_id: number;
@@ -228,7 +228,7 @@ export type StatSnapshotResponseFor<M extends StatSnapshotMetric> = M extends 'i
     ? StatSnapshotAsymmetryResponse
     : never;
 
-// /anomalies/{id}/irf — IRF 차트
+// /anomalies/{id}/irf (IRF 차트)
 
 export interface IrfDataPoint {
   horizon: number;
@@ -255,7 +255,7 @@ export interface IrfResponse {
   irfs: IrfCurve[];
 }
 
-// /anomalies/{id}/ml-map — ML 결과맵 2D 투영
+// /anomalies/{id}/ml-map (ML 결과맵 2D 투영)
 
 export interface MlMapPoint {
   period: string;
